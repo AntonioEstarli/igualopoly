@@ -11,6 +11,10 @@ export default function AdminPanel() {
   const [systemProfiles, setSystemProfiles] = useState<any[]>([]); // Para guardar los perfiles de la DB
   const [editingProfile, setEditingProfile] = useState<any>(null); // Perfil que se está editando
   const variables = ['red', 'visibilidad', 'tiempo', 'margen_error', 'responsabilidades'];
+  // Cartas del sistema
+  const [cards, setCards] = useState<any[]>([]);
+  const [editingCard, setEditingCard] = useState<any>(null);
+  const [isAddingCard, setIsAddingCard] = useState(false);
   // Salas y Reset
   const [numSalas, setNumSalas] = useState(5); // Estado para el número de salas
   const [isResetting, setIsResetting] = useState(false);
@@ -73,6 +77,20 @@ export default function AdminPanel() {
     }
   };
 
+  // Función para cargar las cartas del sistema
+  const fetchCards = async () => {
+    const { data, error } = await supabase
+      .from('cards')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.error("Error cargando cartas:", error);
+    } else {
+      setCards(data || []);
+    }
+  };
+
   // editar perfiles del sistema
   const updateSystemProfile = async (profile: any) => {
     const { error } = await supabase
@@ -91,6 +109,58 @@ export default function AdminPanel() {
     } else {
       setEditingProfile(null); // Cerramos el modal
       fetchSystemProfiles(); // Refrescamos la lista para ver los cambios
+    }
+  };
+
+  // Funciones para gestionar cartas
+  const createCard = async (card: any) => {
+    const { error } = await supabase
+      .from('cards')
+      .insert([card]);
+
+    if (error) {
+      alert("Error al crear carta: " + error.message);
+    } else {
+      setIsAddingCard(false);
+      setEditingCard(null);
+      fetchCards();
+    }
+  };
+
+  const updateCard = async (card: any) => {
+    const { error } = await supabase
+      .from('cards')
+      .update({
+        name_es: card.name_es,
+        name_en: card.name_en,
+        situation_es: card.situation_es,
+        situation_en: card.situation_en,
+        impact_variable: card.impact_variable,
+        impact_values: card.impact_values
+      })
+      .eq('id', card.id);
+
+    if (error) {
+      alert("Error al actualizar carta: " + error.message);
+    } else {
+      setEditingCard(null);
+      fetchCards();
+    }
+  };
+
+  const deleteCard = async (cardId: number) => {
+    const confirmar = confirm("¿Estás seguro de eliminar esta carta?");
+    if (!confirmar) return;
+
+    const { error } = await supabase
+      .from('cards')
+      .delete()
+      .eq('id', cardId);
+
+    if (error) {
+      alert("Error al eliminar carta: " + error.message);
+    } else {
+      fetchCards();
     }
   };
 
@@ -120,8 +190,9 @@ export default function AdminPanel() {
     fetchUsuarios();
 
     fetchSystemProfiles();
+    fetchCards();
 
-    // Suscripción Realtime para inserciones y actualizaciones 
+    // Suscripción Realtime para inserciones y actualizaciones
     const channel = supabase.channel('admin_refresh')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'participants' },
@@ -386,7 +457,79 @@ export default function AdminPanel() {
           </div>
         </section>
 
-        {/* MODAL DE EDICIÓN (Similar a creación de personaje) */}
+        {/* SECCIÓN 3: CONFIGURACIÓN DE CARTAS */}
+        <section className="mt-12">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              🃏 Configuración de Cartas
+            </h2>
+            <button
+              onClick={() => {
+                setEditingCard({
+                  name_es: '',
+                  name_en: '',
+                  situation_es: '',
+                  situation_en: '',
+                  impact_variable: 'red',
+                  impact_values: { ALTO: 0, MEDIO: 0, BAJO: 0 }
+                });
+                setIsAddingCard(true);
+              }}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 shadow-sm"
+            >
+              + Nueva Carta
+            </button>
+          </div>
+          <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
+                <tr>
+                  <th className="p-4">ID</th>
+                  <th className="p-4">Nombre</th>
+                  <th className="p-4">Situación</th>
+                  <th className="p-4">Variable Impacto</th>
+                  <th className="p-4">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {cards.map(card => (
+                  <tr key={card.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-4 font-mono text-sm text-slate-500">{card.id}</td>
+                    <td className="p-4 font-bold text-slate-700">{card.name_es}</td>
+                    <td className="p-4 text-sm text-slate-600 max-w-md truncate">{card.situation_es}</td>
+                    <td className="p-4">
+                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">
+                        {card.impact_variable}
+                      </span>
+                    </td>
+                    <td className="p-4 flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingCard(card);
+                          setIsAddingCard(false);
+                        }}
+                        className="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg text-xs font-bold border border-blue-100"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => deleteCard(card.id)}
+                        className="text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg text-xs font-bold border border-red-100"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {cards.length === 0 && (
+              <p className="p-8 text-center text-slate-400 italic">No hay cartas configuradas...</p>
+            )}
+          </div>
+        </section>
+
+        {/* MODAL DE EDICIÓN DE PERFILES */}
         {editingProfile && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
@@ -414,6 +557,128 @@ export default function AdminPanel() {
                   className="flex-1 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-200"
                 >
                   Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL DE EDICIÓN/CREACIÓN DE CARTAS */}
+        {editingCard && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl my-8">
+              <h3 className="text-2xl font-black mb-6">
+                {isAddingCard ? 'Nueva Carta' : `Editar Carta: ${editingCard.name_es}`}
+              </h3>
+              <div className="space-y-4">
+                {/* Nombre en Español */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Nombre (Español)</label>
+                  <input
+                    type="text"
+                    value={editingCard.name_es}
+                    onChange={(e) => setEditingCard({ ...editingCard, name_es: e.target.value })}
+                    className="w-full p-3 border rounded-lg text-sm"
+                    placeholder="Ej: Calle Vacante"
+                  />
+                </div>
+
+                {/* Nombre en Inglés */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Nombre (English)</label>
+                  <input
+                    type="text"
+                    value={editingCard.name_en}
+                    onChange={(e) => setEditingCard({ ...editingCard, name_en: e.target.value })}
+                    className="w-full p-3 border rounded-lg text-sm"
+                    placeholder="Ex: Vacant Street"
+                  />
+                </div>
+
+                {/* Situación en Español */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Situación (Español)</label>
+                  <textarea
+                    value={editingCard.situation_es}
+                    onChange={(e) => setEditingCard({ ...editingCard, situation_es: e.target.value })}
+                    className="w-full p-3 border rounded-lg text-sm resize-none"
+                    rows={3}
+                    placeholder="Describe la situación que representa esta carta..."
+                  />
+                </div>
+
+                {/* Situación en Inglés */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Situación (English)</label>
+                  <textarea
+                    value={editingCard.situation_en}
+                    onChange={(e) => setEditingCard({ ...editingCard, situation_en: e.target.value })}
+                    className="w-full p-3 border rounded-lg text-sm resize-none"
+                    rows={3}
+                    placeholder="Describe the situation this card represents..."
+                  />
+                </div>
+
+                {/* Variable de impacto */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Variable de Impacto</label>
+                  <select
+                    value={editingCard.impact_variable}
+                    onChange={(e) => setEditingCard({ ...editingCard, impact_variable: e.target.value })}
+                    className="w-full p-3 border rounded-lg text-sm font-bold"
+                  >
+                    <option value="red">Red</option>
+                    <option value="visibilidad">Visibilidad</option>
+                    <option value="tiempo">Tiempo</option>
+                    <option value="margen_error">Margen de Error</option>
+                    <option value="responsabilidades">Responsabilidades</option>
+                  </select>
+                </div>
+
+                {/* Valores de impacto */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">Valores de Impacto Económico</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['ALTO', 'MEDIO', 'BAJO'].map(level => (
+                      <div key={level} className="bg-slate-50 p-3 rounded-xl">
+                        <span className="text-xs font-bold text-slate-500 block mb-1">{level}</span>
+                        <input
+                          type="number"
+                          value={editingCard.impact_values?.[level] || 0}
+                          onChange={(e) => setEditingCard({
+                            ...editingCard,
+                            impact_values: {
+                              ...editingCard.impact_values,
+                              [level]: parseInt(e.target.value) || 0
+                            }
+                          })}
+                          className="w-full p-2 border rounded-lg text-sm font-bold"
+                          placeholder="0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-2 italic">
+                    Valores positivos suman dinero, negativos restan
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                <button
+                  onClick={() => {
+                    setEditingCard(null);
+                    setIsAddingCard(false);
+                  }}
+                  className="flex-1 py-3 font-bold text-slate-400 hover:bg-slate-50 rounded-lg"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => isAddingCard ? createCard(editingCard) : updateCard(editingCard)}
+                  className="flex-1 py-3 bg-green-600 text-white rounded-2xl font-bold shadow-lg shadow-green-200 hover:bg-green-700"
+                >
+                  {isAddingCard ? 'Crear Carta' : 'Guardar Cambios'}
                 </button>
               </div>
             </div>
