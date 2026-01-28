@@ -248,12 +248,15 @@ export default function MinisalaGame() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // Número máximo de cartas/casillas en el tablero
+  const MAX_CARDS = 10;
+
   // Función para avanzar el juego (Solo la ejecuta el líder)
   const advanceGame = async () => {
     // 1. Calcular el siguiente paso (máximo 10 cartas)
     const nextIndex = currentCardIndex + 1;
     
-    if (nextIndex <= 5) {
+    if (nextIndex <= MAX_CARDS) {
       // 2. Notificar a todos los miembros de la minisala vía Realtime
       await supabase.channel(`room:${minisalaId}`).send({
         type: 'broadcast',
@@ -435,7 +438,7 @@ export default function MinisalaGame() {
               <div className="flex flex-col gap-4">
                 {isLeader ? (
                   <div className="bg-white p-10 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center h-full">
-                    {currentCardIndex < 10 ? (
+                    {currentCardIndex < MAX_CARDS ? (
                       <>
                         <p className="text-red-600 font-black mb-8 uppercase tracking-widest text-sm">🌟 Eres el Líder</p>
                         <Dice onRollComplete={() => advanceGame()} />
