@@ -2,16 +2,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/src/lib/supabaseClient';
+import { getTranslation, Language } from '@/src/lib/translations';
 
-const VARIABLES = [
-  { id: 'tiempo', label: 'Tiempo disponible' },
-  { id: 'visibilidad', label: 'Visibilidad' },
-  { id: 'red', label: 'Red / Apoyos' },
-  { id: 'margen_error', label: 'Margen de error' },
-  { id: 'responsabilidades', label: 'Responsabilidades fuera del trabajo' }
-];
+const VARIABLES = ['tiempo', 'visibilidad', 'red', 'margen_error', 'responsabilidades'] as const;
 
-const NIVELES = ['ALTO', 'MEDIO', 'BAJO'];
+const NIVELES = ['ALTO', 'MEDIO', 'BAJO'] as const;
 
 export default function CharacterCreation() {
   const [alias, setAlias] = useState('');
@@ -28,6 +23,16 @@ export default function CharacterCreation() {
   const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#64748b'];
 
   const router = useRouter();
+
+  // Obtener idioma desde sessionStorage
+  const [language, setLanguage] = useState<Language>('ES');
+
+  useEffect(() => {
+    const storedLang = sessionStorage.getItem('idioma') as Language;
+    if (storedLang) {
+      setLanguage(storedLang);
+    }
+  }, []);
 
   // 1. Cargar las salas reales de Supabase al montar el componente
   useEffect(() => {
@@ -81,23 +86,23 @@ export default function CharacterCreation() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white min-h-screen shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Configura tu Personaje</h2>
-      
+      <h2 className="text-xl font-bold mb-4">{getTranslation('characterCreation.title', language)}</h2>
+
       {/* Selección de Alias y Skin */}
       <div className="mb-6 border-b pb-4">
-        <label className="block mb-2 font-semibold">Alias público</label>
-        <input 
-          type="text" 
-          className="w-full border p-2 rounded" 
-          onChange={(e) => setAlias(e.target.value)} 
-          placeholder="Tu nombre en el ranking..."
+        <label className="block mb-2 font-semibold">{getTranslation('characterCreation.publicAlias', language)}</label>
+        <input
+          type="text"
+          className="w-full border p-2 rounded"
+          onChange={(e) => setAlias(e.target.value)}
+          placeholder={getTranslation('characterCreation.aliasPlaceholder', language)}
         />
-        <p className="text-xs text-gray-500 mt-1">Este nombre es el que verán los demás.</p>
+        <p className="text-xs text-gray-500 mt-1">{getTranslation('characterCreation.aliasHelper', language)}</p>
       </div>
 
       {/* Color y emoji */}
       <div className="mb-8 p-4 bg-slate-50 rounded-2xl border">
-        <label className="block mb-4 font-bold text-slate-700 text-sm uppercase">Personaliza tu Avatar</label>
+        <label className="block mb-4 font-bold text-slate-700 text-sm uppercase">{getTranslation('characterCreation.customizeAvatar', language)}</label>
 
         {/* Selector de Emojis */}
         <div className="flex flex-wrap gap-2 mb-4">
@@ -128,16 +133,16 @@ export default function CharacterCreation() {
       {/* Configuración de las 5 Variables */}
       <div className="space-y-4 mb-8">
         {VARIABLES.map((v) => (
-          <div key={v.id} className="flex flex-col">
-            <label className="text-sm font-medium mb-2">{v.label}</label>
+          <div key={v} className="flex flex-col">
+            <label className="text-sm font-medium mb-2">{getTranslation(`characterCreation.variableLabels.${v}`, language)}</label>
             <div className="flex gap-2">
               {NIVELES.map((nivel) => (
                 <button
                   key={nivel}
-                  onClick={() => setVars({...vars, [v.id]: nivel})}
-                  className={`flex-1 py-2 rounded border ${vars[v.id] === nivel ? 'bg-blue-600 text-white' : 'bg-gray-50'}`}
+                  onClick={() => setVars({...vars, [v]: nivel})}
+                  className={`flex-1 py-2 rounded border ${vars[v] === nivel ? 'bg-blue-600 text-white' : 'bg-gray-50'}`}
                 >
-                  {nivel}
+                  {getTranslation(`characterCreation.levels.${nivel}`, language)}
                 </button>
               ))}
             </div>
@@ -146,7 +151,7 @@ export default function CharacterCreation() {
       </div>
 
       <div className="mb-8 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-        <label className="block mb-2 font-semibold">Selecciona tu Sala</label>
+        <label className="block mb-2 font-semibold">{getTranslation('characterCreation.chooseRoom', language)}</label>
         <select
           className="w-full bg-white border-2 border-blue-200 p-3 rounded-xl font-bold text-blue-900 outline-none focus:border-blue-400"
           value={minisalaId}
@@ -159,22 +164,22 @@ export default function CharacterCreation() {
               </option>
             ))
           ) : (
-            <option disabled>Cargando salas...</option>
+            <option disabled>{getTranslation('characterCreation.loadingRooms', language)}</option>
           )}
         </select>
-        <p className="text-xs text-gray-500 mt-1">Consulta con tu facilitador qué sala te corresponde.</p>
+        <p className="text-xs text-gray-500 mt-1">{getTranslation('characterCreation.roomHelper', language)}</p>
       </div>
 
-      <button 
+      <button
         onClick={handleSave}
         disabled={!minisalaId}
         className={`w-full py-4 rounded-2xl font-black text-xl uppercase tracking-wider transition-all shadow-lg ${
-          minisalaId 
-            ? 'bg-green-500 text-white hover:bg-green-600 active:scale-95 shadow-green-200' 
+          minisalaId
+            ? 'bg-green-500 text-white hover:bg-green-600 active:scale-95 shadow-green-200'
             : 'bg-slate-200 text-slate-400 cursor-not-allowed'
         }`}
       >
-        Listo para jugar
+        {getTranslation('characterCreation.readyToPlay', language)}
       </button>
     </div>
   );
