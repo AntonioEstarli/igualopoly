@@ -176,7 +176,7 @@ export default function AdminPanel() {
 
     fetchPropuestas();
     const channel = supabase.channel('admin_monitor')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rule_proposals' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rule_proposals' }, () => {
         fetchPropuestas();
       })
       .subscribe();
