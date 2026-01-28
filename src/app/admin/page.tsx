@@ -133,9 +133,12 @@ export default function AdminPanel() {
       .update({
         name_es: card.name_es,
         name_en: card.name_en,
+        name_cat: card.name_cat,
         situation_es: card.situation_es,
         situation_en: card.situation_en,
+        situation_cat: card.situation_cat,
         impact_variable: card.impact_variable,
+        impact_variable_2: card.impact_variable_2,
         impact_values: card.impact_values
       })
       .eq('id', card.id);
@@ -468,9 +471,12 @@ export default function AdminPanel() {
                 setEditingCard({
                   name_es: '',
                   name_en: '',
+                  name_cat: '',
                   situation_es: '',
                   situation_en: '',
+                  situation_cat: '',
                   impact_variable: 'red',
+                  impact_variable_2: '',
                   impact_values: { ALTO: 0, MEDIO: 0, BAJO: 0 }
                 });
                 setIsAddingCard(true);
@@ -498,9 +504,16 @@ export default function AdminPanel() {
                     <td className="p-4 font-bold text-slate-700">{card.name_es}</td>
                     <td className="p-4 text-sm text-slate-600 max-w-md truncate">{card.situation_es}</td>
                     <td className="p-4">
-                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">
-                        {card.impact_variable}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">
+                          {card.impact_variable}
+                        </span>
+                        {card.impact_variable_2 && (
+                          <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-bold">
+                            {card.impact_variable_2}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 flex gap-2">
                       <button
@@ -595,6 +608,18 @@ export default function AdminPanel() {
                   />
                 </div>
 
+                {/* Nombre en Catalán */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Nombre (Català)</label>
+                  <input
+                    type="text"
+                    value={editingCard.name_cat}
+                    onChange={(e) => setEditingCard({ ...editingCard, name_cat: e.target.value })}
+                    className="w-full p-3 border rounded-lg text-sm"
+                    placeholder="Ex: Carrer Vacant"
+                  />
+                </div>
+
                 {/* Situación en Español */}
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Situación (Español)</label>
@@ -619,14 +644,43 @@ export default function AdminPanel() {
                   />
                 </div>
 
+                {/* Situación en Catalán */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Situación (Català)</label>
+                  <textarea
+                    value={editingCard.situation_cat}
+                    onChange={(e) => setEditingCard({ ...editingCard, situation_cat: e.target.value })}
+                    className="w-full p-3 border rounded-lg text-sm resize-none"
+                    rows={3}
+                    placeholder="Descriu la situació que representa aquesta carta..."
+                  />
+                </div>
+
                 {/* Variable de impacto */}
                 <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Variable de Impacto</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Variable de Impacto 1</label>
                   <select
                     value={editingCard.impact_variable}
                     onChange={(e) => setEditingCard({ ...editingCard, impact_variable: e.target.value })}
                     className="w-full p-3 border rounded-lg text-sm font-bold"
                   >
+                    <option value="red">Red</option>
+                    <option value="visibilidad">Visibilidad</option>
+                    <option value="tiempo">Tiempo</option>
+                    <option value="margen_error">Margen de Error</option>
+                    <option value="responsabilidades">Responsabilidades</option>
+                  </select>
+                </div>
+
+                {/* Variable de impacto 2 (opcional) */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Variable de Impacto 2 (Opcional)</label>
+                  <select
+                    value={editingCard.impact_variable_2 || ''}
+                    onChange={(e) => setEditingCard({ ...editingCard, impact_variable_2: e.target.value || null })}
+                    className="w-full p-3 border rounded-lg text-sm font-bold"
+                  >
+                    <option value="">-- Ninguna --</option>
                     <option value="red">Red</option>
                     <option value="visibilidad">Visibilidad</option>
                     <option value="tiempo">Tiempo</option>
