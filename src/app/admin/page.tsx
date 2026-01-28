@@ -132,8 +132,9 @@ export default function AdminPanel() {
       .from('cards')
       .update({
         name_es: card.name_es,
+        name_en: card.name_en,
         situation_es: card.situation_es,
-        discussion_question: card.discussion_question,
+        situation_en: card.situation_en,
         impact_variable: card.impact_variable,
         impact_values: card.impact_values
       })
@@ -466,8 +467,9 @@ export default function AdminPanel() {
               onClick={() => {
                 setEditingCard({
                   name_es: '',
+                  name_en: '',
                   situation_es: '',
-                  discussion_question: '',
+                  situation_en: '',
                   impact_variable: 'red',
                   impact_values: { ALTO: 0, MEDIO: 0, BAJO: 0 }
                 });
@@ -569,9 +571,9 @@ export default function AdminPanel() {
                 {isAddingCard ? 'Nueva Carta' : `Editar Carta: ${editingCard.name_es}`}
               </h3>
               <div className="space-y-4">
-                {/* Nombre de la carta */}
+                {/* Nombre en Español */}
                 <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Nombre</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Nombre (Español)</label>
                   <input
                     type="text"
                     value={editingCard.name_es}
@@ -581,9 +583,21 @@ export default function AdminPanel() {
                   />
                 </div>
 
-                {/* Situación */}
+                {/* Nombre en Inglés */}
                 <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Situación</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Nombre (English)</label>
+                  <input
+                    type="text"
+                    value={editingCard.name_en}
+                    onChange={(e) => setEditingCard({ ...editingCard, name_en: e.target.value })}
+                    className="w-full p-3 border rounded-lg text-sm"
+                    placeholder="Ex: Vacant Street"
+                  />
+                </div>
+
+                {/* Situación en Español */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Situación (Español)</label>
                   <textarea
                     value={editingCard.situation_es}
                     onChange={(e) => setEditingCard({ ...editingCard, situation_es: e.target.value })}
@@ -593,15 +607,15 @@ export default function AdminPanel() {
                   />
                 </div>
 
-                {/* Pregunta de reflexión */}
+                {/* Situación en Inglés */}
                 <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Pregunta de Reflexión</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Situación (English)</label>
                   <textarea
-                    value={editingCard.discussion_question}
-                    onChange={(e) => setEditingCard({ ...editingCard, discussion_question: e.target.value })}
+                    value={editingCard.situation_en}
+                    onChange={(e) => setEditingCard({ ...editingCard, situation_en: e.target.value })}
                     className="w-full p-3 border rounded-lg text-sm resize-none"
-                    rows={2}
-                    placeholder="Pregunta para discutir en grupo..."
+                    rows={3}
+                    placeholder="Describe the situation this card represents..."
                   />
                 </div>
 
