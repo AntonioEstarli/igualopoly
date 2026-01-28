@@ -244,20 +244,35 @@ export const translations = {
 
   // Podium
   podium: {
+    votingClosed: {
+      ES: '¡Votación Finalizada!',
+      EN: 'Voting Closed!',
+      CAT: 'Votació Finalitzada!'
+    },
     title: {
       ES: 'Reglas Ganadoras',
       EN: 'Winning Rules',
       CAT: 'Regles Guanyadores'
     },
-    topProposals: {
-      ES: 'Top 5 Propuestas',
-      EN: 'Top 5 Proposals',
-      CAT: 'Top 5 Propostes'
+    position: {
+      ES: 'Puesto',
+      EN: 'Position',
+      CAT: 'Posició'
     },
     votes: {
-      ES: 'votos',
-      EN: 'votes',
-      CAT: 'vots'
+      ES: 'Votos',
+      EN: 'Votes',
+      CAT: 'Vots'
+    },
+    author: {
+      ES: 'Autor',
+      EN: 'Author',
+      CAT: 'Autor'
+    },
+    backToStart: {
+      ES: 'Volver al inicio',
+      EN: 'Back to start',
+      CAT: 'Tornar a l\'inici'
     }
   },
 

@@ -1,11 +1,20 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/src/lib/supabaseClient';
+import { getTranslation, Language } from '@/src/lib/translations';
 
 export function VotingView({ minisalaId, participantId }: { minisalaId: string, participantId: string }) {
   const [proposals, setProposals] = useState<any[]>([]);
   const [userVotes, setUserVotes] = useState<string[]>([]);
+  const [language, setLanguage] = useState<Language>('ES');
   const MAX_VOTES = 2;
+
+  useEffect(() => {
+    const storedLang = sessionStorage.getItem('idioma') as Language;
+    if (storedLang) {
+      setLanguage(storedLang);
+    }
+  }, []);
 
   useEffect(() => {
     if (minisalaId) {
@@ -55,8 +64,8 @@ export function VotingView({ minisalaId, participantId }: { minisalaId: string, 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-3xl shadow-xl border border-slate-200">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-black text-slate-800 uppercase italic">Votación de Reglas</h2>
-        <p className="text-slate-500 text-sm">Elige las {MAX_VOTES} propuestas que creas que cambiarían más el sistema.</p>
+        <h2 className="text-2xl font-black text-slate-800 uppercase italic">{getTranslation('voting.title', language)}</h2>
+        <p className="text-slate-500 text-sm">{getTranslation('voting.subtitle', language)}</p>
         <div className="mt-2 flex justify-center gap-1">
           {[...Array(MAX_VOTES)].map((_, i) => (
             <div key={i} className={`w-3 h-3 rounded-full ${i < userVotes.length ? 'bg-red-500' : 'bg-slate-200'}`} />
