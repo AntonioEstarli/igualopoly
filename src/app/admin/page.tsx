@@ -56,70 +56,6 @@ export default function AdminPanel() {
     setPasswordInput('');
   };
 
-  // Pantalla de carga inicial
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // Pantalla de login
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-black text-slate-800 mb-2">Panel de Admin</h1>
-            <p className="text-slate-500 text-sm">Introduce la contraseña para acceder</p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                value={passwordInput}
-                onChange={(e) => {
-                  setPasswordInput(e.target.value);
-                  setPasswordError(false);
-                }}
-                className={`w-full p-4 border-2 rounded-xl outline-none transition-all ${
-                  passwordError
-                    ? 'border-red-500 bg-red-50'
-                    : 'border-slate-200 focus:border-blue-500'
-                }`}
-                placeholder="Introduce tu contraseña"
-                autoFocus
-              />
-              {passwordError && (
-                <p className="text-red-600 text-xs mt-2 font-bold">
-                  ⚠️ Contraseña incorrecta
-                </p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-4 bg-slate-800 text-white rounded-xl font-black shadow-lg hover:bg-slate-900 transition-all active:scale-95"
-            >
-              Acceder
-            </button>
-          </form>
-
-          <div className="mt-6 p-4 bg-slate-50 rounded-xl">
-            <p className="text-xs text-slate-500 text-center">
-              🔒 Acceso restringido solo para administradores
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Reset
   const iniciarNuevaPartida = async () => {
     const confirmar = confirm("⚠️ ¿Estás seguro? Esto borrará TODOS los jugadores, propuestas y votos actuales para empezar de cero.");
@@ -268,48 +204,6 @@ export default function AdminPanel() {
     }
   };
 
-  useEffect(() => {
-    // 1. Escuchar propuestas de reglas en tiempo real [cite: 21]
-    const fetchPropuestas = async () => {
-      const { data } = await supabase.from('rule_proposals').select('*');
-      setPropuestas(data || []);
-    };
-
-    fetchPropuestas();
-    const channel = supabase.channel('admin_monitor')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'rule_proposals' }, () => {
-        fetchPropuestas();
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  useEffect(() => {
-    // Carga inicial
-    const fetchUsuarios = async () => {
-      const { data } = await supabase.from('participants').select('*');
-      setUsuarios(data || []);
-    };
-    fetchUsuarios();
-
-    fetchSystemProfiles();
-    fetchCards();
-
-    // Suscripción Realtime para inserciones y actualizaciones
-    const channel = supabase.channel('admin_refresh')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'participants' },
-        (payload) => {
-          // Al recibir cualquier cambio, refrescamos la lista automáticamente
-          fetchUsuarios();
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
   const reasignarSala = async (usuarioId: string, nuevaSala: string) => {
     await supabase
       .from('participants')
@@ -318,7 +212,7 @@ export default function AdminPanel() {
   };
 
   const cambiarFase = async (nuevaFase: string) => {
-    // Actualiza la fase en la base de datos para que todos los clientes cambien de pantalla 
+    // Actualiza la fase en la base de datos para que todos los clientes cambien de pantalla
     await supabase.from('sessions').update({ phase: nuevaFase }).eq('id', 'SALA_ACTUAL');
     setFaseActual(nuevaFase);
   };
@@ -355,13 +249,13 @@ export default function AdminPanel() {
   };
 
   const asignarLider = async (usuarioId: string, salaId: string) => {
-    // 1. Quitamos el rol de líder a todos en esa minisala específica [cite: 47]
+    // 1. Quitamos el rol de líder a todos en esa minisala específica
     await supabase
       .from('participants')
       .update({ is_leader: false })
       .eq('minisala_id', salaId);
 
-    // 2. Asignamos el nuevo líder [cite: 158]
+    // 2. Asignamos el nuevo líder
     await supabase
       .from('participants')
       .update({ is_leader: true })
@@ -386,6 +280,117 @@ export default function AdminPanel() {
     }
   };
 
+  // useEffect para escuchar propuestas - solo si está autenticado
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const fetchPropuestas = async () => {
+      const { data } = await supabase.from('rule_proposals').select('*');
+      setPropuestas(data || []);
+    };
+
+    fetchPropuestas();
+    const channel = supabase.channel('admin_monitor')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rule_proposals' }, () => {
+        fetchPropuestas();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isAuthenticated]);
+
+  // useEffect para cargar usuarios, perfiles y cartas - solo si está autenticado
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Carga inicial
+    const fetchUsuarios = async () => {
+      const { data } = await supabase.from('participants').select('*');
+      setUsuarios(data || []);
+    };
+    fetchUsuarios();
+
+    fetchSystemProfiles();
+    fetchCards();
+
+    // Suscripción Realtime para inserciones y actualizaciones
+    const channel = supabase.channel('admin_refresh')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'participants' },
+        (payload) => {
+          // Al recibir cualquier cambio, refrescamos la lista automáticamente
+          fetchUsuarios();
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isAuthenticated]);
+
+  // Pantalla de carga inicial
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Pantalla de login
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-black text-slate-800 mb-2">Panel de Admin</h1>
+            <p className="text-slate-500 text-sm">Introduce la contraseña para acceder</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => {
+                  setPasswordInput(e.target.value);
+                  setPasswordError(false);
+                }}
+                className={`w-full p-4 border-2 rounded-xl outline-none transition-all ${
+                  passwordError
+                    ? 'border-red-500 bg-red-50'
+                    : 'border-slate-200 focus:border-blue-500'
+                }`}
+                placeholder="Introduce tu contraseña"
+                autoFocus
+              />
+              {passwordError && (
+                <p className="text-red-600 text-xs mt-2 font-bold">
+                  ⚠️ Contraseña incorrecta
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 bg-slate-800 text-white rounded-xl font-black shadow-lg hover:bg-slate-900 transition-all active:scale-95"
+            >
+              Acceder
+            </button>
+          </form>
+
+          <div className="mt-6 p-4 bg-slate-50 rounded-xl">
+            <p className="text-xs text-slate-500 text-center">
+              🔒 Acceso restringido solo para administradores
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-8">
@@ -408,8 +413,8 @@ export default function AdminPanel() {
           <div className="space-y-4">
             <div>
               <label className="text-xs text-slate-500 font-bold uppercase">Número de salas</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 value={numSalas}
                 onChange={(e) => setNumSalas(parseInt(e.target.value))}
                 min="1" max="20"
@@ -462,7 +467,7 @@ export default function AdminPanel() {
     Esto cambiará la pantalla de todos los jugadores a los resultados finales.
   </p>
 </div>
-        
+
       </div>
 
       {/* Usuarios y salas */}
