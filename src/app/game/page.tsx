@@ -379,104 +379,110 @@ export default function MinisalaGame() {
           </div>
 
           {/* COLUMNA DERECHA: TABLERO, CONTROLES E HISTORIAL */}
-          <div className="flex-1 flex flex-col overflow-y-auto">
+          <div className="flex-1 flex flex-col overflow-y-auto relative">
 
             {/* 1. EL TABLERO (Arriba derecha) */}
-            <div className="w-full bg-slate-800 p-6 shadow-lg">
+            <div className="w-full bg-slate-800 p-6 shadow-lg relative">
               <div className="max-w-4xl mx-auto">
                 <h2 className="text-white text-center mb-4 font-black tracking-widest uppercase text-xs opacity-50">
                   {getTranslation('game.roomProgress', language)}
                 </h2>
                 <BoardView currentStep={currentCardIndex} />
               </div>
+
+              {/* CARTA (Aparece encima del centro del tablero con animación) */}
+              {card && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div
+                    className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-w-xl w-full mx-4 pointer-events-auto animate-zoom-in"
+                    style={{
+                      animation: 'zoomIn 0.6s ease-out 0.5s both'
+                    }}
+                  >
+                    <div className="bg-red-600 p-5 flex justify-between items-center text-white">
+                      <span className="font-black uppercase text-sm tracking-widest">
+                        {language === 'ES' ? card.name_es : language === 'EN' ? card.name_en : card.name_cat}
+                      </span>
+                    </div>
+
+                    <div className="p-6 flex-1">
+                      <div className="space-y-4">
+                        <p className="text-slate-700 font-serif text-xl leading-snug italic">
+                          "{language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}"
+                        </p>
+
+                        <div className="pt-4 border-t border-slate-100">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">{getTranslation('game.proposeChange', language)}</h4>
+                          {!hasSubmittedProposal ? (
+                            <div className="space-y-3">
+                              <textarea
+                                value={proposalText}
+                                onChange={(e) => setProposalText(e.target.value)}
+                                placeholder={getTranslation('game.proposalPlaceholder', language)}
+                                className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
+                              />
+                              <button
+                                onClick={submitProposal}
+                                disabled={!proposalText.trim() || isSubmitting}
+                                className="w-full py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all disabled:bg-slate-200"
+                              >
+                                {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
+                              <span className="text-2xl">✅</span>
+                              <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* 2. CONTROLES Y CARTA ACTUAL */}
-            <div className="max-w-5xl mx-auto w-full p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 2. PANEL DE CONTROL DEL LÍDER / ESPERA */}
+            <div className="max-w-5xl mx-auto w-full p-6">
+              {isLeader ? (
+                <div className="bg-white p-10 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center">
+                  {currentCardIndex < MAX_CARDS ? (
+                    <>
+                      <p className="text-red-600 font-black mb-8 uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
+                      <Dice onRollComplete={() => advanceGame()} />
+                    </>
+                  ) : (
+                    <div className="text-center space-y-6">
+                      <p className="text-slate-800 font-black text-2xl uppercase italic">{getTranslation('game.trajectoryComplete', language)}</p>
+                      <button
+                        onClick={activateVoting}
+                        className="bg-black text-white px-10 py-5 rounded-2xl font-black shadow-2xl hover:scale-105 transition-transform"
+                      >
+                        {getTranslation('game.openVoting', language)}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-slate-800/5 p-10 rounded-3xl border-2 border-slate-200 flex flex-col items-center justify-center text-center italic text-slate-400">
+                  <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin mb-4" />
+                  <p className="text-sm font-medium">{getTranslation('game.leaderDeciding', language)}</p>
+                </div>
+              )}
+            </div>
 
-              {/* Tarjeta de Situación del Jugador */}
-              <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+            {/* 3. TU CAPITAL (Encima del historial) */}
+            <div className="max-w-5xl mx-auto w-full px-6 pb-4">
+              <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
                 <div className="bg-red-600 p-5 flex justify-between items-center text-white">
                   <span className="font-black uppercase text-xs tracking-widest">{getTranslation('game.yourCapital', language)}</span>
                   <span className="text-4xl font-black">{myMoney} €</span>
                 </div>
-
-                <div className="p-6 flex-1">
-                  {card ? (
-                    <div className="animate-fade-in space-y-4">
-                      <h3 className="text-red-600 font-black text-sm uppercase tracking-tighter">
-                        {language === 'ES' ? card.name_es : language === 'EN' ? card.name_en : card.name_cat}
-                      </h3>
-                      <p className="text-slate-700 font-serif text-xl leading-snug italic">
-                        "{language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}"
-                      </p>
-
-                      <div className="pt-4 border-t border-slate-100">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">{getTranslation('game.proposeChange', language)}</h4>
-                        {!hasSubmittedProposal ? (
-                          <div className="space-y-3">
-                            <textarea
-                              value={proposalText}
-                              onChange={(e) => setProposalText(e.target.value)}
-                              placeholder={getTranslation('game.proposalPlaceholder', language)}
-                              className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
-                            />
-                            <button
-                              onClick={submitProposal}
-                              disabled={!proposalText.trim() || isSubmitting}
-                              className="w-full py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all disabled:bg-slate-200"
-                            >
-                              {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
-                            <span className="text-2xl">✅</span>
-                            <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-12 text-center">
-                      <div className="text-5xl mb-4 animate-bounce">🏁</div>
-                      <p className="text-slate-400 font-bold uppercase text-xs">{getTranslation('game.waitingLeader', language)}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Panel de Control del Líder / Espera */}
-              <div className="flex flex-col gap-4">
-                {isLeader ? (
-                  <div className="bg-white p-10 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center h-full">
-                    {currentCardIndex < MAX_CARDS ? (
-                      <>
-                        <p className="text-red-600 font-black mb-8 uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
-                        <Dice onRollComplete={() => advanceGame()} />
-                      </>
-                    ) : (
-                      <div className="text-center space-y-6">
-                        <p className="text-slate-800 font-black text-2xl uppercase italic">{getTranslation('game.trajectoryComplete', language)}</p>
-                        <button
-                          onClick={activateVoting}
-                          className="bg-black text-white px-10 py-5 rounded-2xl font-black shadow-2xl hover:scale-105 transition-transform"
-                        >
-                          {getTranslation('game.openVoting', language)}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-slate-800/5 p-10 rounded-3xl border-2 border-slate-200 flex flex-col items-center justify-center text-center h-full italic text-slate-400">
-                    <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin mb-4" />
-                    <p className="text-sm font-medium">{getTranslation('game.leaderDeciding', language)}</p>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* 3. HISTORIAL (Abajo) */}
+            {/* 4. HISTORIAL (Abajo) */}
             <div className="max-w-5xl mx-auto w-full px-6 pb-12">
               <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="bg-slate-100 p-3 text-slate-500 text-center text-[10px] font-black uppercase tracking-[0.3em]">
@@ -502,6 +508,23 @@ export default function MinisalaGame() {
                 </div>
               </div>
             </div>
+
+            <style jsx>{`
+              @keyframes zoomIn {
+                from {
+                  transform: scale(0);
+                  opacity: 0;
+                }
+                to {
+                  transform: scale(1);
+                  opacity: 1;
+                }
+              }
+
+              .animate-zoom-in {
+                animation: zoomIn 0.4s ease-out;
+              }
+            `}</style>
           </div>
         </div>
 
