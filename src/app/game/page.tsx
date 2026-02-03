@@ -382,17 +382,45 @@ export default function MinisalaGame() {
           <div className="flex-1 flex flex-col overflow-y-auto relative">
 
             {/* 1. EL TABLERO (Arriba derecha) */}
-            <div className="w-full bg-slate-800 p-6 shadow-lg relative">
-              <div className="max-w-4xl mx-auto">
-                <h2 className="text-white text-center mb-4 font-black tracking-widest uppercase text-xs opacity-50">
-                  {getTranslation('game.roomProgress', language)}
-                </h2>
+            <div className="w-full bg-slate-800 px-6 pb-6 pt-2 shadow-lg relative">
+              <div className="max-w-4xl mx-auto" style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
                 <BoardView currentStep={currentCardIndex} />
               </div>
 
-              {/* CARTA (Aparece encima del centro del tablero con animación) */}
+              {/* 2. PANEL DE CONTROL DEL LÍDER / ESPERA (encima del tablero) */}
+              <div className="absolute top-[12%] left-0 right-0 flex justify-center z-10 pointer-events-none">
+                <div className="max-w-md w-full mx-4 pointer-events-auto" style={{ transform: 'scale(0.8)' }}>
+                  {isLeader ? (
+                    <div className="bg-white p-6 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center">
+                      {currentCardIndex < MAX_CARDS ? (
+                        <>
+                          <p className="text-red-600 font-black mb-4 uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
+                          <Dice onRollComplete={() => advanceGame()} />
+                        </>
+                      ) : (
+                        <div className="text-center space-y-4">
+                          <p className="text-slate-800 font-black text-xl uppercase italic">{getTranslation('game.trajectoryComplete', language)}</p>
+                          <button
+                            onClick={activateVoting}
+                            className="bg-black text-white px-8 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 transition-transform"
+                          >
+                            {getTranslation('game.openVoting', language)}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-800/90 p-6 rounded-3xl border-2 border-slate-600 flex flex-col items-center justify-center text-center italic text-slate-300">
+                      <div className="w-10 h-10 border-4 border-slate-600 border-t-slate-300 rounded-full animate-spin mb-3" />
+                      <p className="text-sm font-medium">{getTranslation('game.leaderDeciding', language)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* CARTA (Aparece encajo del panel del dado con animación) */}
               {card && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 flex items-start justify-center pt-[26%] pointer-events-none" style={{ transform: 'scale(0.83)' }}>
                   <div
                     className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-w-xl w-full mx-4 pointer-events-auto animate-zoom-in"
                     style={{
@@ -443,37 +471,8 @@ export default function MinisalaGame() {
               )}
             </div>
 
-            {/* 2. PANEL DE CONTROL DEL LÍDER / ESPERA */}
-            <div className="max-w-5xl mx-auto w-full p-6">
-              {isLeader ? (
-                <div className="bg-white p-10 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center">
-                  {currentCardIndex < MAX_CARDS ? (
-                    <>
-                      <p className="text-red-600 font-black mb-8 uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
-                      <Dice onRollComplete={() => advanceGame()} />
-                    </>
-                  ) : (
-                    <div className="text-center space-y-6">
-                      <p className="text-slate-800 font-black text-2xl uppercase italic">{getTranslation('game.trajectoryComplete', language)}</p>
-                      <button
-                        onClick={activateVoting}
-                        className="bg-black text-white px-10 py-5 rounded-2xl font-black shadow-2xl hover:scale-105 transition-transform"
-                      >
-                        {getTranslation('game.openVoting', language)}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-slate-800/5 p-10 rounded-3xl border-2 border-slate-200 flex flex-col items-center justify-center text-center italic text-slate-400">
-                  <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin mb-4" />
-                  <p className="text-sm font-medium">{getTranslation('game.leaderDeciding', language)}</p>
-                </div>
-              )}
-            </div>
-
             {/* 3. TU CAPITAL (Encima del historial) */}
-            <div className="max-w-5xl mx-auto w-full px-6 pb-4">
+            <div className="max-w-5xl mx-auto w-full px-6 pb-4 pt-6">
               <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
                 <div className="bg-red-600 p-5 flex justify-between items-center text-white">
                   <span className="font-black uppercase text-xs tracking-widest">{getTranslation('game.yourCapital', language)}</span>
