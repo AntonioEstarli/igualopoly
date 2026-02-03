@@ -21,6 +21,10 @@ export default function AdminPanel() {
   const [cards, setCards] = useState<any[]>([]);
   const [editingCard, setEditingCard] = useState<any>(null);
   const [isAddingCard, setIsAddingCard] = useState(false);
+  // Valores del dado
+  const [diceValues, setDiceValues] = useState<any[]>([]);
+  const [editingDiceValue, setEditingDiceValue] = useState<any>(null);
+  const [isAddingDiceValue, setIsAddingDiceValue] = useState(false);
   // Salas y Reset
   const [numSalas, setNumSalas] = useState(5); // Estado para el número de salas
   const [isResetting, setIsResetting] = useState(false);
@@ -125,6 +129,65 @@ export default function AdminPanel() {
       console.error("Error cargando cartas:", error);
     } else {
       setCards(data || []);
+    }
+  };
+
+  // Función para cargar los valores del dado
+  const fetchDiceValues = async () => {
+    const { data, error } = await supabase
+      .from('fake_dice_values')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.error("Error cargando valores del dado:", error);
+    } else {
+      setDiceValues(data || []);
+    }
+  };
+
+  // Funciones para gestionar valores del dado
+  const createDiceValue = async (diceValue: any) => {
+    const { error } = await supabase
+      .from('fake_dice_values')
+      .insert([{ value: diceValue.value }]);
+
+    if (error) {
+      alert("Error al crear valor del dado: " + error.message);
+    } else {
+      setIsAddingDiceValue(false);
+      setEditingDiceValue(null);
+      fetchDiceValues();
+    }
+  };
+
+  const updateDiceValue = async (diceValue: any) => {
+    const { error } = await supabase
+      .from('fake_dice_values')
+      .update({ value: diceValue.value })
+      .eq('id', diceValue.id);
+
+    if (error) {
+      alert("Error al actualizar valor del dado: " + error.message);
+    } else {
+      setEditingDiceValue(null);
+      fetchDiceValues();
+    }
+  };
+
+  const deleteDiceValue = async (diceValueId: number) => {
+    const confirmar = confirm("¿Estás seguro de eliminar este valor?");
+    if (!confirmar) return;
+
+    const { error } = await supabase
+      .from('fake_dice_values')
+      .delete()
+      .eq('id', diceValueId);
+
+    if (error) {
+      alert("Error al eliminar valor del dado: " + error.message);
+    } else {
+      fetchDiceValues();
     }
   };
 
@@ -312,6 +375,7 @@ export default function AdminPanel() {
 
     fetchSystemProfiles();
     fetchCards();
+    fetchDiceValues();
 
     // Suscripción Realtime para inserciones y actualizaciones
     const channel = supabase.channel('admin_refresh')
@@ -656,6 +720,70 @@ export default function AdminPanel() {
           </div>
         </section>
 
+        {/* SECCIÓN 4: CONFIGURACIÓN DEL DADO */}
+        <section className="mt-12">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              🎲 Configuración del Dado
+            </h2>
+            <button
+              onClick={() => {
+                setEditingDiceValue({ value: 1 });
+                setIsAddingDiceValue(true);
+              }}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 shadow-sm"
+            >
+              + Nuevo Valor
+            </button>
+          </div>
+          <p className="text-sm text-slate-500 mb-4">
+            Secuencia de valores predeterminados del dado. El líder usará estos valores en orden.
+          </p>
+          <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
+                <tr>
+                  <th className="p-4">Orden</th>
+                  <th className="p-4">Valor del Dado</th>
+                  <th className="p-4">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {diceValues.map((dv, index) => (
+                  <tr key={dv.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-4 font-mono text-sm text-slate-500">{index + 1}</td>
+                    <td className="p-4">
+                      <span className="inline-flex items-center justify-center w-10 h-10 bg-slate-800 text-white rounded-lg font-black text-xl">
+                        {dv.value}
+                      </span>
+                    </td>
+                    <td className="p-4 flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingDiceValue(dv);
+                          setIsAddingDiceValue(false);
+                        }}
+                        className="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg text-xs font-bold border border-blue-100"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => deleteDiceValue(dv.id)}
+                        className="text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg text-xs font-bold border border-red-100"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {diceValues.length === 0 && (
+              <p className="p-8 text-center text-slate-400 italic">No hay valores configurados. El dado usará valores aleatorios.</p>
+            )}
+          </div>
+        </section>
+
         {/* MODAL DE EDICIÓN DE PERFILES */}
         {editingProfile && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -847,6 +975,54 @@ export default function AdminPanel() {
                   className="flex-1 py-3 bg-green-600 text-white rounded-2xl font-bold shadow-lg shadow-green-200 hover:bg-green-700"
                 >
                   {isAddingCard ? 'Crear Carta' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL DE EDICIÓN/CREACIÓN DE VALORES DEL DADO */}
+        {editingDiceValue && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
+              <h3 className="text-2xl font-black mb-6">
+                {isAddingDiceValue ? 'Nuevo Valor del Dado' : 'Editar Valor del Dado'}
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">Valor (1-6)</label>
+                  <div className="flex gap-2 justify-center">
+                    {[1, 2, 3, 4, 5, 6].map(num => (
+                      <button
+                        key={num}
+                        onClick={() => setEditingDiceValue({ ...editingDiceValue, value: num })}
+                        className={`w-12 h-12 rounded-xl font-black text-xl transition-all ${
+                          editingDiceValue.value === num
+                            ? 'bg-slate-800 text-white scale-110 shadow-lg'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-8">
+                <button
+                  onClick={() => {
+                    setEditingDiceValue(null);
+                    setIsAddingDiceValue(false);
+                  }}
+                  className="flex-1 py-3 font-bold text-slate-400 hover:bg-slate-50 rounded-lg"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => isAddingDiceValue ? createDiceValue(editingDiceValue) : updateDiceValue(editingDiceValue)}
+                  className="flex-1 py-3 bg-green-600 text-white rounded-2xl font-bold shadow-lg shadow-green-200 hover:bg-green-700"
+                >
+                  {isAddingDiceValue ? 'Añadir' : 'Guardar'}
                 </button>
               </div>
             </div>

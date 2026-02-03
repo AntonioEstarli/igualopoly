@@ -40,23 +40,42 @@ function DiceFace({ value }: { value: number }) {
   );
 }
 
-export default function Dice({ onRollComplete }: { onRollComplete: (val: number) => void }) {
+interface DiceProps {
+  onRollComplete: (val: number) => void;
+  getNextValue?: () => Promise<number | null>;
+}
+
+export default function Dice({ onRollComplete, getNextValue }: DiceProps) {
   const [isRolling, setIsRolling] = useState(false);
   const [diceValue, setDiceValue] = useState(1);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
 
   // Mapeo de rotaciones para mostrar cada cara
+  // Cara 2 está en rotateY(90deg), así que para mostrarla rotamos Y negativo
+  // Cara 5 está en rotateY(-90deg), así que para mostrarla rotamos Y positivo
   const faceRotations: Record<number, { x: number; y: number }> = {
     1: { x: 0, y: 0 },
-    2: { x: 0, y: 90 },
+    2: { x: 0, y: -90 },
     3: { x: -90, y: 0 },
     4: { x: 90, y: 0 },
-    5: { x: 0, y: -90 },
+    5: { x: 0, y: 90 },
     6: { x: 180, y: 0 },
   };
 
-  const rollDice = () => {
+  const rollDice = async () => {
     setIsRolling(true);
+
+    // Obtener el valor (forzado de la DB o aleatorio)
+    let value = Math.floor(Math.random() * 6) + 1;
+    if (getNextValue) {
+      const forcedValue = await getNextValue();
+      if (forcedValue !== null && forcedValue >= 1 && forcedValue <= 6) {
+        value = forcedValue;
+      }
+    }
+
+    // Capturamos el valor final en una constante para el closure
+    const finalValue = value;
 
     // Rotación aleatoria durante el lanzamiento
     const spins = 3 + Math.floor(Math.random() * 2); // 3-4 vueltas
@@ -73,7 +92,6 @@ export default function Dice({ onRollComplete }: { onRollComplete: (val: number)
 
     // Después de la animación, mostrar el resultado
     setTimeout(() => {
-      const finalValue = Math.floor(Math.random() * 6) + 1;
       const finalRotation = faceRotations[finalValue];
 
       // Añadir vueltas completas para que la transición sea suave
