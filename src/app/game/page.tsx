@@ -268,14 +268,14 @@ export default function MinisalaGame() {
   }, []);
 
   // Número máximo de cartas/casillas en el tablero
-  const MAX_CARDS = 10;
+  const MAX_CARDS = 5;
 
   // Función para avanzar el juego (Solo la ejecuta el líder)
-  const advanceGame = async () => {
-    // 1. Calcular el siguiente paso (máximo 10 cartas)
-    const nextIndex = currentCardIndex + 1;
-    
-    if (nextIndex <= MAX_CARDS) {
+  const advanceGame = async (diceValue: number) => {
+    // 1. Calcular el siguiente paso sumando el valor del dado
+    const nextIndex = currentCardIndex + diceValue;
+
+    if (currentCardIndex < MAX_CARDS) {
       // 2. Notificar a todos los miembros de la minisala vía Realtime
       await supabase.channel(`room:${minisalaId}`).send({
         type: 'broadcast',
@@ -356,6 +356,41 @@ export default function MinisalaGame() {
       .eq('minisala_id', minisalaId);
   };
 
+  // Función para obtener el siguiente valor del dado (fake)
+  const getNextDiceValue = async (): Promise<number | null> => {
+    // 1. Obtener el next_dice_index de la sala actual
+    const { data: roomData, error: roomError } = await supabase
+      .from('rooms')
+      .select('next_dice_index')
+      .eq('id', minisalaId)
+      .single();
+
+    if (roomError || !roomData) {
+      return null;
+    }
+
+    const nextIndex = roomData.next_dice_index || 1;
+
+    // 2. Buscar el valor en fake_dice_values con ese índice
+    const { data: diceData, error: diceError } = await supabase
+      .from('fake_dice_values')
+      .select('value')
+      .eq('id', nextIndex)
+      .single();
+
+    if (diceError || !diceData) {
+      return null;
+    }
+
+    // 3. Incrementar el next_dice_index de la sala
+    await supabase
+      .from('rooms')
+      .update({ next_dice_index: nextIndex + 1 })
+      .eq('id', minisalaId);
+
+    return diceData.value;
+  };
+
   return (
     <div className="min-h-screen bg-slate-100">
       {/* FASE 1: JUEGO ACTIVO */}
@@ -403,7 +438,7 @@ export default function MinisalaGame() {
                       {currentCardIndex < MAX_CARDS ? (
                         <>
                           <p className="text-red-600 font-black mb-4 uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
-                          <Dice onRollComplete={() => advanceGame()} />
+                          <Dice onRollComplete={(val) => advanceGame(val)} getNextValue={getNextDiceValue} />
                         </>
                       ) : (
                         <div className="text-center space-y-4">
