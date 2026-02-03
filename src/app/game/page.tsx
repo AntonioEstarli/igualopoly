@@ -392,7 +392,7 @@ export default function MinisalaGame() {
 
               {/* CARTA (Aparece encima del centro del tablero con animación) */}
               {card && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 flex items-start justify-center pt-24 pointer-events-none">
                   <div
                     className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-w-xl w-full mx-4 pointer-events-auto animate-zoom-in"
                     style={{
@@ -444,9 +444,9 @@ export default function MinisalaGame() {
             </div>
 
             {/* 2. PANEL DE CONTROL DEL LÍDER / ESPERA */}
-            <div className="max-w-5xl mx-auto w-full p-6">
+            <div className="max-w-5xl mx-auto w-full p-6 relative z-20">
               {isLeader ? (
-                <div className="bg-white p-10 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center">
+                <div className="bg-white p-6 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center">
                   {currentCardIndex < MAX_CARDS ? (
                     <>
                       <p className="text-red-600 font-black mb-8 uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
@@ -465,7 +465,7 @@ export default function MinisalaGame() {
                   )}
                 </div>
               ) : (
-                <div className="bg-slate-800/5 p-10 rounded-3xl border-2 border-slate-200 flex flex-col items-center justify-center text-center italic text-slate-400">
+                <div className="bg-slate-800/5 p-6 rounded-3xl border-2 border-slate-200 flex flex-col items-center justify-center text-center italic text-slate-400">
                   <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin mb-4" />
                   <p className="text-sm font-medium">{getTranslation('game.leaderDeciding', language)}</p>
                 </div>
