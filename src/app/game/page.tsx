@@ -40,10 +40,18 @@ export default function MinisalaGame() {
   // Idioma del usuario
   const [language, setLanguage] = useState<Language>('ES');
 
+  // Variables del jugador
+  const [userVars, setUserVars] = useState<Record<string, string>>({});
+
   useEffect(() => {
     const storedLang = sessionStorage.getItem('idioma') as Language;
     if (storedLang) {
       setLanguage(storedLang);
+    }
+    // Cargar variables del jugador
+    const storedVars = sessionStorage.getItem('vars');
+    if (storedVars) {
+      setUserVars(JSON.parse(storedVars));
     }
   }, []);
 
@@ -471,8 +479,32 @@ export default function MinisalaGame() {
               )}
             </div>
 
-            {/* 3. TU CAPITAL (Encima del historial) */}
-            <div className="max-w-5xl mx-auto w-full px-6 pb-4 pt-6">
+            {/* 3. TUS VARIABLES (Panel informativo del perfil) */}
+            <div className="max-w-5xl mx-auto w-full px-6 pt-6">
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-slate-700 p-3 text-white text-center text-[10px] font-black uppercase tracking-[0.3em]">
+                  {getTranslation('game.yourVariables', language)}
+                </div>
+                <div className="p-4 flex flex-wrap justify-center gap-3">
+                  {Object.entries(userVars).map(([key, value]) => {
+                    const labelKey = `characterCreation.variableLabels.${key}`;
+                    const levelKey = `characterCreation.levels.${value}`;
+                    const colorClass = value === 'ALTO' ? 'bg-green-100 text-green-700 border-green-200'
+                      : value === 'MEDIO' ? 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                      : 'bg-red-100 text-red-700 border-red-200';
+                    return (
+                      <div key={key} className={`px-4 py-2 rounded-2xl border ${colorClass} flex items-center gap-2`}>
+                        <span className="text-xs font-bold">{getTranslation(labelKey, language)}:</span>
+                        <span className="text-xs font-black uppercase">{getTranslation(levelKey, language)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* 4. TU CAPITAL (Encima del historial) */}
+            <div className="max-w-5xl mx-auto w-full px-6 pb-4 pt-4">
               <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
                 <div className="bg-red-600 p-5 flex justify-between items-center text-white">
                   <span className="font-black uppercase text-xs tracking-widest">{getTranslation('game.yourCapital', language)}</span>
@@ -481,7 +513,7 @@ export default function MinisalaGame() {
               </div>
             </div>
 
-            {/* 4. HISTORIAL (Abajo) */}
+            {/* 5. HISTORIAL (Abajo) */}
             <div className="max-w-5xl mx-auto w-full px-6 pb-12">
               <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="bg-slate-100 p-3 text-slate-500 text-center text-[10px] font-black uppercase tracking-[0.3em]">

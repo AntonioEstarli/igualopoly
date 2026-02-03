@@ -131,6 +131,11 @@ export const translations = {
 
   // Game
   game: {
+    yourVariables: {
+      ES: 'Tu Perfil',
+      EN: 'Your Profile',
+      CAT: 'El teu Perfil'
+    },
     yourCapital: {
       ES: 'Tu Capital',
       EN: 'Your Capital',
