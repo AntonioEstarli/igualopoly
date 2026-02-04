@@ -184,7 +184,7 @@ export default function MinisalaGame() {
         const userVars = JSON.parse(sessionStorage.getItem('vars') || '{}');
 
         // 3. Calculamos el impacto del detalle (monto y razón)
-        const detail = getImpactDetail(userVars, data.impact_variable, data.impact_values);
+        const detail = getImpactDetail(userVars, data.impact_variable, data.impact_values, data.impact_variable_2);
 
         // --- NUEVA LÓGICA DE ACTUALIZACIÓN ---
 
@@ -525,8 +525,11 @@ export default function MinisalaGame() {
                       <tbody className="divide-y divide-slate-50">
                         {history.map((item, idx) => (
                           <tr key={idx} className="hover:bg-slate-50">
-                            <td className="p-4 font-bold text-slate-700">{item.cardName}</td>
-                            <td className={`p-4 font-black text-right ${item.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            <td className="p-4">
+                              <span className="font-bold text-slate-700">{item.cardName}</span>
+                              <span className="text-xs text-slate-400 ml-2">{item.reason}</span>
+                            </td>
+                            <td className={`p-4 font-black text-right whitespace-nowrap ${item.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {item.amount >= 0 ? `+${item.amount}` : item.amount}€
                             </td>
                           </tr>
