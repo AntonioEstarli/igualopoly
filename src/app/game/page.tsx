@@ -25,7 +25,8 @@ export default function MinisalaGame() {
   const [myMoney, setMyMoney] = useState(0);
   const [card, setCard] = useState<any>(null);
   const [minisalaId, setMinisalaId] = useState('');
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [boardPosition, setBoardPosition] = useState(0);  // Posición del peón (avanza según dado)
+  const [currentCardNumber, setCurrentCardNumber] = useState(0); // Número de carta actual (avanza de 1 en 1)
   const [history, setHistory] = useState<{cardName: string, amount: number, reason: string}[]>([]);
   const [roomPlayers, setRoomPlayers] = useState<RoomPlayer[]>([]);
   const [systemProfiles, setSystemProfiles] = useState<any[]>([]);
@@ -71,12 +72,12 @@ export default function MinisalaGame() {
     // Suscripción al estado de la minisala específica
     const channel = supabase.channel(`room:${sId}`)
       .on('broadcast', { event: 'card_advance' }, ({ payload }) => {
-        // 1. Actualizamos el estado de la sala (para el tablero)
-        setRoomState(prev => ({ ...prev, currentCard: payload.newIndex }));
+        // 1. Actualizamos la posición del peón (según el dado)
+        setRoomState(prev => ({ ...prev, currentCard: payload.nextBoardPosition }));
+        setBoardPosition(payload.nextBoardPosition);
 
-        // 2. IMPORTANTE: Actualizamos el índice de la carta (lo que no tenías)
-        // Esto hará que los que NO son líderes también avancen de carta y sumen/resten dinero
-        setCurrentCardIndex(payload.newIndex);
+        // 2. Actualizamos el número de carta (de 1 en 1)
+        setCurrentCardNumber(payload.nextCardNumber);
       })
       .subscribe();
 
@@ -161,69 +162,70 @@ export default function MinisalaGame() {
 
   // Cargar la carta, actualizar el dinero y añadir al historial
   useEffect(() => {
-    // SALIDA: Si el índice es 0, no cargamos carta ni aplicamos impacto
-    if (roomState.currentCard === 0) {
+    // SALIDA: Si no hay carta o no hay cartas cargadas, no hacemos nada
+    if (currentCardNumber === 0 || allCards.length === 0) {
       setCard(null);
       return;
     }
 
     setHasSubmittedProposal(false);
 
-    const loadCard = async () => {
-  // 1. Cargamos la carta desde Supabase usando el índice actual de la sala
-  const { data } = await supabase
-    .from('cards')
-    .select('*')
-    .eq('id', roomState.currentCard)
-    .single();
+    // Usamos el array de cartas ya cargado, con el número de carta como posición
+    // currentCardNumber = 1 corresponde a allCards[0], etc.
+    const cardIndex = currentCardNumber - 1;
 
-      if (data) {
-        setCard(data);
+    // Si el índice está fuera de rango, no hay carta
+    if (cardIndex < 0 || cardIndex >= allCards.length) {
+      setCard(null);
+      return;
+    }
 
-        // 2. Recuperamos las variables que el usuario eligió al inicio
-        const userVars = JSON.parse(sessionStorage.getItem('vars') || '{}');
+    const data = allCards[cardIndex];
 
-        // 3. Calculamos el impacto del detalle (monto y razón)
-        const detail = getImpactDetail(userVars, data.impact_variable, data.impact_values, data.impact_variable_2);
+    if (data) {
+      setCard(data);
 
-        // --- NUEVA LÓGICA DE ACTUALIZACIÓN ---
+      // 2. Recuperamos las variables que el usuario eligió al inicio
+      const userVars = JSON.parse(sessionStorage.getItem('vars') || '{}');
 
-        // 4. Calculamos el nuevo total de forma precisa (usando una función de actualización para evitar estados viejos)
-        setMyMoney(prevMoney => {
-          const nuevoTotal = prevMoney + detail.amount;
+      // 3. Calculamos el impacto del detalle (monto y razón)
+      const detail = getImpactDetail(userVars, data.impact_variable, data.impact_values, data.impact_variable_2);
 
-          // 5. Guardamos en Supabase para que el marcador global se actualice
-          const usuarioId = sessionStorage.getItem('participant_id');
-          if (usuarioId) {
-            // Ejecutamos la actualización en segundo plano
-            supabase
-              .from('participants')
-              .update({ money: nuevoTotal })
-              .eq('id', usuarioId)
-              .then(({ error }) => {
-                if (error) console.error("Error al sincronizar dinero:", error);
-              });
-          }
+      // --- NUEVA LÓGICA DE ACTUALIZACIÓN ---
 
-          return nuevoTotal;
-        });
+      // 4. Calculamos el nuevo total de forma precisa (usando una función de actualización para evitar estados viejos)
+      setMyMoney(prevMoney => {
+        const nuevoTotal = prevMoney + detail.amount;
 
-        // 6. Registramos este movimiento en el historial
-        if (roomState.currentCard > 0) {
-          setHistory(prev => [
-            {
-              cardName: data.name_es,
-              amount: detail.amount,
-              reason: detail.reason
-            },
-            ...prev
-          ]);
+        // 5. Guardamos en Supabase para que el marcador global se actualice
+        const usuarioId = sessionStorage.getItem('participant_id');
+        if (usuarioId) {
+          // Ejecutamos la actualización en segundo plano
+          supabase
+            .from('participants')
+            .update({ money: nuevoTotal })
+            .eq('id', usuarioId)
+            .then(({ error }) => {
+              if (error) console.error("Error al sincronizar dinero:", error);
+            });
         }
-      }
-    };
 
-    loadCard();
-  }, [roomState.currentCard]); // Se dispara cada vez que el líder mueve la ficha
+        return nuevoTotal;
+      });
+
+      // 6. Registramos este movimiento en el historial
+      if (currentCardNumber > 0) {
+        setHistory(prev => [
+          {
+            cardName: data.name_es,
+            amount: detail.amount,
+            reason: detail.reason
+          },
+          ...prev
+        ]);
+      }
+    }
+  }, [currentCardNumber, allCards]); // Se dispara cada vez que cambia el número de carta
 
   // Subscripcion para saber si es lider
   useEffect(() => {
@@ -268,29 +270,31 @@ export default function MinisalaGame() {
   }, []);
 
   // Número máximo de cartas/casillas en el tablero
-  const MAX_CARDS = 5;
+  const MAX_CARDS = 10;
 
   // Función para avanzar el juego (Solo la ejecuta el líder)
   const advanceGame = async (diceValue: number) => {
-    // 1. Calcular el siguiente paso sumando el valor del dado
-    const nextIndex = currentCardIndex + diceValue;
+    // El peón avanza según el dado, la carta avanza de 1 en 1
+    const nextBoardPosition = boardPosition + diceValue;
+    const nextCardNumber = currentCardNumber + 1;
 
-    if (currentCardIndex < MAX_CARDS) {
+    if (boardPosition < MAX_CARDS) {
       // 2. Notificar a todos los miembros de la minisala vía Realtime
       await supabase.channel(`room:${minisalaId}`).send({
         type: 'broadcast',
         event: 'card_advance',
-        payload: { newIndex: nextIndex }
+        payload: { nextBoardPosition, nextCardNumber }
       });
 
-      // 3. Actualizar el estado local para mover la ficha y cargar la nueva carta
-      setRoomState(prev => ({ ...prev, currentCard: nextIndex }));
-      setCurrentCardIndex(nextIndex);
-      
-      // 3. Guardamos progreso en db
+      // 3. Actualizar el estado local
+      setRoomState(prev => ({ ...prev, currentCard: nextBoardPosition }));
+      setBoardPosition(nextBoardPosition);  // Posición del peón
+      setCurrentCardNumber(nextCardNumber);     // Número de carta
+
+      // 4. Guardamos progreso en db
       const { error } = await supabase
         .from('rooms')
-        .update({ current_step: nextIndex }) 
+        .update({ current_step: nextBoardPosition })
         .eq('id', minisalaId);
 
       if (error) {
@@ -369,16 +373,20 @@ export default function MinisalaGame() {
       return null;
     }
 
-    const nextIndex = roomData.next_dice_index || 1;
+    const nextIndex = roomData.next_dice_index || 0;
 
-    // 2. Buscar el valor en fake_dice_values con ese índice
+    // 2. Obtener todos los valores ordenados por id y usar el índice como posición
     const { data: diceData, error: diceError } = await supabase
       .from('fake_dice_values')
       .select('value')
-      .eq('id', nextIndex)
-      .single();
+      .order('id', { ascending: true });
 
-    if (diceError || !diceData) {
+    if (diceError || !diceData || diceData.length === 0) {
+      return null;
+    }
+
+    // Si el índice está fuera de rango, no hay más valores predeterminados
+    if (nextIndex >= diceData.length) {
       return null;
     }
 
@@ -388,7 +396,7 @@ export default function MinisalaGame() {
       .update({ next_dice_index: nextIndex + 1 })
       .eq('id', minisalaId);
 
-    return diceData.value;
+    return diceData[nextIndex].value;
   };
 
   return (
@@ -414,7 +422,7 @@ export default function MinisalaGame() {
                     margen_error: profile.margen_error,
                     responsabilidades: profile.responsabilidades
                   },
-                  currentCardIndex,
+                  boardPosition,
                   allCards
                 )
               }))}
@@ -427,7 +435,7 @@ export default function MinisalaGame() {
             {/* 1. EL TABLERO (Arriba derecha) */}
             <div className="w-full bg-slate-800 px-6 pb-6 pt-2 shadow-lg relative">
               <div className="max-w-4xl mx-auto" style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
-                <BoardView currentStep={currentCardIndex} />
+                <BoardView currentStep={boardPosition} />
               </div>
 
               {/* 2. PANEL DE CONTROL DEL LÍDER / ESPERA (encima del tablero) */}
@@ -435,7 +443,7 @@ export default function MinisalaGame() {
                 <div className="max-w-md w-full mx-4 pointer-events-auto" style={{ transform: 'scale(0.8)' }}>
                   {isLeader ? (
                     <div className="bg-white p-6 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center">
-                      {currentCardIndex < MAX_CARDS ? (
+                      {boardPosition < MAX_CARDS ? (
                         <>
                           <p className="text-red-600 font-black mb-4 uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
                           <Dice onRollComplete={(val) => advanceGame(val)} getNextValue={getNextDiceValue} />

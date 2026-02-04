@@ -85,7 +85,8 @@ export default function AdminPanel() {
         id: `sala_${i + 1}`,
         name: `Sala ${i + 1}`,
         capacity: 5,
-        current_phase: 'playing'
+        current_phase: 'playing',
+        next_dice_index: 0
       }));
 
       const { error: insertError } = await supabase.from('rooms').insert(nuevasSalas);
