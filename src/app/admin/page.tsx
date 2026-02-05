@@ -30,6 +30,8 @@ export default function AdminPanel() {
   const [isResetting, setIsResetting] = useState(false);
   // Estado de las salas en tiempo real
   const [rooms, setRooms] = useState<any[]>([]);
+  // Mostrar/ocultar configuración avanzada
+  const [showConfig, setShowConfig] = useState(false);
 
   // Verificar autenticación al cargar
   useEffect(() => {
@@ -412,7 +414,10 @@ export default function AdminPanel() {
     if (!isAuthenticated) return;
 
     const fetchPropuestas = async () => {
-      const { data } = await supabase.from('rule_proposals').select('*');
+      const { data } = await supabase
+        .from('rule_proposals')
+        .select('*')
+        .order('votes', { ascending: false });
       setPropuestas(data || []);
     };
 
@@ -432,7 +437,11 @@ export default function AdminPanel() {
 
     // Carga inicial
     const fetchUsuarios = async () => {
-      const { data } = await supabase.from('participants').select('*');
+      const { data } = await supabase
+        .from('participants')
+        .select('*')
+        .order('minisala_id', { ascending: true })
+        .order('id', { ascending: true });
       setUsuarios(data || []);
     };
     fetchUsuarios();
@@ -545,7 +554,7 @@ export default function AdminPanel() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-6xl mx-auto">
 
         {/* SECCIÓN NUEVA: CONFIGURACIÓN DE PARTIDA */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100">
@@ -578,8 +587,42 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        {/* Monitor de Propuestas */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border col-span-2">
+        {/* Activar Votación Global */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100">
+          <h2 className="font-bold mb-4 text-purple-600 flex items-center gap-2">
+            🗳️ Activar Voto
+          </h2>
+          <button
+            onClick={() => activateGlobalVoting()}
+            className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-purple-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+          >
+            <span>ACTIVAR VOTACIÓN</span>
+            <span className="text-2xl">🗳️</span>
+          </button>
+          <p className="text-center text-[10px] text-slate-400 mt-2 italic">
+            Verifica que todas las salas estén en "Ranking" antes de activar.
+          </p>
+        </div>
+
+        {/* Finalizar Votación y Ver Podio */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+          <h2 className="font-bold mb-4 text-blue-600 flex items-center gap-2">
+            🏆 Cierre del Taller
+          </h2>
+          <button
+            onClick={() => finalizarYVerPodio()}
+            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+          >
+            <span>MOSTRAR PODIO</span>
+            <span className="text-2xl">🥇</span>
+          </button>
+          <p className="text-center text-[10px] text-slate-400 mt-2 italic">
+            Esto cambiará la pantalla de todos los jugadores a los resultados finales.
+          </p>
+        </div>
+
+        {/* Monitor de Propuestas - Ocupa toda la fila */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border md:col-span-3">
           <h2 className="font-bold mb-4 border-b pb-2 text-slate-600">Banco de Reglas Sugeridas</h2>
           <div className="max-h-60 overflow-y-auto space-y-2">
             {propuestas.length > 0 ? propuestas.map((p) => (
@@ -593,46 +636,10 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        {/* Activar Votación Global */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100 mb-8">
-          <h2 className="font-bold mb-4 text-purple-600 flex items-center gap-2">
-            🗳️ Activar Voto
-          </h2>
-          <button
-            onClick={() => activateGlobalVoting()}
-            className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-purple-700 transition-all active:scale-95 flex items-center justify-center gap-3"
-          >
-            <span>ACTIVAR VOTACIÓN EN TODAS LAS SALAS</span>
-            <span className="text-2xl">🗳️</span>
-          </button>
-          <p className="text-center text-[10px] text-slate-400 mt-2 italic">
-            Verifica que todas las salas estén en "Ranking" antes de activar.
-          </p>
-        </div>
-
-        {/* Finalizar Votación y Ver Podio */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100 mb-8">
-          <h2 className="font-bold mb-4 text-blue-600 flex items-center gap-2">
-            🏆 Cierre del Taller
-          </h2>
-          <button
-            onClick={() => finalizarYVerPodio()}
-            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3"
-          >
-            <span>MOSTRAR PODIO DE REGLAS GANADORAS</span>
-            <span className="text-2xl">🥇</span>
-          </button>
-          <p className="text-center text-[10px] text-slate-400 mt-2 italic">
-            Esto cambiará la pantalla de todos los jugadores a los resultados finales.
-          </p>
-        </div>
-
       </div>
 
       {/* Usuarios y salas */}
       <div className="p-8 max-w-6xl mx-auto">
-        <h1 className="text-3xl font-black mb-8">Panel de Control Admin</h1>
-
         {/* SECCIÓN 0: ESTADO DE LAS SALAS */}
         <section className="mb-12">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -752,8 +759,22 @@ export default function AdminPanel() {
           </div>
         </section>
 
-        {/* SECCIÓN 2: PERFILES DE SISTEMA */}
-        <section>
+        {/* Botón para mostrar/ocultar configuración avanzada */}
+        <div className="mt-8 mb-4">
+          <button
+            onClick={() => setShowConfig(!showConfig)}
+            className="flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold text-sm transition-all"
+          >
+            <span className={`transform transition-transform ${showConfig ? 'rotate-90' : ''}`}>▶</span>
+            {showConfig ? 'Ocultar configuración avanzada' : 'Mostrar configuración avanzada'}
+          </button>
+        </div>
+
+        {/* SECCIONES DE CONFIGURACIÓN (ocultas por defecto) */}
+        {showConfig && (
+          <>
+            {/* SECCIÓN 2: PERFILES DE SISTEMA */}
+            <section>
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             ⚙️ Configuración del Sistema (Arquetipos)
           </h2>
@@ -920,6 +941,8 @@ export default function AdminPanel() {
             )}
           </div>
         </section>
+          </>
+        )}
 
         {/* MODAL DE EDICIÓN DE PERFILES */}
         {editingProfile && (
