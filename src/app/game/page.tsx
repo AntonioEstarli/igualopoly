@@ -9,6 +9,7 @@ import { CapitalRace } from '@/src/components/CapitalRace';
 import { calculateSystemMoney } from '@/src/lib/gameLogic';
 import { VotingView } from '@/src/components/VotingView';
 import { PodiumView } from '@/src/components/PodiumView';
+import { RankingView } from '@/src/components/RankingView';
 import { getTranslation, Language } from '@/src/lib/translations';
 
 interface RoomPlayer {
@@ -36,7 +37,7 @@ export default function MinisalaGame() {
   const [hasSubmittedProposal, setHasSubmittedProposal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // 1. Estado para la fase (que escuchará de Supabase)
-  const [gamePhase, setGamePhase] = useState<'playing' | 'voting' | 'podium'>('playing');
+  const [gamePhase, setGamePhase] = useState<'playing' | 'ranking' | 'voting' | 'podium'>('playing');
 
   // Idioma del usuario
   const [language, setLanguage] = useState<Language>('ES');
@@ -104,9 +105,8 @@ export default function MinisalaGame() {
     fetchSystemData();
   }, []);
 
-  // Suscripción para detectar el cambio de fase (añadir al useEffect de Realtime existente)
+  // Suscripción para detectar el cambio de fase en participants (voting/podium)
   useEffect(() => {
-    const usuarioId = sessionStorage.getItem('participant_id');
     const channel = supabase.channel(`phase_sync_${minisalaId}`)
       .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'participants' },
@@ -114,6 +114,23 @@ export default function MinisalaGame() {
           // Esto ahora aceptará 'voting' o 'podium'
           if (payload.new.current_phase) {
             setGamePhase(payload.new.current_phase);
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [minisalaId]);
+
+  // Suscripción para detectar el cambio de fase en rooms (ranking)
+  useEffect(() => {
+    if (!minisalaId) return;
+
+    const channel = supabase.channel(`room_phase_sync_${minisalaId}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${minisalaId}` },
+        (payload) => {
+          if (payload.new.current_phase === 'ranking') {
+            setGamePhase('ranking');
           }
         }
       )
@@ -360,6 +377,18 @@ export default function MinisalaGame() {
       .eq('minisala_id', minisalaId);
   };
 
+  // Función para que el Líder active el ranking
+  const activateRanking = async () => {
+    // Actualizamos el current_phase de la sala a 'ranking'
+    await supabase
+      .from('rooms')
+      .update({ current_phase: 'ranking' })
+      .eq('id', minisalaId);
+
+    // Actualizamos el estado local inmediatamente para el líder
+    setGamePhase('ranking');
+  };
+
   // Función para obtener el siguiente valor del dado (fake)
   const getNextDiceValue = async (): Promise<number | null> => {
     // 1. Obtener el next_dice_index de la sala actual
@@ -452,10 +481,10 @@ export default function MinisalaGame() {
                         <div className="text-center space-y-4">
                           <p className="text-slate-800 font-black text-xl uppercase italic">{getTranslation('game.trajectoryComplete', language)}</p>
                           <button
-                            onClick={activateVoting}
+                            onClick={activateRanking}
                             className="bg-black text-white px-8 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 transition-transform"
                           >
-                            {getTranslation('game.openVoting', language)}
+                            {getTranslation('game.openRanking', language)}
                           </button>
                         </div>
                       )}
@@ -605,8 +634,31 @@ export default function MinisalaGame() {
           </div>
         </div>
 
+      ) : gamePhase === 'ranking' ? (
+        /* FASE 2: RANKING */
+        <RankingView
+          players={roomPlayers}
+          systemProfiles={systemProfiles.map(profile => ({
+            id: profile.id,
+            alias: profile.alias,
+            color: profile.color,
+            emoji: profile.emoji,
+            money: calculateSystemMoney(
+              {
+                red: profile.red,
+                visibilidad: profile.visibilidad,
+                tiempo: profile.tiempo,
+                margen_error: profile.margen_error,
+                responsabilidades: profile.responsabilidades
+              },
+              boardPosition,
+              allCards
+            )
+          }))}
+        />
+
       ) : gamePhase === 'voting' ? (
-        /* FASE 2: VOTACIÓN */
+        /* FASE 3: VOTACIÓN */
         <div className="pt-12 pb-20 px-4 max-w-4xl mx-auto">
           <VotingView
             minisalaId={minisalaId}
@@ -615,7 +667,7 @@ export default function MinisalaGame() {
         </div>
 
       ) : (
-        /* FASE 3: PODIO */
+        /* FASE 4: PODIO */
         <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900 text-white">
           <PodiumView />
         </div>

@@ -186,6 +186,11 @@ export const translations = {
       EN: 'Trajectory Complete!',
       CAT: 'Trajectòria Completa!'
     },
+    openRanking: {
+      ES: 'ABRIR RANKING',
+      EN: 'OPEN RANKING',
+      CAT: 'OBRIR RANKING'
+    },
     openVoting: {
       ES: 'ABRIR VOTACIÓN GLOBAL 💡',
       EN: 'OPEN GLOBAL VOTING 💡',
@@ -278,6 +283,45 @@ export const translations = {
       ES: 'Volver al inicio',
       EN: 'Back to start',
       CAT: 'Tornar a l\'inici'
+    }
+  },
+
+  // Ranking
+  ranking: {
+    title: {
+      ES: 'Ranking Final',
+      EN: 'Final Ranking',
+      CAT: 'Rànquing Final'
+    },
+    subtitle: {
+      ES: 'Puntuaciones de todos los participantes',
+      EN: 'Scores of all participants',
+      CAT: 'Puntuacions de tots els participants'
+    },
+    participants: {
+      ES: 'Participantes',
+      EN: 'Participants',
+      CAT: 'Participants'
+    },
+    systemProfiles: {
+      ES: 'Arquetipos del Sistema',
+      EN: 'System Archetypes',
+      CAT: 'Arquetips del Sistema'
+    },
+    position: {
+      ES: 'Pos.',
+      EN: 'Pos.',
+      CAT: 'Pos.'
+    },
+    name: {
+      ES: 'Nombre',
+      EN: 'Name',
+      CAT: 'Nom'
+    },
+    capital: {
+      ES: 'Capital',
+      EN: 'Capital',
+      CAT: 'Capital'
     }
   },
 
