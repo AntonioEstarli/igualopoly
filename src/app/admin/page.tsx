@@ -544,6 +544,48 @@ export default function AdminPanel() {
     }
   };
 
+  // Iniciar simulación final con arquetipos igualados
+  const iniciarSimulacionFinal = async () => {
+    const confirmar = confirm("⚠️ ¿Estás seguro? Esto reiniciará el juego para todos los participantes usando los arquetipos finales (más igualados).");
+    if (!confirmar) return;
+
+    try {
+      // 1. Reiniciar el dinero de todos los participantes a 0 y cambiar a fase 'final'
+      const { error: participantsError } = await supabase
+        .from('participants')
+        .update({
+          money: 0,
+          current_phase: 'final'
+        })
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (participantsError) {
+        alert("Error al actualizar participantes: " + participantsError.message);
+        return;
+      }
+
+      // 2. Reiniciar las salas: current_step=0, next_dice_index=0, current_phase='final'
+      const { error: roomsError } = await supabase
+        .from('rooms')
+        .update({
+          current_step: 0,
+          next_dice_index: 0,
+          current_phase: 'final'
+        })
+        .neq('id', '_none_');
+
+      if (roomsError) {
+        alert("Error al actualizar salas: " + roomsError.message);
+        return;
+      }
+
+      alert("🎯 ¡Simulación final activada! Los líderes verán el botón para empezar.");
+    } catch (error) {
+      console.error("Error al iniciar simulación final:", error);
+      alert("Hubo un error al iniciar la simulación final.");
+    }
+  };
+
   // useEffect para escuchar propuestas - solo si está autenticado
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -755,6 +797,31 @@ export default function AdminPanel() {
           <p className="text-center text-[10px] text-slate-400 mt-2 italic">
             Esto cambiará la pantalla de todos los jugadores a los resultados finales.
           </p>
+        </div>
+
+        {/* Simulación Final */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-emerald-100 md:col-span-3">
+          <h2 className="font-bold mb-4 text-emerald-600 flex items-center gap-2">
+            🎯 Simulación Final
+          </h2>
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="flex-1">
+              <p className="text-sm text-slate-600 mb-2">
+                Reinicia el juego usando los <strong>arquetipos finales</strong> (más igualados).
+                Los jugadores mantendrán su perfil pero verán cómo habría sido el resultado con condiciones más equitativas.
+              </p>
+              <p className="text-[10px] text-slate-400 italic">
+                El dinero se reiniciará a 0, el peón volverá a la salida y se usarán los arquetipos de la tabla "system_profiles_final".
+              </p>
+            </div>
+            <button
+              onClick={() => iniciarSimulacionFinal()}
+              className="w-full md:w-auto px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+            >
+              <span>INICIAR SIMULACIÓN</span>
+              <span className="text-2xl">🎯</span>
+            </button>
+          </div>
         </div>
 
         {/* Monitor de Propuestas - Ocupa toda la fila */}

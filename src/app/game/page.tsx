@@ -37,7 +37,11 @@ export default function MinisalaGame() {
   const [hasSubmittedProposal, setHasSubmittedProposal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // 1. Estado para la fase (que escuchará de Supabase)
-  const [gamePhase, setGamePhase] = useState<'playing' | 'ranking' | 'voting' | 'podium'>('playing');
+  const [gamePhase, setGamePhase] = useState<'playing' | 'ranking' | 'voting' | 'podium' | 'final'>('playing');
+  // Estado para la simulación final
+  const [isFinalSimulation, setIsFinalSimulation] = useState(false);
+  const [systemProfilesFinal, setSystemProfilesFinal] = useState<any[]>([]);
+  const [isAutoSimulating, setIsAutoSimulating] = useState(false); // Indica si la simulación automática está corriendo
 
   // Idioma del usuario
   const [language, setLanguage] = useState<Language>('ES');
@@ -105,15 +109,43 @@ export default function MinisalaGame() {
     fetchSystemData();
   }, []);
 
-  // Suscripción para detectar el cambio de fase en participants (voting/podium)
+  // carga inicial de Perfiles de sistema FINAL (para la simulación final)
+  useEffect(() => {
+    const fetchSystemDataFinal = async () => {
+      const { data, error } = await supabase
+        .from('system_profiles_final')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (data) {
+        setSystemProfilesFinal(data);
+      } else {
+        console.error("Error cargando perfiles de sistema final:", error);
+      }
+    };
+
+    fetchSystemDataFinal();
+  }, []);
+
+  // Suscripción para detectar el cambio de fase en participants (voting/podium/final)
   useEffect(() => {
     const channel = supabase.channel(`phase_sync_${minisalaId}`)
       .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'participants' },
         (payload) => {
-          // Esto ahora aceptará 'voting' o 'podium'
           if (payload.new.current_phase) {
-            setGamePhase(payload.new.current_phase);
+            const newPhase = payload.new.current_phase;
+            setGamePhase(newPhase);
+
+            // Si entramos en fase 'final', reiniciamos el estado del juego
+            if (newPhase === 'final') {
+              setBoardPosition(0);
+              setCurrentCardNumber(0);
+              setCard(null);
+              setHistory([]);
+              setMyMoney(0);
+              setIsFinalSimulation(true);
+            }
           }
         }
       )
@@ -244,7 +276,7 @@ export default function MinisalaGame() {
     }
   }, [currentCardNumber, allCards]); // Se dispara cada vez que cambia el número de carta
 
-  // Subscripcion para saber si es lider
+  // Subscripcion para saber si es lider y la fase actual
   useEffect(() => {
     const usuarioId = sessionStorage.getItem('participant_id');
     if (!usuarioId) {
@@ -256,10 +288,25 @@ export default function MinisalaGame() {
     const syncRole = async () => {
       const { data } = await supabase
         .from('participants')
-        .select('is_leader')
+        .select('is_leader, current_phase, money')
         .eq('id', usuarioId)
         .single();
-      if (data) setIsLeader(data.is_leader);
+      if (data) {
+        setIsLeader(data.is_leader);
+        // Sincronizar la fase actual
+        if (data.current_phase) {
+          setGamePhase(data.current_phase);
+          // Si entramos en fase 'final', reiniciamos el estado del juego
+          if (data.current_phase === 'final') {
+            setBoardPosition(0);
+            setCurrentCardNumber(0);
+            setCard(null);
+            setHistory([]);
+            setMyMoney(data.money || 0);
+            setIsFinalSimulation(true);
+          }
+        }
+      }
     };
 
     syncRole();
@@ -389,6 +436,59 @@ export default function MinisalaGame() {
     setGamePhase('ranking');
   };
 
+  // Función para que el Líder inicie la simulación final
+  const startFinalSimulation = async () => {
+    // Broadcast inicial para sincronizar el estado del juego
+    await supabase.channel(`room:${minisalaId}`).send({
+      type: 'broadcast',
+      event: 'card_advance',
+      payload: { nextBoardPosition: 0, nextCardNumber: 0 }
+    });
+
+    // Actualizamos todos los participantes de la sala a 'playing'
+    await supabase
+      .from('participants')
+      .update({ current_phase: 'playing' })
+      .eq('minisala_id', minisalaId);
+
+    // Actualizamos la sala a 'playing'
+    await supabase
+      .from('rooms')
+      .update({ current_phase: 'playing' })
+      .eq('id', minisalaId);
+
+    // Actualizamos el estado local
+    setGamePhase('playing');
+    setIsAutoSimulating(true); // Iniciar simulación automática
+  };
+
+  // Simulación automática: lanza el dado automáticamente durante la simulación final
+  useEffect(() => {
+    // Solo el líder ejecuta la simulación automática
+    if (!isFinalSimulation || !isAutoSimulating || !isLeader || gamePhase !== 'playing') {
+      return;
+    }
+
+    // Si ya llegamos al final, no hacer nada más
+    if (boardPosition >= MAX_CARDS) {
+      setIsAutoSimulating(false);
+      return;
+    }
+
+    const runAutoSimulation = async () => {
+      // Esperar 2 segundos antes de cada lanzamiento
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Obtener el siguiente valor del dado
+      const diceValue = await getNextDiceValue() || Math.floor(Math.random() * 6) + 1;
+
+      // Avanzar el juego
+      await advanceGame(diceValue);
+    };
+
+    runAutoSimulation();
+  }, [isFinalSimulation, isAutoSimulating, isLeader, gamePhase, boardPosition]);
+
   // Función para obtener el siguiente valor del dado (fake)
   const getNextDiceValue = async (): Promise<number | null> => {
     // 1. Obtener el next_dice_index de la sala actual
@@ -438,7 +538,7 @@ export default function MinisalaGame() {
           <div className="w-full md:w-80 h-1/3 md:h-full p-2 bg-slate-900 shadow-2xl z-10">
             <CapitalRace
               players={roomPlayers}
-              systemProfiles={systemProfiles.map(profile => ({
+              systemProfiles={(isFinalSimulation ? systemProfilesFinal : systemProfiles).map(profile => ({
                 id: profile.id,
                 alias: profile.alias,
                 color: profile.color,
@@ -470,7 +570,35 @@ export default function MinisalaGame() {
               {/* 2. PANEL DE CONTROL DEL LÍDER / ESPERA (encima del tablero) */}
               <div className="absolute top-[12%] left-0 right-0 flex justify-center z-10 pointer-events-none">
                 <div className="max-w-md w-full mx-4 pointer-events-auto" style={{ transform: 'scale(0.8)' }}>
-                  {isLeader ? (
+                  {isFinalSimulation ? (
+                    /* SIMULACIÓN FINAL: Indicador de progreso automático */
+                    <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-3xl shadow-xl border-4 border-emerald-300 flex flex-col items-center justify-center">
+                      {boardPosition < MAX_CARDS ? (
+                        <>
+                          <p className="text-white font-black mb-2 uppercase tracking-widest text-sm">{getTranslation('game.finalSimulation', language)}</p>
+                          <p className="text-emerald-100 text-xs mb-4">{getTranslation('game.simulatingProgress', language)}</p>
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 border-4 border-emerald-200 border-t-white rounded-full animate-spin" />
+                            <div className="text-white">
+                              <p className="text-3xl font-black">{boardPosition}/{MAX_CARDS}</p>
+                              <p className="text-xs text-emerald-100">{getTranslation('game.steps', language)}</p>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center space-y-4">
+                          <p className="text-white font-black text-xl uppercase italic">{getTranslation('game.simulationComplete', language)}</p>
+                          <button
+                            onClick={activateRanking}
+                            className="bg-white text-emerald-600 px-8 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 transition-transform"
+                          >
+                            {getTranslation('game.openRanking', language)}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : isLeader ? (
+                    /* JUEGO NORMAL: Dado para el líder */
                     <div className="bg-white p-6 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center">
                       {boardPosition < MAX_CARDS ? (
                         <>
@@ -498,8 +626,8 @@ export default function MinisalaGame() {
                 </div>
               </div>
 
-              {/* CARTA (Aparece encajo del panel del dado con animación) */}
-              {card && (
+              {/* CARTA (Aparece encajo del panel del dado con animación) - No mostrar en simulación final */}
+              {card && !isFinalSimulation && (
                 <div className="absolute inset-0 flex items-start justify-center pt-[26%] pointer-events-none" style={{ transform: 'scale(0.83)' }}>
                   <div
                     className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-w-xl w-full mx-4 pointer-events-auto animate-zoom-in"
@@ -638,7 +766,7 @@ export default function MinisalaGame() {
         /* FASE 2: RANKING */
         <RankingView
           players={roomPlayers}
-          systemProfiles={systemProfiles.map(profile => ({
+          systemProfiles={(isFinalSimulation ? systemProfilesFinal : systemProfiles).map(profile => ({
             id: profile.id,
             alias: profile.alias,
             color: profile.color,
@@ -664,6 +792,37 @@ export default function MinisalaGame() {
             minisalaId={minisalaId}
             participantId={sessionStorage.getItem('participant_id') || ''}
           />
+        </div>
+
+      ) : gamePhase === 'final' ? (
+        /* FASE FINAL: Pantalla de espera antes de la simulación */
+        <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-emerald-900 via-slate-900 to-emerald-900">
+          <div className="max-w-lg w-full text-center">
+            <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-emerald-500/30">
+              <div className="text-6xl mb-6">🎯</div>
+              <h1 className="text-3xl font-black text-white mb-4">
+                {getTranslation('game.finalSimulation', language)}
+              </h1>
+              <p className="text-emerald-200 mb-8 text-sm">
+                {getTranslation('game.finalSimulationDesc', language)}
+              </p>
+
+              {isLeader ? (
+                <button
+                  onClick={startFinalSimulation}
+                  className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-xl shadow-2xl shadow-emerald-500/30 hover:bg-emerald-400 transition-all active:scale-95 flex items-center justify-center gap-3"
+                >
+                  <span>{getTranslation('game.startSimulation', language)}</span>
+                  <span className="text-2xl">🚀</span>
+                </button>
+              ) : (
+                <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-600">
+                  <div className="w-10 h-10 border-4 border-emerald-600 border-t-emerald-300 rounded-full animate-spin mx-auto mb-4" />
+                  <p className="text-slate-300 text-sm">{getTranslation('game.waitingLeaderSimulation', language)}</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
       ) : (
