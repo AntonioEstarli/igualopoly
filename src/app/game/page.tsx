@@ -43,6 +43,12 @@ export default function MinisalaGame() {
   const [systemProfilesFinal, setSystemProfilesFinal] = useState<any[]>([]);
   const [isAutoSimulating, setIsAutoSimulating] = useState(false); // Indica si la simulación automática está corriendo
 
+  // Estado para detectar cuando el dado está girando
+  const [isDiceRolling, setIsDiceRolling] = useState(false);
+
+  // Estado para sincronizar el lanzamiento del dado entre todos los jugadores
+  const [externalDiceRoll, setExternalDiceRoll] = useState<{ value: number; timestamp: number } | null>(null);
+
   // Idioma del usuario
   const [language, setLanguage] = useState<Language>('ES');
 
@@ -83,6 +89,10 @@ export default function MinisalaGame() {
 
         // 2. Actualizamos el número de carta (de 1 en 1)
         setCurrentCardNumber(payload.nextCardNumber);
+      })
+      .on('broadcast', { event: 'dice_roll' }, ({ payload }) => {
+        // Sincronizar el lanzamiento del dado para todos los jugadores
+        setExternalDiceRoll({ value: payload.diceValue, timestamp: payload.timestamp });
       })
       .subscribe();
 
@@ -336,26 +346,49 @@ export default function MinisalaGame() {
   // Número máximo de cartas/casillas en el tablero
   const MAX_CARDS = 10;
 
-  // Función para avanzar el juego (Solo la ejecuta el líder)
+  // Función para manejar el inicio del lanzamiento del dado
+  const handleDiceRollStart = () => {
+    setIsDiceRolling(true);
+  };
+
+  // Función que el líder usa para obtener el valor del dado y hacer broadcast
+  const handleLeaderDiceRoll = async (): Promise<number> => {
+    // Obtener el valor del dado
+    const diceValue = await getNextDiceValue() || Math.floor(Math.random() * 6) + 1;
+
+    // Broadcast del lanzamiento del dado para que todos lo vean (incluyendo el líder)
+    await supabase.channel(`room:${minisalaId}`).send({
+      type: 'broadcast',
+      event: 'dice_roll',
+      payload: { diceValue, timestamp: Date.now() }
+    });
+
+    return diceValue;
+  };
+
+  // Función para avanzar el juego (se llama después de que el dado termine de girar)
   const advanceGame = async (diceValue: number) => {
+    // Solo el líder avanza el juego
+    if (!isLeader) return;
+
     // El peón avanza según el dado, la carta avanza de 1 en 1
     const nextBoardPosition = boardPosition + diceValue;
     const nextCardNumber = currentCardNumber + 1;
 
     if (boardPosition < MAX_CARDS) {
-      // 2. Notificar a todos los miembros de la minisala vía Realtime
+      // Notificar a todos los miembros de la minisala vía Realtime
       await supabase.channel(`room:${minisalaId}`).send({
         type: 'broadcast',
         event: 'card_advance',
         payload: { nextBoardPosition, nextCardNumber }
       });
 
-      // 3. Actualizar el estado local
+      // Actualizar el estado local
       setRoomState(prev => ({ ...prev, currentCard: nextBoardPosition }));
       setBoardPosition(nextBoardPosition);  // Posición del peón
       setCurrentCardNumber(nextCardNumber);     // Número de carta
 
-      // 4. Guardamos progreso en db
+      // Guardamos progreso en db
       const { error } = await supabase
         .from('rooms')
         .update({ current_step: nextBoardPosition })
@@ -365,6 +398,9 @@ export default function MinisalaGame() {
         console.error("Error al guardar progreso en DB:", error.message);
       }
     }
+
+    // Resetear el estado del dado después de que se complete el lanzamiento
+    setIsDiceRolling(false);
   };
 
   // Funcion para Enviar propuesta
@@ -479,8 +515,11 @@ export default function MinisalaGame() {
       // Esperar 2 segundos antes de cada lanzamiento
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Obtener el siguiente valor del dado
-      const diceValue = await getNextDiceValue() || Math.floor(Math.random() * 6) + 1;
+      // Obtener el siguiente valor del dado y hacer broadcast
+      const diceValue = await handleLeaderDiceRoll();
+
+      // Esperar a que la animación del dado termine (1800ms)
+      await new Promise(resolve => setTimeout(resolve, 1800));
 
       // Avanzar el juego
       await advanceGame(diceValue);
@@ -597,37 +636,50 @@ export default function MinisalaGame() {
                         </div>
                       )}
                     </div>
-                  ) : isLeader ? (
-                    /* JUEGO NORMAL: Dado para el líder */
+                  ) : (
+                    /* JUEGO NORMAL: Dado para todos (solo el líder puede lanzar) */
                     <div className="bg-white p-6 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center">
                       {boardPosition < MAX_CARDS ? (
                         <>
-                          <p className="text-red-600 font-black mb-4 uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
-                          <Dice onRollComplete={(val) => advanceGame(val)} getNextValue={getNextDiceValue} />
+                          {isLeader ? (
+                            <p className="text-red-600 font-black mb-4 uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
+                          ) : (
+                            <p className="text-slate-600 font-black mb-4 uppercase tracking-widest text-sm">{getTranslation('game.leaderDeciding', language)}</p>
+                          )}
+                          <Dice
+                            onRollComplete={(val) => advanceGame(val)}
+                            onRollStart={handleDiceRollStart}
+                            getNextValue={getNextDiceValue}
+                            showButton={isLeader}
+                            externalRoll={externalDiceRoll}
+                            broadcastRoll={isLeader ? handleLeaderDiceRoll : undefined}
+                          />
                         </>
                       ) : (
-                        <div className="text-center space-y-4">
-                          <p className="text-slate-800 font-black text-xl uppercase italic">{getTranslation('game.trajectoryComplete', language)}</p>
-                          <button
-                            onClick={activateRanking}
-                            className="bg-black text-white px-8 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 transition-transform"
-                          >
-                            {getTranslation('game.openRanking', language)}
-                          </button>
-                        </div>
+                        isLeader ? (
+                          <div className="text-center space-y-4">
+                            <p className="text-slate-800 font-black text-xl uppercase italic">{getTranslation('game.trajectoryComplete', language)}</p>
+                            <button
+                              onClick={activateRanking}
+                              className="bg-black text-white px-8 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 transition-transform"
+                            >
+                              {getTranslation('game.openRanking', language)}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="bg-slate-800/90 p-6 rounded-3xl border-2 border-slate-600 flex flex-col items-center justify-center text-center italic text-slate-300">
+                            <div className="w-10 h-10 border-4 border-slate-600 border-t-slate-300 rounded-full animate-spin mb-3" />
+                            <p className="text-sm font-medium">{getTranslation('game.leaderDeciding', language)}</p>
+                          </div>
+                        )
                       )}
-                    </div>
-                  ) : (
-                    <div className="bg-slate-800/90 p-6 rounded-3xl border-2 border-slate-600 flex flex-col items-center justify-center text-center italic text-slate-300">
-                      <div className="w-10 h-10 border-4 border-slate-600 border-t-slate-300 rounded-full animate-spin mb-3" />
-                      <p className="text-sm font-medium">{getTranslation('game.leaderDeciding', language)}</p>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* CARTA (Aparece encajo del panel del dado con animación) - No mostrar en simulación final */}
-              {card && !isFinalSimulation && (
+              {card && !isFinalSimulation && !isDiceRolling && (
                 <div className="absolute inset-0 flex items-start justify-center pt-[26%] pointer-events-none" style={{ transform: 'scale(0.83)' }}>
                   <div
                     className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-w-xl w-full mx-4 pointer-events-auto animate-zoom-in"
