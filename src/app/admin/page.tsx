@@ -28,6 +28,8 @@ export default function AdminPanel() {
   // Salas y Reset
   const [numSalas, setNumSalas] = useState(5); // Estado para el número de salas
   const [isResetting, setIsResetting] = useState(false);
+  // Estado de las salas en tiempo real
+  const [rooms, setRooms] = useState<any[]>([]);
 
   // Verificar autenticación al cargar
   useEffect(() => {
@@ -102,6 +104,20 @@ export default function AdminPanel() {
       alert("Hubo un error al resetear la partida.");
     } finally {
       setIsResetting(false);
+    }
+  };
+
+  // Función para cargar las salas
+  const fetchRooms = async () => {
+    const { data, error } = await supabase
+      .from('rooms')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.error("Error cargando salas:", error);
+    } else {
+      setRooms(data || []);
     }
   };
 
@@ -326,6 +342,53 @@ export default function AdminPanel() {
       .eq('id', usuarioId);
   };
 
+  // Activar votación global en todas las salas
+  const activateGlobalVoting = async () => {
+    // Verificar el estado de todas las salas
+    const { data: currentRooms } = await supabase
+      .from('rooms')
+      .select('id, current_phase');
+
+    if (!currentRooms || currentRooms.length === 0) {
+      alert("No hay salas configuradas.");
+      return;
+    }
+
+    const allInRanking = currentRooms.every(room => room.current_phase === 'ranking');
+
+    let confirmar: boolean;
+    if (allInRanking) {
+      confirmar = confirm("✅ Todas las salas están listas. ¿Quieres pasar a la votación?");
+    } else {
+      confirmar = confirm("⚠️ ¡Cuidado! Hay alguna sala que no ha terminado. ¿Seguro que quieres pasar a la votación?");
+    }
+
+    if (!confirmar) return;
+
+    // Actualizar todas las salas a 'voting'
+    const { error: roomsError } = await supabase
+      .from('rooms')
+      .update({ current_phase: 'voting' })
+      .neq('id', '_none_');
+
+    if (roomsError) {
+      alert("Error al actualizar salas: " + roomsError.message);
+      return;
+    }
+
+    // Actualizar todos los participantes a 'voting'
+    const { error: participantsError } = await supabase
+      .from('participants')
+      .update({ current_phase: 'voting' })
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (participantsError) {
+      alert("Error al actualizar participantes: " + participantsError.message);
+    } else {
+      alert("🗳️ ¡Votación activada para todos los jugadores!");
+    }
+  };
+
   // Finalizar y ver el podio
   const finalizarYVerPodio = async () => {
     const confirmar = confirm("¿Deseas cerrar las votaciones y mostrar el podio a todos los participantes?");
@@ -377,8 +440,9 @@ export default function AdminPanel() {
     fetchSystemProfiles();
     fetchCards();
     fetchDiceValues();
+    fetchRooms();
 
-    // Suscripción Realtime para inserciones y actualizaciones
+    // Suscripción Realtime para inserciones y actualizaciones de participantes
     const channel = supabase.channel('admin_refresh')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'participants' },
@@ -389,7 +453,20 @@ export default function AdminPanel() {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // Suscripción Realtime para cambios en salas
+    const roomsChannel = supabase.channel('admin_rooms_refresh')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'rooms' },
+        () => {
+          fetchRooms();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(roomsChannel);
+    };
   }, [isAuthenticated]);
 
   // Pantalla de carga inicial
@@ -516,28 +593,87 @@ export default function AdminPanel() {
           </div>
         </div>
 
+        {/* Activar Votación Global */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100 mb-8">
+          <h2 className="font-bold mb-4 text-purple-600 flex items-center gap-2">
+            🗳️ Activar Voto
+          </h2>
+          <button
+            onClick={() => activateGlobalVoting()}
+            className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-purple-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+          >
+            <span>ACTIVAR VOTACIÓN EN TODAS LAS SALAS</span>
+            <span className="text-2xl">🗳️</span>
+          </button>
+          <p className="text-center text-[10px] text-slate-400 mt-2 italic">
+            Verifica que todas las salas estén en "Ranking" antes de activar.
+          </p>
+        </div>
+
         {/* Finalizar Votación y Ver Podio */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100 mb-8">
-  <h2 className="font-bold mb-4 text-blue-600 flex items-center gap-2">
-    🏆 Cierre del Taller
-  </h2>
-  <button
-    onClick={() => finalizarYVerPodio()}
-    className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3"
-  >
-    <span>MOSTRAR PODIO DE REGLAS GANADORAS</span>
-    <span className="text-2xl">🥇</span>
-  </button>
-  <p className="text-center text-[10px] text-slate-400 mt-2 italic">
-    Esto cambiará la pantalla de todos los jugadores a los resultados finales.
-  </p>
-</div>
+          <h2 className="font-bold mb-4 text-blue-600 flex items-center gap-2">
+            🏆 Cierre del Taller
+          </h2>
+          <button
+            onClick={() => finalizarYVerPodio()}
+            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+          >
+            <span>MOSTRAR PODIO DE REGLAS GANADORAS</span>
+            <span className="text-2xl">🥇</span>
+          </button>
+          <p className="text-center text-[10px] text-slate-400 mt-2 italic">
+            Esto cambiará la pantalla de todos los jugadores a los resultados finales.
+          </p>
+        </div>
 
       </div>
 
       {/* Usuarios y salas */}
       <div className="p-8 max-w-6xl mx-auto">
         <h1 className="text-3xl font-black mb-8">Panel de Control Admin</h1>
+
+        {/* SECCIÓN 0: ESTADO DE LAS SALAS */}
+        <section className="mb-12">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            🏠 Salas
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {rooms.map(room => {
+              const phaseColors: Record<string, string> = {
+                playing: 'bg-green-100 text-green-700 border-green-200',
+                ranking: 'bg-purple-100 text-purple-700 border-purple-200',
+                voting: 'bg-blue-100 text-blue-700 border-blue-200',
+                podium: 'bg-yellow-100 text-yellow-700 border-yellow-200'
+              };
+              const phaseLabels: Record<string, string> = {
+                playing: '▶️ Jugando',
+                ranking: '🏆 Ranking',
+                voting: '🗳️ Votando',
+                podium: '🥇 Podio'
+              };
+              const phaseClass = phaseColors[room.current_phase] || 'bg-slate-100 text-slate-600 border-slate-200';
+              const phaseLabel = phaseLabels[room.current_phase] || room.current_phase;
+
+              return (
+                <div
+                  key={room.id}
+                  className="bg-white p-4 rounded-xl border shadow-sm flex flex-col items-center gap-2"
+                >
+                  <span className="font-black text-slate-700 text-sm">{room.name}</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${phaseClass}`}>
+                    {phaseLabel}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {rooms.length === 0 && (
+            <div className="bg-white p-8 rounded-xl border text-center">
+              <p className="text-slate-400 italic">No hay salas configuradas. Crea una nueva partida.</p>
+            </div>
+          )}
+        </section>
 
         {/* SECCIÓN 1: PARTICIPANTES REALES */}
         <section className="mb-12">
