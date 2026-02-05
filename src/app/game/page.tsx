@@ -353,7 +353,7 @@ export default function MinisalaGame() {
           minisala_id: sId, // <--- Aseguramos que este valor existe
           proposal_text: proposalText,
           votes: 0,
-          card_id: roomState.currentCard
+          card_id: card?.id
         }
       ]);
 
