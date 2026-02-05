@@ -215,6 +215,41 @@ export const translations = {
       ES: 'Progreso de la Minisala',
       EN: 'Room Progress',
       CAT: 'Progrés de la Minisala'
+    },
+    finalSimulation: {
+      ES: 'Simulación Final',
+      EN: 'Final Simulation',
+      CAT: 'Simulació Final'
+    },
+    finalSimulationDesc: {
+      ES: 'Vamos a repetir el juego con condiciones más igualitarias para ver cómo habría sido el resultado.',
+      EN: 'Let\'s replay the game with more equal conditions to see how the result would have been.',
+      CAT: 'Repetirem el joc amb condicions més igualitàries per veure com hauria estat el resultat.'
+    },
+    startSimulation: {
+      ES: 'EMPEZAR SIMULACIÓN',
+      EN: 'START SIMULATION',
+      CAT: 'COMENÇAR SIMULACIÓ'
+    },
+    waitingLeaderSimulation: {
+      ES: 'Esperando al líder para empezar la simulación...',
+      EN: 'Waiting for the leader to start the simulation...',
+      CAT: 'Esperant el líder per començar la simulació...'
+    },
+    simulatingProgress: {
+      ES: 'Simulando trayectoria automáticamente...',
+      EN: 'Simulating trajectory automatically...',
+      CAT: 'Simulant trajectòria automàticament...'
+    },
+    steps: {
+      ES: 'pasos',
+      EN: 'steps',
+      CAT: 'passos'
+    },
+    simulationComplete: {
+      ES: '¡Simulación Completa!',
+      EN: 'Simulation Complete!',
+      CAT: 'Simulació Completa!'
     }
   },
 
