@@ -435,34 +435,81 @@ export default function AdminPanel() {
   };
 
   const exportToCSV = async () => {
-    // 1. Obtener datos combinados de la base de datos
+    // 1. Obtener participantes ordenados por puntos
     const { data: participants } = await supabase
       .from('participants')
-      .select('alias, money, variables, compromiso')
+      .select('alias, money, minisala_id, is_leader')
       .order('money', { ascending: false });
 
-    if (!participants) return;
+    // 2. Obtener propuestas con votos
+    const { data: proposals } = await supabase
+      .from('rule_proposals')
+      .select('proposal_text, votes')
+      .order('votes', { ascending: false });
 
-    // 2. Definir cabeceras del CSV
-    const headers = ["Alias", "Dinero Final", "Variables", "Compromiso"];
+    if (!participants && !proposals) {
+      alert("No hay datos para exportar");
+      return;
+    }
 
-    // 3. Formatear filas
-    const rows = participants.map(p => [
-      p.alias,
-      `${p.money} €`,
-      JSON.stringify(p.variables).replace(/"/g, '""'), // Escapar JSON para CSV
-      `"${p.compromiso || ''}"`
-    ]);
+    // 3. Fecha de la partida (fecha actual cuando se pulsa el botón)
+    const fechaPartida = new Date().toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
 
-    // 4. Crear contenido y descargar
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    // 4. Construir el CSV con múltiples secciones
+    let csvContent = '';
+
+    // Sección 1: Fecha
+    csvContent += `FECHA DE LA PARTIDA\n`;
+    csvContent += `"${fechaPartida}"\n\n`;
+
+    // Sección 2: Participantes
+    csvContent += `PARTICIPANTES (Ordenados por Puntos)\n`;
+    csvContent += `Alias,Sala,Rol,Puntos\n`;
+
+    if (participants && participants.length > 0) {
+      participants.forEach(p => {
+        const rol = p.is_leader ? 'Líder' : 'Participante';
+        const sala = p.minisala_id || 'Sin sala';
+        csvContent += `"${p.alias}","${sala}","${rol}",${p.money}\n`;
+      });
+    }
+
+    csvContent += `\n`;
+
+    // Sección 3: Propuestas
+    csvContent += `PROPUESTAS\n`;
+    csvContent += `Propuesta,Votos\n`;
+
+    if (proposals && proposals.length > 0) {
+      proposals.forEach(prop => {
+        csvContent += `"${prop.proposal_text}",${prop.votes}\n`;
+      });
+    }
+
+    // 5. Crear y descargar el archivo
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
 
+    // Formatear fecha para el nombre del archivo (DD-MM-YYYY)
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const fileName = `resultados_igualopoly_${day}-${month}-${year}.csv`;
+
     link.setAttribute("href", url);
-    link.setAttribute("download", `resultados_igualopoly_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", fileName);
     link.click();
+
+    // Liberar el objeto URL
+    URL.revokeObjectURL(url);
   };
 
   const asignarLider = async (usuarioId: string, salaId: string) => {
@@ -820,6 +867,30 @@ export default function AdminPanel() {
             >
               <span>INICIAR SIMULACIÓN</span>
               <span className="text-2xl">🎯</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Exportar Resultados */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 md:col-span-3">
+          <h2 className="font-bold mb-4 text-slate-600 flex items-center gap-2">
+            📥 Exportar Datos
+          </h2>
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="flex-1">
+              <p className="text-sm text-slate-600 mb-2">
+                Exporta todos los resultados de la partida en formato CSV: participantes ordenados por puntos (con sala, rol), propuestas con votos, y fecha de la partida.
+              </p>
+              <p className="text-[10px] text-slate-400 italic">
+                El archivo incluirá la fecha actual como fecha de la partida.
+              </p>
+            </div>
+            <button
+              onClick={exportToCSV}
+              className="w-full md:w-auto px-8 py-4 bg-slate-800 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-slate-900 transition-all active:scale-95 flex items-center justify-center gap-3"
+            >
+              <span>EXPORTAR CSV</span>
+              <span className="text-2xl">📥</span>
             </button>
           </div>
         </div>
@@ -1686,12 +1757,6 @@ export default function AdminPanel() {
         )}
       </div>
 
-      {/* Footer Acciones */}
-      <div className="flex gap-4 mt-8">
-        <button onClick={exportToCSV} className="bg-slate-800 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-slate-900 transition-all">
-          📥 Exportar Resultados (CSV)
-        </button>
-      </div>
     </div>
   );
 }
