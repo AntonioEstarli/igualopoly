@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Componente para renderizar los puntos de cada cara del dado
 function DiceFace({ value }: { value: number }) {
@@ -42,10 +42,14 @@ function DiceFace({ value }: { value: number }) {
 
 interface DiceProps {
   onRollComplete: (val: number) => void;
+  onRollStart?: () => void;
   getNextValue?: () => Promise<number | null>;
+  showButton?: boolean; // Controla si se muestra el botón de lanzar
+  externalRoll?: { value: number; timestamp: number } | null; // Trigger externo para lanzar el dado con un valor específico
+  broadcastRoll?: () => Promise<number>; // Función para hacer broadcast del lanzamiento (solo para el líder)
 }
 
-export default function Dice({ onRollComplete, getNextValue }: DiceProps) {
+export default function Dice({ onRollComplete, onRollStart, getNextValue, showButton = true, externalRoll, broadcastRoll }: DiceProps) {
   const [isRolling, setIsRolling] = useState(false);
   const [diceValue, setDiceValue] = useState(1);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -62,20 +66,9 @@ export default function Dice({ onRollComplete, getNextValue }: DiceProps) {
     6: { x: 180, y: 0 },
   };
 
-  const rollDice = async () => {
+  // Función interna para ejecutar la animación del dado con un valor específico
+  const executeRoll = (finalValue: number) => {
     setIsRolling(true);
-
-    // Obtener el valor (forzado de la DB o aleatorio)
-    let value = Math.floor(Math.random() * 6) + 1;
-    if (getNextValue) {
-      const forcedValue = await getNextValue();
-      if (forcedValue !== null && forcedValue >= 1 && forcedValue <= 6) {
-        value = forcedValue;
-      }
-    }
-
-    // Capturamos el valor final en una constante para el closure
-    const finalValue = value;
 
     // Rotación aleatoria durante el lanzamiento
     const spins = 3 + Math.floor(Math.random() * 2); // 3-4 vueltas
@@ -83,7 +76,6 @@ export default function Dice({ onRollComplete, getNextValue }: DiceProps) {
     const randomY = spins * 360 + Math.random() * 360;
 
     // Usar requestAnimationFrame para asegurar que la transición se aplique correctamente
-    // (especialmente en el primer lanzamiento)
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setRotation({ x: randomX, y: randomY });
@@ -104,6 +96,38 @@ export default function Dice({ onRollComplete, getNextValue }: DiceProps) {
       setIsRolling(false);
       onRollComplete(finalValue);
     }, 1800);
+  };
+
+  // Efecto para manejar lanzamientos externos (cuando otros jugadores lanzan el dado)
+  useEffect(() => {
+    // Solo ejecutar si no está ya girando (para evitar duplicados)
+    if (externalRoll && externalRoll.value >= 1 && externalRoll.value <= 6 && !isRolling) {
+      executeRoll(externalRoll.value);
+    }
+  }, [externalRoll]);
+
+  const rollDice = async () => {
+    // Notificar que el dado está comenzando a girar
+    if (onRollStart) {
+      onRollStart();
+    }
+
+    // Si es el líder (tiene broadcastRoll), hacer broadcast Y ejecutar localmente
+    if (broadcastRoll) {
+      const diceValue = await broadcastRoll();
+      // Ejecutar la animación localmente para el líder
+      executeRoll(diceValue);
+    } else {
+      // Si no es el líder, obtener valor y ejecutar animación localmente (fallback)
+      let value = Math.floor(Math.random() * 6) + 1;
+      if (getNextValue) {
+        const forcedValue = await getNextValue();
+        if (forcedValue !== null && forcedValue >= 1 && forcedValue <= 6) {
+          value = forcedValue;
+        }
+      }
+      executeRoll(value);
+    }
   };
 
   return (
@@ -160,14 +184,16 @@ export default function Dice({ onRollComplete, getNextValue }: DiceProps) {
         </div>
       </div>
 
-      {/* Botón de lanzar */}
-      <button
-        onClick={rollDice}
-        disabled={isRolling}
-        className="bg-red-600 text-white px-8 py-3 rounded-full font-black uppercase tracking-wider shadow-lg shadow-red-200 hover:bg-red-700 hover:scale-105 transition-all disabled:bg-slate-400 disabled:shadow-none disabled:scale-100"
-      >
-        {isRolling ? 'Lanzando...' : 'Lanzar Dado'}
-      </button>
+      {/* Botón de lanzar - solo visible para el líder */}
+      {showButton && (
+        <button
+          onClick={rollDice}
+          disabled={isRolling}
+          className="bg-red-600 text-white px-8 py-3 rounded-full font-black uppercase tracking-wider shadow-lg shadow-red-200 hover:bg-red-700 hover:scale-105 transition-all disabled:bg-slate-400 disabled:shadow-none disabled:scale-100"
+        >
+          {isRolling ? 'Lanzando...' : 'Lanzar Dado'}
+        </button>
+      )}
     </div>
   );
 }
