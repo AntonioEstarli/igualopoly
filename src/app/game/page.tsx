@@ -343,8 +343,7 @@ export default function MinisalaGame() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Número máximo de cartas/casillas en el tablero
-  const MAX_CARDS = 10;
+  // Ya no se usa MAX_CARDS: ahora el fin de partida se determina cuando no hay más cartas disponibles (allCards.length)
 
   // Función para manejar el inicio del lanzamiento del dado
   const handleDiceRollStart = () => {
@@ -375,28 +374,26 @@ export default function MinisalaGame() {
     const nextBoardPosition = boardPosition + diceValue;
     const nextCardNumber = currentCardNumber + 1;
 
-    if (boardPosition < MAX_CARDS) {
-      // Notificar a todos los miembros de la minisala vía Realtime
-      await supabase.channel(`room:${minisalaId}`).send({
-        type: 'broadcast',
-        event: 'card_advance',
-        payload: { nextBoardPosition, nextCardNumber }
-      });
+    // Siempre notificamos y avanzamos el estado (la lógica de si hay carta o no se maneja en el render)
+    await supabase.channel(`room:${minisalaId}`).send({
+      type: 'broadcast',
+      event: 'card_advance',
+      payload: { nextBoardPosition, nextCardNumber }
+    });
 
-      // Actualizar el estado local
-      setRoomState(prev => ({ ...prev, currentCard: nextBoardPosition }));
-      setBoardPosition(nextBoardPosition);  // Posición del peón
-      setCurrentCardNumber(nextCardNumber);     // Número de carta
+    // Actualizar el estado local
+    setRoomState(prev => ({ ...prev, currentCard: nextBoardPosition }));
+    setBoardPosition(nextBoardPosition);  // Posición del peón
+    setCurrentCardNumber(nextCardNumber);     // Número de carta
 
-      // Guardamos progreso en db
-      const { error } = await supabase
-        .from('rooms')
-        .update({ current_step: nextBoardPosition })
-        .eq('id', minisalaId);
+    // Guardamos progreso en db
+    const { error } = await supabase
+      .from('rooms')
+      .update({ current_step: nextBoardPosition })
+      .eq('id', minisalaId);
 
-      if (error) {
-        console.error("Error al guardar progreso en DB:", error.message);
-      }
+    if (error) {
+      console.error("Error al guardar progreso en DB:", error.message);
     }
 
     // Resetear el estado del dado después de que se complete el lanzamiento
@@ -505,8 +502,8 @@ export default function MinisalaGame() {
       return;
     }
 
-    // Si ya llegamos al final, no hacer nada más
-    if (boardPosition >= MAX_CARDS) {
+    // Si ya no hay más cartas, detener la simulación
+    if (currentCardNumber >= allCards.length) {
       setIsAutoSimulating(false);
       return;
     }
@@ -612,14 +609,14 @@ export default function MinisalaGame() {
                   {isFinalSimulation ? (
                     /* SIMULACIÓN FINAL: Indicador de progreso automático */
                     <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-3xl shadow-xl border-4 border-emerald-300 flex flex-col items-center justify-center">
-                      {boardPosition < MAX_CARDS ? (
+                      {currentCardNumber <= allCards.length ? (
                         <>
                           <p className="text-white font-black mb-2 uppercase tracking-widest text-sm">{getTranslation('game.finalSimulation', language)}</p>
                           <p className="text-emerald-100 text-xs mb-4">{getTranslation('game.simulatingProgress', language)}</p>
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 border-4 border-emerald-200 border-t-white rounded-full animate-spin" />
                             <div className="text-white">
-                              <p className="text-3xl font-black">{boardPosition}/{MAX_CARDS}</p>
+                              <p className="text-3xl font-black">{currentCardNumber}/{allCards.length}</p>
                               <p className="text-xs text-emerald-100">{getTranslation('game.steps', language)}</p>
                             </div>
                           </div>
@@ -639,7 +636,7 @@ export default function MinisalaGame() {
                   ) : (
                     /* JUEGO NORMAL: Dado para todos (solo el líder puede lanzar) */
                     <div className="bg-white p-6 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center">
-                      {boardPosition < MAX_CARDS ? (
+                      {currentCardNumber <= allCards.length ? (
                         <>
                           {isLeader ? (
                             <p className="text-red-600 font-black mb-4 uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
