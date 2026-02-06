@@ -684,7 +684,10 @@ export default function MinisalaGame() {
                       animation: 'zoomIn 0.6s ease-out 0.5s both'
                     }}
                   >
-                    <div className="bg-red-600 p-5 flex justify-between items-center text-white">
+                    <div
+                      className="p-5 flex justify-between items-center text-white"
+                      style={{ backgroundColor: card.color || '#ef4444' }}
+                    >
                       <span className="font-black uppercase text-sm tracking-widest">
                         {language === 'ES' ? card.name_es : language === 'EN' ? card.name_en : card.name_cat}
                       </span>
