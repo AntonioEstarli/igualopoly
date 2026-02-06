@@ -25,22 +25,48 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20 }: Capita
       </h3>
 
       {/* PISTA DE ATLETISMO */}
-      <div className="flex-1 flex gap-1 relative bg-orange-700 rounded-sm p-1 border-x-4 border-white shadow-inner overflow-hidden">
+      <div className="flex-1 flex relative bg-orange-700 rounded-sm p-1 border-x-4 border-white shadow-inner overflow-hidden">
         
         {/* LÍNEAS DE CALLE (Pintura blanca de pista) */}
-        <div className="absolute inset-0 flex pointer-events-none">
-          {Array.from({ length: TOTAL_LANES + 1 }).map((_, i) => (
-            <div 
-              key={i} 
-              className="h-full border-l border-white/40 w-full first:border-l-0" 
+        <div className="absolute inset-1 flex pointer-events-none">
+          {Array.from({ length: TOTAL_LANES }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-full flex-1 ${i > 0 ? 'border-l border-white/40' : ''}`}
             />
           ))}
         </div>
 
         {/* MARCAS DE DISTANCIA (Meta y Salida) */}
-        <div className="absolute inset-x-0 top-0 h-px bg-white/80 shadow-[0_1px_0_rgba(255,255,255,0.5)] z-10">
-          <span className="absolute -top-4 right-2 text-[8px] font-black text-orange-800 uppercase">Finish (20€)</span>
+        {/* Meta con patrón a cuadros */}
+        <div
+          className="absolute inset-x-0 h-3 z-10 shadow-lg"
+          style={{
+            bottom: '90%',
+            backgroundImage: `
+              linear-gradient(45deg, white 25%, transparent 25%),
+              linear-gradient(-45deg, white 25%, transparent 25%),
+              linear-gradient(45deg, transparent 75%, white 75%),
+              linear-gradient(-45deg, transparent 75%, white 75%)
+            `,
+            backgroundSize: '12px 12px',
+            backgroundPosition: '0 0, 0 6px, 6px -6px, -6px 0px'
+          }}
+        >
+          <span className="absolute -bottom-5 right-2 text-[8px] font-black text-white/80 uppercase">Finish (20€)</span>
         </div>
+
+        {/* Líneas intermedias de progreso */}
+        <div className="absolute inset-x-0 h-px bg-white/30 z-10" style={{ bottom: '67.5%' }}>
+          <span className="absolute -right-1 -top-2 text-[7px] font-bold text-white/60">15€</span>
+        </div>
+        <div className="absolute inset-x-0 h-px bg-white/30 z-10" style={{ bottom: '45%' }}>
+          <span className="absolute -right-1 -top-2 text-[7px] font-bold text-white/60">10€</span>
+        </div>
+        <div className="absolute inset-x-0 h-px bg-white/30 z-10" style={{ bottom: '22.5%' }}>
+          <span className="absolute -right-1 -top-2 text-[7px] font-bold text-white/60">5€</span>
+        </div>
+
         <div className="absolute inset-x-0 bottom-10 h-1 bg-white/40 z-10" />
 
         {/* RENDERIZADO DE CARRILES (10 calles) */}
@@ -86,11 +112,11 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20 }: Capita
                   </div>
 
                   {/* Avatar/Ficha */}
-                  <div 
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-lg border-2 transition-transform hover:scale-110 ${
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-base shadow-lg border-2 transition-transform hover:scale-110 ${
                       isSystem ? 'border-slate-800 bg-slate-200' : 'border-white'
                     }`}
-                    style={{ 
+                    style={{
                       backgroundColor: isSystem ? '#cbd5e1' : (participant.color || '#3b82f6'),
                     }}
                   >
@@ -106,23 +132,6 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20 }: Capita
             </div>
           );
         })}
-      </div>
-
-      {/* LEYENDA DEL ESTADIO */}
-      <div className="mt-4 flex justify-between items-center px-2">
-        <div className="flex gap-4">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-blue-500 rounded-sm" />
-            <span className="text-[9px] font-bold text-slate-500 uppercase">Atletas</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-slate-400 rounded-sm" />
-            <span className="text-[9px] font-bold text-slate-500 uppercase">Bots Sistema</span>
-          </div>
-        </div>
-        <div className="text-[10px] font-mono text-slate-400">
-          Scale: 0 - {maxCapital}€
-        </div>
       </div>
     </div>
   );
