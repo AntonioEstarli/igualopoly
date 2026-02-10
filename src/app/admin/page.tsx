@@ -391,6 +391,18 @@ export default function AdminPanel() {
         situation_es: card.situation_es,
         situation_en: card.situation_en,
         situation_cat: card.situation_cat,
+        sabias_es: card.sabias_es,
+        sabias_en: card.sabias_en,
+        sabias_cat: card.sabias_cat,
+        afecta_es: card.afecta_es,
+        afecta_en: card.afecta_en,
+        afecta_cat: card.afecta_cat,
+        reflexion_es: card.reflexion_es,
+        reflexion_en: card.reflexion_en,
+        reflexion_cat: card.reflexion_cat,
+        reescribe_es: card.reescribe_es,
+        reescribe_en: card.reescribe_en,
+        reescribe_cat: card.reescribe_cat,
         impact_variable: card.impact_variable,
         impact_variable_2: card.impact_variable_2,
         impact_values: card.impact_values,
@@ -1257,6 +1269,18 @@ export default function AdminPanel() {
                   situation_es: '',
                   situation_en: '',
                   situation_cat: '',
+                  sabias_es: '',
+                  sabias_en: '',
+                  sabias_cat: '',
+                  afecta_es: '',
+                  afecta_en: '',
+                  afecta_cat: '',
+                  reflexion_es: '',
+                  reflexion_en: '',
+                  reflexion_cat: '',
+                  reescribe_es: '',
+                  reescribe_en: '',
+                  reescribe_cat: '',
                   impact_variable: 'red',
                   impact_variable_2: '',
                   impact_values: { ALTO: 0, MEDIO: 0, BAJO: 0 },
@@ -1652,6 +1676,154 @@ export default function AdminPanel() {
                         className="w-full p-3 border rounded-lg text-sm resize-none"
                         rows={3}
                         placeholder="Descriu la situació..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ¿Sabías que...? */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">¿Sabías que...?</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Español</label>
+                      <textarea
+                        value={editingCard.sabias_es || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, sabias_es: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Dato curioso o contexto..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">English</label>
+                      <textarea
+                        value={editingCard.sabias_en || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, sabias_en: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Did you know...?"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Català</label>
+                      <textarea
+                        value={editingCard.sabias_cat || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, sabias_cat: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Sabies que...?"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cómo afecta a los perfiles */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">👥 Cómo afecta a los perfiles</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Español</label>
+                      <textarea
+                        value={editingCard.afecta_es || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, afecta_es: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="¿A quién afecta esto?"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">English</label>
+                      <textarea
+                        value={editingCard.afecta_en || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, afecta_en: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Who does this affect?"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Català</label>
+                      <textarea
+                        value={editingCard.afecta_cat || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, afecta_cat: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="A qui afecta?"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preguntas de reflexión */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">💬 Preguntas de reflexión</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Español</label>
+                      <textarea
+                        value={editingCard.reflexion_es || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, reflexion_es: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Pregunta de reflexión..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">English</label>
+                      <textarea
+                        value={editingCard.reflexion_en || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, reflexion_en: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Reflection question..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Català</label>
+                      <textarea
+                        value={editingCard.reflexion_cat || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, reflexion_cat: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Pregunta de reflexió..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reescribe la regla */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">✍️ Reescribe la regla</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Español</label>
+                      <textarea
+                        value={editingCard.reescribe_es || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, reescribe_es: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Instrucciones de reescritura..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">English</label>
+                      <textarea
+                        value={editingCard.reescribe_en || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, reescribe_en: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Rewrite instructions..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Català</label>
+                      <textarea
+                        value={editingCard.reescribe_cat || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, reescribe_cat: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Instruccions de reescriptura..."
                       />
                     </div>
                   </div>

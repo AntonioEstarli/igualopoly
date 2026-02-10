@@ -11,6 +11,7 @@ import { VotingView } from '@/src/components/VotingView';
 import { PodiumView } from '@/src/components/PodiumView';
 import { RankingView } from '@/src/components/RankingView';
 import { getTranslation, Language } from '@/src/lib/translations';
+import ReactMarkdown from 'react-markdown';
 
 interface RoomPlayer {
   id: string;
@@ -51,6 +52,9 @@ export default function MinisalaGame() {
 
   // Idioma del usuario
   const [language, setLanguage] = useState<Language>('ES');
+
+  // Estado para controlar el paso actual de la carta (1, 2, o 3)
+  const [cardStep, setCardStep] = useState(1);
 
   // Variables del jugador
   const [userVars, setUserVars] = useState<Record<string, string>>({});
@@ -228,6 +232,7 @@ export default function MinisalaGame() {
     }
 
     setHasSubmittedProposal(false);
+    setCardStep(1); // Resetear al paso 1 cuando cambia la carta
 
     // Usamos el array de cartas ya cargado, con el número de carta como posición
     // currentCardNumber = 1 corresponde a allCards[0], etc.
@@ -694,37 +699,145 @@ export default function MinisalaGame() {
                     </div>
 
                     <div className="p-6 flex-1">
-                      <div className="space-y-4">
-                        <p className="text-slate-700 font-serif text-xl leading-snug italic">
-                          "{language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}"
-                        </p>
+                      {/* PASO 1: Situación */}
+                      {cardStep === 1 && (
+                        <div className="space-y-4">
+                          <div className="text-slate-700 font-serif text-xl leading-snug italic prose prose-lg max-w-none">
+                            <ReactMarkdown>
+                              {`"${language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}"`}
+                            </ReactMarkdown>
+                          </div>
+                          <button
+                            onClick={() => setCardStep(2)}
+                            className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                          >
+                            Siguiente →
+                          </button>
+                        </div>
+                      )}
 
-                        <div className="pt-4 border-t border-slate-100">
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">{getTranslation('game.proposeChange', language)}</h4>
-                          {!hasSubmittedProposal ? (
-                            <div className="space-y-3">
-                              <textarea
-                                value={proposalText}
-                                onChange={(e) => setProposalText(e.target.value)}
-                                placeholder={getTranslation('game.proposalPlaceholder', language)}
-                                className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
-                              />
-                              <button
-                                onClick={submitProposal}
-                                disabled={!proposalText.trim() || isSubmitting}
-                                className="w-full py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all disabled:bg-slate-200"
-                              >
-                                {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
-                              <span className="text-2xl">✅</span>
-                              <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
+                      {/* PASO 2: Sabías que + Afecta + Puntuación */}
+                      {cardStep === 2 && (
+                        <div className="space-y-4">
+                          {/* Sabías que */}
+                          {(card.sabias_es || card.sabias_en || card.sabias_cat) && (
+                            <div>
+                              <h4 className="text-xs font-black text-slate-600 mb-2">💡 ¿Sabías que...?</h4>
+                              <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                                <ReactMarkdown>
+                                  {language === 'ES' ? card.sabias_es : language === 'EN' ? card.sabias_en : card.sabias_cat}
+                                </ReactMarkdown>
+                              </div>
                             </div>
                           )}
+
+                          {/* Cómo afecta a los perfiles */}
+                          {(card.afecta_es || card.afecta_en || card.afecta_cat) && (
+                            <div>
+                              <h4 className="text-xs font-black text-slate-600 mb-2">👥 Cómo afecta a los perfiles</h4>
+                              <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                                <ReactMarkdown>
+                                  {language === 'ES' ? card.afecta_es : language === 'EN' ? card.afecta_en : card.afecta_cat}
+                                </ReactMarkdown>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Puntuación */}
+                          <div>
+                            <h4 className="text-xs font-black text-slate-600 mb-2">🎯 Puntuación</h4>
+                            <div className="bg-slate-50 p-4 rounded-xl space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-bold text-slate-700">
+                                  {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.ALTO', language)}
+                                </span>
+                                <span className="text-sm font-black text-green-600">
+                                  {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}€
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-bold text-slate-700">
+                                  {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.MEDIO', language)}
+                                </span>
+                                <span className="text-sm font-black text-yellow-600">
+                                  {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}€
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-bold text-slate-700">
+                                  {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.BAJO', language)}
+                                </span>
+                                <span className="text-sm font-black text-red-600">
+                                  {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}€
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => setCardStep(3)}
+                            className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                          >
+                            Siguiente →
+                          </button>
                         </div>
-                      </div>
+                      )}
+
+                      {/* PASO 3: Reflexión + Reescribe + Propuesta */}
+                      {cardStep === 3 && (
+                        <div className="space-y-4">
+                          {/* Preguntas de reflexión */}
+                          {(card.reflexion_es || card.reflexion_en || card.reflexion_cat) && (
+                            <div>
+                              <h4 className="text-xs font-black text-slate-600 mb-2">💬 Preguntas de reflexión</h4>
+                              <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                                <ReactMarkdown>
+                                  {language === 'ES' ? card.reflexion_es : language === 'EN' ? card.reflexion_en : card.reflexion_cat}
+                                </ReactMarkdown>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Reescribe la regla */}
+                          {(card.reescribe_es || card.reescribe_en || card.reescribe_cat) && (
+                            <div>
+                              <h4 className="text-xs font-black text-slate-600 mb-2">✍️ Reescribe la regla</h4>
+                              <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                                <ReactMarkdown>
+                                  {language === 'ES' ? card.reescribe_es : language === 'EN' ? card.reescribe_en : card.reescribe_cat}
+                                </ReactMarkdown>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Propuesta */}
+                          <div className="pt-2 border-t border-slate-100">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">{getTranslation('game.proposeChange', language)}</h4>
+                            {!hasSubmittedProposal ? (
+                              <div className="space-y-3">
+                                <textarea
+                                  value={proposalText}
+                                  onChange={(e) => setProposalText(e.target.value)}
+                                  placeholder={getTranslation('game.proposalPlaceholder', language)}
+                                  className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
+                                />
+                                <button
+                                  onClick={submitProposal}
+                                  disabled={!proposalText.trim() || isSubmitting}
+                                  className="w-full py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all disabled:bg-slate-200"
+                                >
+                                  {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
+                                <span className="text-2xl">✅</span>
+                                <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
