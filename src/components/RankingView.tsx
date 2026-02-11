@@ -105,14 +105,19 @@ export function RankingView({ players, systemProfiles }: RankingViewProps) {
                 {/* Name with Avatar */}
                 <div className="col-span-7 flex items-center gap-3">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-lg border-2 ${
-                      participant.isSystem ? 'border-slate-600 bg-slate-700' : 'border-white/30'
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-lg border-2 overflow-hidden ${
+                      participant.isSystem ? 'border-slate-600 bg-slate-700' : ''
                     }`}
                     style={{
-                      backgroundColor: participant.isSystem ? undefined : (participant.color || '#3b82f6')
+                      backgroundColor: participant.isSystem ? undefined : (participant.color || '#3b82f6'),
+                      borderColor: participant.isSystem ? undefined : (participant.color || '#3b82f6'),
                     }}
                   >
-                    {participant.isSystem ? '🤖' : (participant.emoji || '👤')}
+                    {participant.isSystem ? '🤖' : (
+                      participant.emoji?.startsWith('avatar-')
+                        ? <img src={`/images/${participant.emoji}.png`} className="w-full h-full object-contain p-0.5" alt="avatar" />
+                        : (participant.emoji || '👤')
+                    )}
                   </div>
                   <div className="flex flex-col">
                     <span className="text-white font-bold text-sm">{participant.alias}</span>

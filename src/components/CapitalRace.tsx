@@ -113,14 +113,19 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20 }: Capita
 
                   {/* Avatar/Ficha */}
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-base shadow-lg border-2 transition-transform hover:scale-110 ${
-                      isSystem ? 'border-slate-800 bg-slate-200' : 'border-white'
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-base shadow-lg border-2 transition-transform hover:scale-110 overflow-hidden ${
+                      isSystem ? 'border-slate-800 bg-slate-200' : ''
                     }`}
                     style={{
                       backgroundColor: isSystem ? '#cbd5e1' : (participant.color || '#3b82f6'),
+                      borderColor: isSystem ? '#1e293b' : (participant.color || '#3b82f6'),
                     }}
                   >
-                    {isSystem ? '🤖' : (participant.emoji || '👤')}
+                    {isSystem ? '🤖' : (
+                      participant.emoji?.startsWith('avatar-')
+                        ? <img src={`/images/${participant.emoji}.png`} className="w-full h-full object-contain" alt="avatar" />
+                        : (participant.emoji || '👤')
+                    )}
                   </div>
 
                   {/* Marcador de dinero individual */}
