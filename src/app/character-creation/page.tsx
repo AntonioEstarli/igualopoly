@@ -10,16 +10,15 @@ const NIVELES = ['ALTO', 'MEDIO', 'BAJO'] as const;
 
 export default function CharacterCreation() {
   const [alias, setAlias] = useState('');
-  const [skinId, setSkinId] = useState(1);
   const [rooms, setRooms] = useState<any[]>([]); // Estado para las salas de la DB
   const [minisalaId, setMinisalaId] = useState(''); // Empezamos vacío
   const [vars, setVars] = useState<Record<string, string>>({
     tiempo: 'MEDIO', visibilidad: 'MEDIO', red: 'MEDIO', margen_error: 'MEDIO', responsabilidades: 'MEDIO'
   });
-  // color y emoji
+  // color y avatar
   const [selectedColor, setSelectedColor] = useState('#ef4444');
-  const [selectedEmoji, setSelectedEmoji] = useState('👤');
-  const EMOJIS = ['👤', '🐱', '🦊', '🚀', '🌈', '🔥', '💎', '🍀', '🍕', '🎸'];
+  const [selectedEmoji, setSelectedEmoji] = useState('avatar-hombre-1');
+  const [avatarGender, setAvatarGender] = useState<'hombre' | 'mujer'>('hombre');
   const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#64748b'];
 
   const router = useRouter();
@@ -37,7 +36,7 @@ export default function CharacterCreation() {
   // 1. Cargar las salas reales de Supabase al montar el componente
   useEffect(() => {
     const fetchRooms = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('rooms')
         .select('*')
         .order('id', { ascending: true });
@@ -63,7 +62,7 @@ export default function CharacterCreation() {
       .insert([{
         name: nombre,
         alias: alias || nombre, // Si no hay alias, usamos el nombre
-        skin_id: skinId,
+        skin_id: parseInt(selectedEmoji.split('-')[2]) || 1,
         variables: vars, // Guardamos el objeto JSON de variables
         money: 0,
         minisala_id: minisalaId,
@@ -100,24 +99,40 @@ export default function CharacterCreation() {
         <p className="text-xs text-gray-500 mt-1">{getTranslation('characterCreation.aliasHelper', language)}</p>
       </div>
 
-      {/* Color y emoji */}
+      {/* Avatar y color */}
       <div className="mb-8 p-4 bg-slate-50 rounded-2xl border">
         <label className="block mb-4 font-bold text-slate-700 text-sm uppercase">{getTranslation('characterCreation.customizeAvatar', language)}</label>
 
-        {/* Selector de Emojis */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {EMOJIS.map(e => (
+        {/* Toggle género */}
+        <div className="flex gap-2 mb-4">
+          {(['hombre', 'mujer'] as const).map(g => (
             <button
-              key={e}
-              onClick={() => setSelectedEmoji(e)}
-              className={`text-2xl p-2 rounded-xl border-2 transition-all ${selectedEmoji === e ? 'border-blue-500 bg-white scale-110 shadow-sm' : 'border-transparent opacity-50'}`}
+              key={g}
+              onClick={() => { setAvatarGender(g); setSelectedEmoji(`avatar-${g}-1`); }}
+              className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all ${avatarGender === g ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-500 border'}`}
             >
-              {e}
+              {g === 'hombre' ? '♂ Hombre' : '♀ Mujer'}
             </button>
           ))}
         </div>
 
-        {/* Selector de Colores */}
+        {/* Grid de 5 avatares */}
+        <div className="flex gap-2 mb-5">
+          {[1, 2, 3, 4, 5].map(n => {
+            const id = `avatar-${avatarGender}-${n}`;
+            return (
+              <button
+                key={id}
+                onClick={() => setSelectedEmoji(id)}
+                className={`flex-1 rounded-xl overflow-hidden border-2 transition-all ${selectedEmoji === id ? 'border-blue-500 scale-105 shadow-md' : 'border-transparent opacity-50'}`}
+              >
+                <img src={`/images/${id}.png`} className="w-full h-full object-cover" alt={id} />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Selector de color de anillo */}
         <div className="flex flex-wrap gap-3">
           {COLORS.map(c => (
             <button

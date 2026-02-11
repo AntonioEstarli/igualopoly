@@ -991,10 +991,16 @@ export default function AdminPanel() {
                       <div className="flex items-center gap-3">
                         {/* Avatar circular con el color y emoji elegido */}
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm"
-                          style={{ backgroundColor: u.color + '20', border: `2px solid ${u.color}` }}
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm overflow-hidden"
+                          style={{
+                            backgroundColor: u.emoji?.startsWith('avatar-') ? 'transparent' : (u.color + '20'),
+                            border: `2px solid ${u.color}`
+                          }}
                         >
-                          {u.emoji || '👤'}
+                          {u.emoji?.startsWith('avatar-')
+                            ? <img src={`/images/${u.emoji}.png`} className="w-full h-full object-cover" alt="avatar" />
+                            : (u.emoji || '👤')
+                          }
                         </div>
                         <div>
                           <div className="font-bold text-slate-700">{u.alias}</div>
