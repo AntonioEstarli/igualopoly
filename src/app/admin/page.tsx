@@ -993,7 +993,7 @@ export default function AdminPanel() {
                         <div
                           className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm overflow-hidden"
                           style={{
-                            backgroundColor: u.emoji?.startsWith('avatar-') ? 'transparent' : (u.color + '20'),
+                            backgroundColor: u.color + '20',
                             border: `2px solid ${u.color}`
                           }}
                         >

@@ -109,7 +109,7 @@ export function RankingView({ players, systemProfiles }: RankingViewProps) {
                       participant.isSystem ? 'border-slate-600 bg-slate-700' : ''
                     }`}
                     style={{
-                      backgroundColor: participant.isSystem ? undefined : (participant.emoji?.startsWith('avatar-') ? 'transparent' : (participant.color || '#3b82f6')),
+                      backgroundColor: participant.isSystem ? undefined : (participant.color || '#3b82f6'),
                       borderColor: participant.isSystem ? undefined : (participant.color || '#3b82f6'),
                     }}
                   >

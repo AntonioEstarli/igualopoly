@@ -117,7 +117,7 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20 }: Capita
                       isSystem ? 'border-slate-800 bg-slate-200' : ''
                     }`}
                     style={{
-                      backgroundColor: isSystem ? '#cbd5e1' : (participant.emoji?.startsWith('avatar-') ? 'transparent' : (participant.color || '#3b82f6')),
+                      backgroundColor: isSystem ? '#cbd5e1' : (participant.color || '#3b82f6'),
                       borderColor: isSystem ? '#1e293b' : (participant.color || '#3b82f6'),
                     }}
                   >
