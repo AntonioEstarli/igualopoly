@@ -998,7 +998,7 @@ export default function AdminPanel() {
                           }}
                         >
                           {u.emoji?.startsWith('avatar-')
-                            ? <img src={`/images/${u.emoji}.png`} className="w-full h-full object-cover" alt="avatar" />
+                            ? <img src={`/images/${u.emoji}.png`} className="w-full h-full object-contain p-0.5" alt="avatar" />
                             : (u.emoji || '👤')
                           }
                         </div>

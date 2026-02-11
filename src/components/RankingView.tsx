@@ -115,7 +115,7 @@ export function RankingView({ players, systemProfiles }: RankingViewProps) {
                   >
                     {participant.isSystem ? '🤖' : (
                       participant.emoji?.startsWith('avatar-')
-                        ? <img src={`/images/${participant.emoji}.png`} className="w-full h-full object-cover" alt="avatar" />
+                        ? <img src={`/images/${participant.emoji}.png`} className="w-full h-full object-contain p-0.5" alt="avatar" />
                         : (participant.emoji || '👤')
                     )}
                   </div>

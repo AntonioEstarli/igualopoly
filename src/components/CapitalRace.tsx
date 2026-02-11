@@ -123,7 +123,7 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20 }: Capita
                   >
                     {isSystem ? '🤖' : (
                       participant.emoji?.startsWith('avatar-')
-                        ? <img src={`/images/${participant.emoji}.png`} className="w-full h-full object-cover" alt="avatar" />
+                        ? <img src={`/images/${participant.emoji}.png`} className="w-full h-full object-contain" alt="avatar" />
                         : (participant.emoji || '👤')
                     )}
                   </div>
