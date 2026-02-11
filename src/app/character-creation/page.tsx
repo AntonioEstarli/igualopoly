@@ -116,15 +116,15 @@ export default function CharacterCreation() {
           ))}
         </div>
 
-        {/* Grid de 5 avatares */}
-        <div className="flex gap-2 mb-5">
-          {[1, 2, 3, 4, 5].map(n => {
+        {/* Grid de 10 avatares (2 filas × 5) */}
+        <div className="grid grid-cols-5 gap-2 mb-5">
+          {[1, 2, 3, 4, 5, 10, 11, 12, 13, 14].map(n => {
             const id = `avatar-${avatarGender}-${n}`;
             return (
               <button
                 key={id}
                 onClick={() => setSelectedEmoji(id)}
-                className={`flex-1 rounded-xl overflow-hidden border-2 transition-all ${selectedEmoji === id ? 'border-blue-500 scale-105 shadow-md' : 'border-transparent opacity-50'}`}
+                className={`rounded-xl overflow-hidden border-2 transition-all ${selectedEmoji === id ? 'border-blue-500 scale-105 shadow-md' : 'border-transparent opacity-50'}`}
               >
                 <img src={`/images/${id}.png`} className="w-full h-full object-cover" alt={id} />
               </button>
