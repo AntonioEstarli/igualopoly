@@ -124,9 +124,9 @@ export default function CharacterCreation() {
               <button
                 key={id}
                 onClick={() => setSelectedEmoji(id)}
-                className={`rounded-xl overflow-hidden border-2 transition-all ${selectedEmoji === id ? 'border-blue-500 scale-105 shadow-md' : 'border-transparent opacity-50'}`}
+                className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedEmoji === id ? 'border-blue-500 scale-105 shadow-md' : 'border-transparent opacity-50'}`}
               >
-                <img src={`/images/${id}.png`} className="w-full h-full object-cover" alt={id} />
+                <img src={`/images/${id}.png`} className="w-full h-full object-contain" alt={id} />
               </button>
             );
           })}
