@@ -12,6 +12,7 @@ import { PodiumView } from '@/src/components/PodiumView';
 import { RankingView } from '@/src/components/RankingView';
 import { getTranslation, Language } from '@/src/lib/translations';
 import ReactMarkdown from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
 
 interface RoomPlayer {
   id: string;
@@ -703,8 +704,8 @@ export default function MinisalaGame() {
                       {cardStep === 1 && (
                         <div className="space-y-4">
                           <div className="text-slate-700 font-serif text-xl leading-snug italic prose prose-lg max-w-none">
-                            <ReactMarkdown>
-                              {`"${language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}"`}
+                            <ReactMarkdown remarkPlugins={[remarkBreaks]}>
+                              {language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}
                             </ReactMarkdown>
                           </div>
                           <button
@@ -724,7 +725,7 @@ export default function MinisalaGame() {
                             <div>
                               <h4 className="text-xs font-black text-slate-600 mb-2">💡 ¿Sabías que...?</h4>
                               <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
-                                <ReactMarkdown>
+                                <ReactMarkdown remarkPlugins={[remarkBreaks]}>
                                   {language === 'ES' ? card.sabias_es : language === 'EN' ? card.sabias_en : card.sabias_cat}
                                 </ReactMarkdown>
                               </div>
@@ -736,7 +737,7 @@ export default function MinisalaGame() {
                             <div>
                               <h4 className="text-xs font-black text-slate-600 mb-2">👥 Cómo afecta a los perfiles</h4>
                               <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
-                                <ReactMarkdown>
+                                <ReactMarkdown remarkPlugins={[remarkBreaks]}>
                                   {language === 'ES' ? card.afecta_es : language === 'EN' ? card.afecta_en : card.afecta_cat}
                                 </ReactMarkdown>
                               </div>
@@ -791,7 +792,7 @@ export default function MinisalaGame() {
                             <div>
                               <h4 className="text-xs font-black text-slate-600 mb-2">💬 Preguntas de reflexión</h4>
                               <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
-                                <ReactMarkdown>
+                                <ReactMarkdown remarkPlugins={[remarkBreaks]}>
                                   {language === 'ES' ? card.reflexion_es : language === 'EN' ? card.reflexion_en : card.reflexion_cat}
                                 </ReactMarkdown>
                               </div>
