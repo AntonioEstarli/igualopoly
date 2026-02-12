@@ -121,7 +121,9 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20 }: Capita
                       borderColor: isSystem ? '#1e293b' : (participant.color || '#3b82f6'),
                     }}
                   >
-                    {isSystem ? '🤖' : (
+                    {isSystem ? (
+                      <img src={`/images/${participant.emoji || 'bot1'}.png`} className="w-full h-full object-contain" alt="bot" />
+                    ) : (
                       participant.emoji?.startsWith('avatar-')
                         ? <img src={`/images/${participant.emoji}.png`} className="w-full h-full object-contain" alt="avatar" />
                         : (participant.emoji || '👤')

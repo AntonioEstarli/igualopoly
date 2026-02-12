@@ -244,6 +244,7 @@ export default function AdminPanel() {
         id: newId,
         alias: profile.alias,
         color: profile.color,
+        emoji: profile.emoji,
         red: profile.red,
         visibilidad: profile.visibilidad,
         tiempo: profile.tiempo,
@@ -266,6 +267,7 @@ export default function AdminPanel() {
       .update({
         alias: profile.alias,
         color: profile.color,
+        emoji: profile.emoji,
         red: profile.red,
         visibilidad: profile.visibilidad,
         tiempo: profile.tiempo,
@@ -312,6 +314,7 @@ export default function AdminPanel() {
         id: newId,
         alias: profile.alias,
         color: profile.color,
+        emoji: profile.emoji,
         red: profile.red,
         visibilidad: profile.visibilidad,
         tiempo: profile.tiempo,
@@ -334,6 +337,7 @@ export default function AdminPanel() {
       .update({
         alias: profile.alias,
         color: profile.color,
+        emoji: profile.emoji,
         red: profile.red,
         visibilidad: profile.visibilidad,
         tiempo: profile.tiempo,
@@ -1108,7 +1112,10 @@ export default function AdminPanel() {
                     {systemProfiles.map(p => (
                       <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-4">
-                          <div className="w-6 h-6 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: p.color }} />
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: p.color }} />
+                            {p.emoji && <img src={`/images/${p.emoji}.png`} className="w-8 h-8 object-contain" alt={p.emoji} />}
+                          </div>
                         </td>
                         <td className="p-4 font-bold text-slate-700">{p.alias}</td>
                         <td className="p-4">
@@ -1205,7 +1212,10 @@ export default function AdminPanel() {
                     {systemProfilesFinal.map(p => (
                       <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-4">
-                          <div className="w-6 h-6 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: p.color }} />
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: p.color }} />
+                            {p.emoji && <img src={`/images/${p.emoji}.png`} className="w-8 h-8 object-contain" alt={p.emoji} />}
+                          </div>
                         </td>
                         <td className="p-4 font-bold text-slate-700">{p.alias}</td>
                         <td className="p-4">
@@ -1463,6 +1473,25 @@ export default function AdminPanel() {
                     />
                   </div>
                 </div>
+                {/* Avatar */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">Avatar</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[1, 2, 3, 4, 5].map(n => {
+                      const id = `bot${n}`;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setEditingProfile({ ...editingProfile, emoji: id })}
+                          className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${editingProfile.emoji === id ? 'border-blue-500 scale-105 shadow-md' : 'border-transparent opacity-50'}`}
+                        >
+                          <img src={`/images/${id}.png`} className="w-full h-full object-contain" alt={id} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 {/* Variables */}
                 <div className="border-t pt-4 mt-4">
                   <label className="text-xs font-bold text-slate-600 uppercase mb-3 block">Variables del Arquetipo</label>
@@ -1539,6 +1568,25 @@ export default function AdminPanel() {
                       className="flex-1 p-3 border rounded-lg text-sm font-mono"
                       placeholder="#6366f1"
                     />
+                  </div>
+                </div>
+                {/* Avatar */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">Avatar</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[1, 2, 3, 4, 5].map(n => {
+                      const id = `bot${n}`;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setEditingProfileFinal({ ...editingProfileFinal, emoji: id })}
+                          className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${editingProfileFinal.emoji === id ? 'border-blue-500 scale-105 shadow-md' : 'border-transparent opacity-50'}`}
+                        >
+                          <img src={`/images/${id}.png`} className="w-full h-full object-contain" alt={id} />
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 {/* Variables */}

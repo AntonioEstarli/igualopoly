@@ -113,7 +113,9 @@ export function RankingView({ players, systemProfiles }: RankingViewProps) {
                       borderColor: participant.isSystem ? undefined : (participant.color || '#3b82f6'),
                     }}
                   >
-                    {participant.isSystem ? '🤖' : (
+                    {participant.isSystem ? (
+                      <img src={`/images/${participant.emoji || 'bot1'}.png`} className="w-full h-full object-contain p-0.5" alt="bot" />
+                    ) : (
                       participant.emoji?.startsWith('avatar-')
                         ? <img src={`/images/${participant.emoji}.png`} className="w-full h-full object-contain p-0.5" alt="avatar" />
                         : (participant.emoji || '👤')
@@ -149,7 +151,9 @@ export function RankingView({ players, systemProfiles }: RankingViewProps) {
             <span className="text-slate-400">{getTranslation('ranking.participants', language)}</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-slate-600 rounded-full flex items-center justify-center text-[8px]">🤖</div>
+            <div className="w-4 h-4 bg-slate-600 rounded-full overflow-hidden flex items-center justify-center">
+              <img src="/images/bot1.png" className="w-full h-full object-contain" alt="bot" />
+            </div>
             <span className="text-slate-400">{getTranslation('ranking.systemProfiles', language)}</span>
           </div>
         </div>
