@@ -317,7 +317,7 @@ export default function MinisalaGame() {
       setCardVisible(false);
       return;
     }
-    const timer = setTimeout(() => setCardVisible(true), 1500);
+    const timer = setTimeout(() => setCardVisible(true), 1300);
     return () => clearTimeout(timer);
   }, [card]);
 
@@ -333,13 +333,13 @@ export default function MinisalaGame() {
       setDisplayedPlayers(roomPlayers);
       return;
     }
-    const timer = setTimeout(() => setDisplayedPlayers(roomPlayers), 1500);
+    const timer = setTimeout(() => setDisplayedPlayers(roomPlayers), 2300);
     return () => clearTimeout(timer);
   }, [roomPlayers]);
 
   // Retrasa la posición del tablero para los arquetipos del CapitalRace
   useEffect(() => {
-    const timer = setTimeout(() => setDisplayedBoardPosition(boardPosition), 1500);
+    const timer = setTimeout(() => setDisplayedBoardPosition(boardPosition), 2300);
     return () => clearTimeout(timer);
   }, [boardPosition]);
 
@@ -360,6 +360,8 @@ export default function MinisalaGame() {
         .single();
       if (data) {
         setIsLeader(data.is_leader);
+        // Inicializar el dinero siempre desde la DB (incluye el valor inicial de 10€)
+        setMyMoney(data.money || 0);
         // Sincronizar la fase actual
         if (data.current_phase) {
           setGamePhase(data.current_phase);
@@ -369,7 +371,6 @@ export default function MinisalaGame() {
             setCurrentCardNumber(0);
             setCard(null);
             setHistory([]);
-            setMyMoney(data.money || 0);
             setIsFinalSimulation(true);
           }
         }

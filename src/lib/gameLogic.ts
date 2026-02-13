@@ -119,7 +119,7 @@ export const getImpactDetail = (
  * y el histórico de cartas jugadas hasta el momento.
  */
 export function calculateSystemMoney(profileVars: any, currentStep: number, allCards: any[]) {
-  let total = 0;
+  let total = 10; // Capital inicial igual que los jugadores
 
   // Recorremos las cartas desde la primera hasta la actual
   for (let i = 0; i < currentStep; i++) {
