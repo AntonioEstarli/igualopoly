@@ -60,12 +60,37 @@ export const calculateCardImpact = (
   return 0;
 };
 
+const varLabels: Record<string, Record<string, string>> = {
+  red:               { ES: '🤝 Red', EN: '🤝 Network', CAT: '🤝 Xarxa' },
+  visibilidad:       { ES: '👀 Visibilidad', EN: '👀 Visibility', CAT: '👀 Visibilitat' },
+  tiempo:            { ES: '🕒 Disponibilidad', EN: '🕒 Availability', CAT: '🕒 Disponibilitat' },
+  margen_error:      { ES: '⚠️ Margen de error', EN: '⚠️ Error margin', CAT: '⚠️ Marge d\'error' },
+  responsabilidades: { ES: '🎒 Cargas invisibles', EN: '🎒 Invisible burdens', CAT: '🎒 Càrregues invisibles' },
+};
+
+const reasonTemplates = {
+  single: {
+    ES: (v: string, l: string) => `Por tener ${v} en nivel ${l}`,
+    EN: (v: string, l: string) => `Due to ${v} at level ${l}`,
+    CAT: (v: string, l: string) => `Per tenir ${v} en nivell ${l}`,
+  },
+  combined: {
+    ES: (v1: string, l1: string, v2: string, l2: string, lc: string) => `Por tener ${v1} (${l1}) + ${v2} (${l2}) = nivel ${lc}`,
+    EN: (v1: string, l1: string, v2: string, l2: string, lc: string) => `Due to ${v1} (${l1}) + ${v2} (${l2}) = level ${lc}`,
+    CAT: (v1: string, l1: string, v2: string, l2: string, lc: string) => `Per tenir ${v1} (${l1}) + ${v2} (${l2}) = nivell ${lc}`,
+  },
+};
+
 export const getImpactDetail = (
   userVars: any,
   impactVar: string,
   impactValues: any,
-  impactVar2?: string | null
+  impactVar2?: string | null,
+  language: 'ES' | 'EN' | 'CAT' = 'ES'
 ) => {
+  const lang = language in reasonTemplates.single ? language : 'ES';
+  const label = (v: string) => varLabels[v.toLowerCase()]?.[lang] ?? v.replace('_', ' ');
+
   // Caso 2: Combinación de dos variables
   if (impactVar2) {
     const level1 = userVars[impactVar.toLowerCase()] as VariableLevel || 'MEDIO';
@@ -75,7 +100,7 @@ export const getImpactDetail = (
 
     return {
       amount,
-      reason: `Por tener ${impactVar.replace('_', ' ')} (${level1}) + ${impactVar2.replace('_', ' ')} (${level2}) = nivel ${combinedLevel}`
+      reason: reasonTemplates.combined[lang as keyof typeof reasonTemplates.combined](label(impactVar), level1, label(impactVar2), level2, combinedLevel)
     };
   }
 
@@ -85,7 +110,7 @@ export const getImpactDetail = (
 
   return {
     amount,
-    reason: `Por tener ${impactVar.replace('_', ' ')} en nivel ${userLevel}`
+    reason: reasonTemplates.single[lang as keyof typeof reasonTemplates.single](label(impactVar), userLevel)
   };
 };
 

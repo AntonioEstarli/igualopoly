@@ -90,13 +90,6 @@ export function PodiumView() {
           </div>
         ))}
       </div>
-
-      <button
-        onClick={() => window.location.reload()}
-        className="mt-12 text-white/20 hover:text-white/60 text-xs uppercase font-bold tracking-widest transition-all"
-      >
-        {getTranslation('podium.backToStart', language)}
-      </button>
     </div>
   );
 }

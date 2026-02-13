@@ -254,7 +254,7 @@ export default function MinisalaGame() {
       const userVars = JSON.parse(sessionStorage.getItem('vars') || '{}');
 
       // 3. Calculamos el impacto del detalle (monto y razón)
-      const detail = getImpactDetail(userVars, data.impact_variable, data.impact_values, data.impact_variable_2);
+      const detail = getImpactDetail(userVars, data.impact_variable, data.impact_values, data.impact_variable_2, language);
 
       // --- NUEVA LÓGICA DE ACTUALIZACIÓN ---
 
@@ -282,7 +282,7 @@ export default function MinisalaGame() {
       if (currentCardNumber > 0) {
         setHistory(prev => [
           {
-            cardName: data.name_es,
+            cardName: language === 'EN' ? data.name_en : language === 'CAT' ? data.name_cat : data.name_es,
             amount: detail.amount,
             reason: detail.reason
           },
@@ -290,7 +290,7 @@ export default function MinisalaGame() {
         ]);
       }
     }
-  }, [currentCardNumber, allCards]); // Se dispara cada vez que cambia el número de carta
+  }, [currentCardNumber, allCards, language]); // Se dispara cada vez que cambia el número de carta o el idioma
 
   // Subscripcion para saber si es lider y la fase actual
   useEffect(() => {
@@ -580,6 +580,7 @@ export default function MinisalaGame() {
           <div className="w-full md:w-80 h-1/3 md:h-full p-2 bg-slate-900 shadow-2xl z-10">
             <CapitalRace
               players={roomPlayers}
+              language={language}
               systemProfiles={(isFinalSimulation ? systemProfilesFinal : systemProfiles).map(profile => ({
                 id: profile.id,
                 alias: profile.alias,
@@ -656,6 +657,7 @@ export default function MinisalaGame() {
                             showButton={isLeader}
                             externalRoll={externalDiceRoll}
                             broadcastRoll={isLeader ? handleLeaderDiceRoll : undefined}
+                            language={language}
                           />
                         </>
                       ) : (
@@ -712,7 +714,7 @@ export default function MinisalaGame() {
                             onClick={() => setCardStep(2)}
                             className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
                           >
-                            Siguiente →
+                            {getTranslation('game.next', language)}
                           </button>
                         </div>
                       )}
@@ -723,7 +725,7 @@ export default function MinisalaGame() {
                           {/* Sabías que */}
                           {(card.sabias_es || card.sabias_en || card.sabias_cat) && (
                             <div>
-                              <h4 className="text-xs font-black text-slate-600 mb-2">💡 ¿Sabías que...?</h4>
+                              <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardDidYouKnow', language)}</h4>
                               <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
                                 <ReactMarkdown remarkPlugins={[remarkBreaks]}>
                                   {language === 'ES' ? card.sabias_es : language === 'EN' ? card.sabias_en : card.sabias_cat}
@@ -735,7 +737,7 @@ export default function MinisalaGame() {
                           {/* Cómo afecta a los perfiles */}
                           {(card.afecta_es || card.afecta_en || card.afecta_cat) && (
                             <div>
-                              <h4 className="text-xs font-black text-slate-600 mb-2">👥 Cómo afecta a los perfiles</h4>
+                              <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardHowAffects', language)}</h4>
                               <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
                                 <ReactMarkdown remarkPlugins={[remarkBreaks]}>
                                   {language === 'ES' ? card.afecta_es : language === 'EN' ? card.afecta_en : card.afecta_cat}
@@ -746,7 +748,7 @@ export default function MinisalaGame() {
 
                           {/* Puntuación */}
                           <div>
-                            <h4 className="text-xs font-black text-slate-600 mb-2">🎯 Puntuación</h4>
+                            <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardScore', language)}</h4>
                             <div className="bg-slate-50 p-4 rounded-xl space-y-2">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm font-bold text-slate-700">
@@ -779,7 +781,7 @@ export default function MinisalaGame() {
                             onClick={() => setCardStep(3)}
                             className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
                           >
-                            Siguiente →
+                            {getTranslation('game.next', language)}
                           </button>
                         </div>
                       )}
@@ -790,7 +792,7 @@ export default function MinisalaGame() {
                           {/* Preguntas de reflexión */}
                           {(card.reflexion_es || card.reflexion_en || card.reflexion_cat) && (
                             <div>
-                              <h4 className="text-xs font-black text-slate-600 mb-2">💬 Preguntas de reflexión</h4>
+                              <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardReflection', language)}</h4>
                               <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
                                 <ReactMarkdown remarkPlugins={[remarkBreaks]}>
                                   {language === 'ES' ? card.reflexion_es : language === 'EN' ? card.reflexion_en : card.reflexion_cat}
@@ -802,7 +804,7 @@ export default function MinisalaGame() {
                           {/* Reescribe la regla */}
                           {(card.reescribe_es || card.reescribe_en || card.reescribe_cat) && (
                             <div>
-                              <h4 className="text-xs font-black text-slate-600 mb-2">✍️ Reescribe la regla</h4>
+                              <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardRewrite', language)}</h4>
                               <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
                                 <ReactMarkdown>
                                   {language === 'ES' ? card.reescribe_es : language === 'EN' ? card.reescribe_en : card.reescribe_cat}
@@ -835,7 +837,7 @@ export default function MinisalaGame() {
                                     onClick={() => setCard(null)}
                                     className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
                                   >
-                                    Siguiente →
+                                    {getTranslation('game.next', language)}
                                   </button>
                                 )}
                               </div>
@@ -849,7 +851,7 @@ export default function MinisalaGame() {
                                   onClick={() => setCard(null)}
                                   className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
                                 >
-                                  Siguiente →
+                                  {getTranslation('game.next', language)}
                                 </button>
                               </div>
                             )}
