@@ -7,7 +7,7 @@ export function VotingView({ minisalaId, participantId }: { minisalaId: string, 
   const [proposals, setProposals] = useState<any[]>([]);
   const [userVotes, setUserVotes] = useState<string[]>([]);
   const [language, setLanguage] = useState<Language>('ES');
-  const MAX_VOTES = 2;
+  const MAX_VOTES = 3;
 
   useEffect(() => {
     const storedLang = sessionStorage.getItem('idioma') as Language;
@@ -102,10 +102,7 @@ export function VotingView({ minisalaId, participantId }: { minisalaId: string, 
                 </div>
               </div>
 
-              <div className="flex flex-col items-center">
-                <span className="text-xl">{isSelected ? '❤️' : '🔥'}</span>
-                <span className="font-black text-slate-800">{p.votes || 0}</span>
-              </div>
+              <span className="text-xl">{isSelected ? '❤️' : '🔥'}</span>
             </button>
           );
         })}

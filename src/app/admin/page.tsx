@@ -610,6 +610,17 @@ export default function AdminPanel() {
 
     if (error) {
       alert("Error al activar podio: " + error.message);
+      return;
+    }
+
+    // Actualizamos también todas las salas para que el monitor las muestre en fase 'podium'
+    const { error: roomsError } = await supabase
+      .from('rooms')
+      .update({ current_phase: 'podium' })
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (roomsError) {
+      alert("Error al actualizar salas: " + roomsError.message);
     } else {
       alert("¡Podio activado para todos los jugadores!");
     }
