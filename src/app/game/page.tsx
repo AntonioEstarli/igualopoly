@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/src/lib/supabaseClient';
 import { calculateCardImpact } from '@/src/lib/gameLogic';
 import { getImpactDetail } from '@/src/lib/gameLogic';
@@ -56,6 +56,14 @@ export default function MinisalaGame() {
 
   // Estado para controlar el paso actual de la carta (1, 2, o 3)
   const [cardStep, setCardStep] = useState(1);
+
+  // Retrasa la aparición de la carta para que se aprecie el movimiento del peón
+  const [cardVisible, setCardVisible] = useState(false);
+
+  // Versión retrasada de roomPlayers y boardPosition para sincronizar CapitalRace con la carta
+  const [displayedPlayers, setDisplayedPlayers] = useState<RoomPlayer[]>([]);
+  const playersInitialized = useRef(false);
+  const [displayedBoardPosition, setDisplayedBoardPosition] = useState(0);
 
   // Variables del jugador
   const [userVars, setUserVars] = useState<Record<string, string>>({});
@@ -302,6 +310,38 @@ export default function MinisalaGame() {
       }
     }
   }, [currentCardNumber, allCards, language]); // Se dispara cada vez que cambia el número de carta o el idioma
+
+  // Retrasa la aparición de la carta para que se aprecie el movimiento del peón
+  useEffect(() => {
+    if (!card) {
+      setCardVisible(false);
+      return;
+    }
+    const timer = setTimeout(() => setCardVisible(true), 1500);
+    return () => clearTimeout(timer);
+  }, [card]);
+
+  // Sincroniza displayedPlayers con roomPlayers: inmediato en la carga inicial, retrasado en actualizaciones
+  useEffect(() => {
+    if (roomPlayers.length === 0) {
+      playersInitialized.current = false;
+      setDisplayedPlayers([]);
+      return;
+    }
+    if (!playersInitialized.current) {
+      playersInitialized.current = true;
+      setDisplayedPlayers(roomPlayers);
+      return;
+    }
+    const timer = setTimeout(() => setDisplayedPlayers(roomPlayers), 1500);
+    return () => clearTimeout(timer);
+  }, [roomPlayers]);
+
+  // Retrasa la posición del tablero para los arquetipos del CapitalRace
+  useEffect(() => {
+    const timer = setTimeout(() => setDisplayedBoardPosition(boardPosition), 1500);
+    return () => clearTimeout(timer);
+  }, [boardPosition]);
 
   // Subscripcion para saber si es lider y la fase actual
   useEffect(() => {
@@ -590,7 +630,7 @@ export default function MinisalaGame() {
           {/* COLUMNA IZQUIERDA: CARRERA DE CAPITAL (Vertical) */}
           <div className="w-full md:w-80 h-1/3 md:h-full p-2 bg-slate-900 shadow-2xl z-10">
             <CapitalRace
-              players={roomPlayers}
+              players={displayedPlayers}
               language={language}
               systemProfiles={(isFinalSimulation ? systemProfilesFinal : systemProfiles).map(profile => ({
                 id: profile.id,
@@ -605,7 +645,7 @@ export default function MinisalaGame() {
                     margen_error: profile.margen_error,
                     responsabilidades: profile.responsabilidades
                   },
-                  boardPosition,
+                  displayedBoardPosition,
                   allCards
                 )
               }))}
@@ -695,7 +735,7 @@ export default function MinisalaGame() {
               </div>
 
               {/* CARTA (Aparece encajo del panel del dado con animación) - No mostrar en simulación final */}
-              {card && !isFinalSimulation && !isDiceRolling && (
+              {card && cardVisible && !isFinalSimulation && !isDiceRolling && (
                 <div className="absolute inset-0 flex items-start justify-center pt-[10%] pointer-events-none z-20" style={{ transform: 'scale(0.95)' }}>
                   <div
                     className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-w-xl w-full mx-4 pointer-events-auto animate-zoom-in"

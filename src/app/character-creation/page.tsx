@@ -64,7 +64,7 @@ export default function CharacterCreation() {
         alias: alias || nombre, // Si no hay alias, usamos el nombre
         skin_id: parseInt(selectedEmoji.split('-')[2]) || 1,
         variables: vars, // Guardamos el objeto JSON de variables
-        money: 0,
+        money: 10,
         minisala_id: minisalaId,
         current_phase: 'playing', // Aseguramos que empieza en fase juego
         color: selectedColor,
