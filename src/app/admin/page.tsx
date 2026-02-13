@@ -22,6 +22,13 @@ export default function AdminPanel() {
   const [editingProfileFinal, setEditingProfileFinal] = useState<any>(null);
   const [isAddingProfileFinal, setIsAddingProfileFinal] = useState(false);
   const variables = ['red', 'visibilidad', 'tiempo', 'margen_error', 'responsabilidades'];
+  const variableLabels: Record<string, string> = {
+    red: '🤝 Red',
+    visibilidad: '👀 Visibilidad',
+    tiempo: '🕒 Disponibilidad',
+    margen_error: '⚠️ Margen de error',
+    responsabilidades: '🎒 Cargas invisibles',
+  };
   // Cartas del sistema
   const [cards, setCards] = useState<any[]>([]);
   const [editingCard, setEditingCard] = useState<any>(null);
@@ -1100,11 +1107,11 @@ export default function AdminPanel() {
                     <tr>
                       <th className="p-4">Color</th>
                       <th className="p-4">Nombre</th>
-                      <th className="p-4">Red</th>
-                      <th className="p-4">Visibilidad</th>
-                      <th className="p-4">Tiempo</th>
-                      <th className="p-4">Margen Error</th>
-                      <th className="p-4">Responsabilidades</th>
+                      <th className="p-4">🤝 Red</th>
+                      <th className="p-4">👀 Visibilidad</th>
+                      <th className="p-4">🕒 Disponibilidad</th>
+                      <th className="p-4">⚠️ Margen Error</th>
+                      <th className="p-4">🎒 Cargas invisibles</th>
                       <th className="p-4">Acciones</th>
                     </tr>
                   </thead>
@@ -1200,11 +1207,11 @@ export default function AdminPanel() {
                     <tr>
                       <th className="p-4">Color</th>
                       <th className="p-4">Nombre</th>
-                      <th className="p-4">Red</th>
-                      <th className="p-4">Visibilidad</th>
-                      <th className="p-4">Tiempo</th>
-                      <th className="p-4">Margen Error</th>
-                      <th className="p-4">Responsabilidades</th>
+                      <th className="p-4">🤝 Red</th>
+                      <th className="p-4">👀 Visibilidad</th>
+                      <th className="p-4">🕒 Disponibilidad</th>
+                      <th className="p-4">⚠️ Margen Error</th>
+                      <th className="p-4">🎒 Cargas invisibles</th>
                       <th className="p-4">Acciones</th>
                     </tr>
                   </thead>
@@ -1497,7 +1504,7 @@ export default function AdminPanel() {
                   <label className="text-xs font-bold text-slate-600 uppercase mb-3 block">Variables del Arquetipo</label>
                   {variables.map(v => (
                     <div key={v} className="flex justify-between items-center bg-slate-50 p-3 rounded-xl mb-2">
-                      <span className="text-sm font-bold capitalize text-slate-600">{v.replace('_', ' ')}</span>
+                      <span className="text-sm font-bold text-slate-600">{variableLabels[v]}</span>
                       <select
                         value={editingProfile[v]}
                         onChange={(e) => setEditingProfile({ ...editingProfile, [v]: e.target.value })}
@@ -1594,7 +1601,7 @@ export default function AdminPanel() {
                   <label className="text-xs font-bold text-slate-600 uppercase mb-3 block">Variables del Arquetipo</label>
                   {variables.map(v => (
                     <div key={v} className="flex justify-between items-center bg-slate-50 p-3 rounded-xl mb-2">
-                      <span className="text-sm font-bold capitalize text-slate-600">{v.replace('_', ' ')}</span>
+                      <span className="text-sm font-bold text-slate-600">{variableLabels[v]}</span>
                       <select
                         value={editingProfileFinal[v]}
                         onChange={(e) => setEditingProfileFinal({ ...editingProfileFinal, [v]: e.target.value })}
@@ -1894,11 +1901,11 @@ export default function AdminPanel() {
                         onChange={(e) => setEditingCard({ ...editingCard, impact_variable: e.target.value })}
                         className="w-full p-3 border rounded-lg text-sm font-bold"
                       >
-                        <option value="red">Red</option>
-                        <option value="visibilidad">Visibilidad</option>
-                        <option value="tiempo">Tiempo</option>
-                        <option value="margen_error">Margen de Error</option>
-                        <option value="responsabilidades">Responsabilidades</option>
+                        <option value="red">🤝 Red</option>
+                        <option value="visibilidad">👀 Visibilidad</option>
+                        <option value="tiempo">🕒 Disponibilidad</option>
+                        <option value="margen_error">⚠️ Margen de Error</option>
+                        <option value="responsabilidades">🎒 Cargas invisibles</option>
                       </select>
                     </div>
                     <div>
@@ -1909,11 +1916,11 @@ export default function AdminPanel() {
                         className="w-full p-3 border rounded-lg text-sm font-bold"
                       >
                         <option value="">-- Ninguna --</option>
-                        <option value="red">Red</option>
-                        <option value="visibilidad">Visibilidad</option>
-                        <option value="tiempo">Tiempo</option>
-                        <option value="margen_error">Margen de Error</option>
-                        <option value="responsabilidades">Responsabilidades</option>
+                        <option value="red">🤝 Red</option>
+                        <option value="visibilidad">👀 Visibilidad</option>
+                        <option value="tiempo">🕒 Disponibilidad</option>
+                        <option value="margen_error">⚠️ Margen de Error</option>
+                        <option value="responsabilidades">🎒 Cargas invisibles</option>
                       </select>
                     </div>
                   </div>

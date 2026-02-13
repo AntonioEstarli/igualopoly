@@ -111,7 +111,7 @@ export default function CharacterCreation() {
               onClick={() => { setAvatarGender(g); setSelectedEmoji(`avatar-${g}-1`); }}
               className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all ${avatarGender === g ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-500 border'}`}
             >
-              {g === 'hombre' ? '♂ Hombre' : '♀ Mujer'}
+              {g === 'hombre' ? getTranslation('characterCreation.genderMale', language) : getTranslation('characterCreation.genderFemale', language)}
             </button>
           ))}
         </div>

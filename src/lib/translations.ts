@@ -63,6 +63,16 @@ export const translations = {
       EN: 'Customize your Avatar',
       CAT: 'Personalitza el teu Avatar'
     },
+    genderMale: {
+      ES: '♂ Hombre',
+      EN: '♂ Male',
+      CAT: '♂ Home'
+    },
+    genderFemale: {
+      ES: '♀ Mujer',
+      EN: '♀ Female',
+      CAT: '♀ Dona'
+    },
     chooseRoom: {
       ES: 'Selecciona tu Sala',
       EN: 'Select your Room',
@@ -85,29 +95,29 @@ export const translations = {
     },
     variableLabels: {
       tiempo: {
-        ES: 'Tiempo disponible',
-        EN: 'Available time',
-        CAT: 'Temps disponible'
+        ES: '🕒 Disponibilidad',
+        EN: '🕒 Availability',
+        CAT: '🕒 Disponibilitat'
       },
       visibilidad: {
-        ES: 'Visibilidad',
-        EN: 'Visibility',
-        CAT: 'Visibilitat'
+        ES: '👀 Visibilidad',
+        EN: '👀 Visibility',
+        CAT: '👀 Visibilitat'
       },
       red: {
-        ES: 'Red / Apoyos',
-        EN: 'Network / Support',
-        CAT: 'Xarxa / Suports'
+        ES: '🤝 Red / Capital social',
+        EN: '🤝 Network / Social capital',
+        CAT: '🤝 Xarxa / Capital social'
       },
       margen_error: {
-        ES: 'Margen de error',
-        EN: 'Error margin',
-        CAT: 'Marge d\'error'
+        ES: '⚠️ Margen de error',
+        EN: '⚠️ Error margin',
+        CAT: '⚠️ Marge d\'error'
       },
       responsabilidades: {
-        ES: 'Responsabilidades fuera del trabajo',
-        EN: 'Responsibilities outside work',
-        CAT: 'Responsabilitats fora de la feina'
+        ES: '🎒 Cargas invisibles',
+        EN: '🎒 Invisible burdens',
+        CAT: '🎒 Càrregues invisibles'
       }
     },
     levels: {
@@ -200,6 +210,51 @@ export const translations = {
       ES: 'El líder está decidiendo el siguiente paso...',
       EN: 'The leader is deciding the next step...',
       CAT: 'El líder està decidint el següent pas...'
+    },
+    next: {
+      ES: 'Siguiente →',
+      EN: 'Next →',
+      CAT: 'Següent →'
+    },
+    cardDidYouKnow: {
+      ES: '💡 ¿Sabías que...?',
+      EN: '💡 Did you know...?',
+      CAT: '💡 Sabies que...?'
+    },
+    cardHowAffects: {
+      ES: '👥 Cómo afecta a los perfiles',
+      EN: '👥 How it affects profiles',
+      CAT: '👥 Com afecta els perfils'
+    },
+    cardScore: {
+      ES: '🎯 Puntuación',
+      EN: '🎯 Score',
+      CAT: '🎯 Puntuació'
+    },
+    cardReflection: {
+      ES: '💬 Preguntas de reflexión',
+      EN: '💬 Reflection questions',
+      CAT: '💬 Preguntes de reflexió'
+    },
+    cardRewrite: {
+      ES: '✍️ Reescribe la regla',
+      EN: '✍️ Rewrite the rule',
+      CAT: '✍️ Reescriu la regla'
+    },
+    stadiumTitle: {
+      ES: 'Stadium: Carrera de Capital',
+      EN: 'Stadium: Capital Race',
+      CAT: 'Estadi: Cursa de Capital'
+    },
+    rollDice: {
+      ES: 'Lanzar Dado',
+      EN: 'Roll Dice',
+      CAT: 'Llançar Dau'
+    },
+    rolling: {
+      ES: 'Lanzando...',
+      EN: 'Rolling...',
+      CAT: 'Llançant...'
     },
     movementHistory: {
       ES: 'Registro de Movimientos',

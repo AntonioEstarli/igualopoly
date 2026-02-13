@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { getTranslation, Language } from '@/src/lib/translations';
 
 // Componente para renderizar los puntos de cada cara del dado
 function DiceFace({ value }: { value: number }) {
@@ -47,9 +48,10 @@ interface DiceProps {
   showButton?: boolean; // Controla si se muestra el botón de lanzar
   externalRoll?: { value: number; timestamp: number } | null; // Trigger externo para lanzar el dado con un valor específico
   broadcastRoll?: () => Promise<number>; // Función para hacer broadcast del lanzamiento (solo para el líder)
+  language?: Language;
 }
 
-export default function Dice({ onRollComplete, onRollStart, getNextValue, showButton = true, externalRoll, broadcastRoll }: DiceProps) {
+export default function Dice({ onRollComplete, onRollStart, getNextValue, showButton = true, externalRoll, broadcastRoll, language = 'ES' }: DiceProps) {
   const [isRolling, setIsRolling] = useState(false);
   const [diceValue, setDiceValue] = useState(1);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -191,7 +193,7 @@ export default function Dice({ onRollComplete, onRollStart, getNextValue, showBu
           disabled={isRolling}
           className="bg-red-600 text-white px-8 py-3 rounded-full font-black uppercase tracking-wider shadow-lg shadow-red-200 hover:bg-red-700 hover:scale-105 transition-all disabled:bg-slate-400 disabled:shadow-none disabled:scale-100"
         >
-          {isRolling ? 'Lanzando...' : 'Lanzar Dado'}
+          {isRolling ? getTranslation('game.rolling', language) : getTranslation('game.rollDice', language)}
         </button>
       )}
     </div>

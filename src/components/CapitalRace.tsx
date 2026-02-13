@@ -1,4 +1,5 @@
 'use client';
+import { getTranslation, Language } from '@/src/lib/translations';
 
 interface Participant {
   id: string;
@@ -12,16 +13,17 @@ interface CapitalRaceProps {
   players: Participant[];
   systemProfiles: Participant[];
   maxCapital?: number;
+  language?: Language;
 }
 
-export function CapitalRace({ players, systemProfiles, maxCapital = 20 }: CapitalRaceProps) {
+export function CapitalRace({ players, systemProfiles, maxCapital = 20, language = 'ES' }: CapitalRaceProps) {
   const TOTAL_LANES = 10;
   const PLAYER_LANES = 5;
 
   return (
     <div className="flex flex-col h-full bg-slate-100 p-4 rounded-2xl shadow-xl border border-slate-300 min-w-[380px]">
       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 text-center">
-        Stadium: Carrera de Capital
+        {getTranslation('game.stadiumTitle', language)}
       </h3>
 
       {/* PISTA DE ATLETISMO */}
