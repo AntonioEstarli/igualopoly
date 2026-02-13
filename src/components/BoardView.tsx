@@ -16,15 +16,37 @@ export function BoardView({ currentStep }: { currentStep: number }) {
     >
       {/* FICHA ÚNICA DE LA MINISALA */}
       <div
-          className="absolute w-[5%] h-[9%] bg-red-600 rounded-full border-2 border-white shadow-[0_0_15px_rgba(0,0,0,0.5)] transition-all duration-1000 ease-in-out flex items-center justify-center z-10"
-          style={{ 
-            left: `${pos.x}%`, 
+          className="absolute transition-all duration-1000 ease-in-out z-10 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]"
+          style={{
+            left: `${pos.x}%`,
             top: `${pos.y}%`,
-            transform: 'translate(-50%, -50%)'
+            transform: 'translate(-50%, -50%)',
+            width: '5%',
+            aspectRatio: '1 / 1.8',
           }}
         >
-          {/* Un pequeño brillo para que parezca una pieza física */}
-          <div className="w-full h-full rounded-full bg-gradient-to-tr from-black/20 to-white/30" />
+          <svg viewBox="0 0 40 72" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+            {/* Sombra interior */}
+            <defs>
+              <radialGradient id="pawnShine" cx="35%" cy="25%" r="55%">
+                <stop offset="0%" stopColor="white" stopOpacity="0.45" />
+                <stop offset="100%" stopColor="black" stopOpacity="0.25" />
+              </radialGradient>
+            </defs>
+            {/* Base */}
+            <ellipse cx="20" cy="64" rx="16" ry="3" fill="#b91c1c" />
+            {/* Cuerpo */}
+            <path d="M6 64 Q4 48 13 40 Q7 34 12 28 Q16 20 20 20 Q24 20 28 28 Q33 34 27 40 Q36 48 34 64 Z" fill="#ef4444" />
+            {/* Cabeza */}
+            <circle cx="20" cy="16" r="10" fill="#ef4444" />
+            {/* Brillo */}
+            <ellipse cx="20" cy="64" rx="16" ry="3" fill="url(#pawnShine)" />
+            <path d="M6 64 Q4 48 13 40 Q7 34 12 28 Q16 20 20 20 Q24 20 28 28 Q33 34 27 40 Q36 48 34 64 Z" fill="url(#pawnShine)" />
+            <circle cx="20" cy="16" r="10" fill="url(#pawnShine)" />
+            {/* Borde blanco */}
+            <ellipse cx="20" cy="64" rx="16" ry="3" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.6" />
+            <circle cx="20" cy="16" r="10" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.6" />
+          </svg>
         </div>
 
       {/* Logo centrado en el tablero */}
