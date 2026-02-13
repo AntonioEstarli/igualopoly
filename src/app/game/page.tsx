@@ -199,11 +199,17 @@ export default function MinisalaGame() {
 
   // Carrera de capital
   useEffect(() => {
+    if (!minisalaId) return;
+
+    let cancelled = false;
+
     const fetchRoomPlayers = async () => {
       const { data, error } = await supabase
         .from('participants')
         .select('id, alias, money, minisala_id, color, emoji') // Asegúrarse de que los nombres coinciden con la DB
         .eq('minisala_id', minisalaId);
+
+      if (cancelled) return;
 
       if (error) {
         console.error("Error cargando jugadores:", error);
@@ -217,11 +223,16 @@ export default function MinisalaGame() {
     fetchRoomPlayers();
 
     // Suscripción para ver cómo se mueven los demás en tiempo real
+    // Escucha INSERT (nuevo jugador entra) y UPDATE (dinero cambia)
     const channel = supabase.channel(`room_players_${minisalaId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'participants' }, fetchRoomPlayers)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'participants' }, fetchRoomPlayers)
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
   }, [minisalaId]);
 
   // Cargar la carta, actualizar el dinero y añadir al historial
