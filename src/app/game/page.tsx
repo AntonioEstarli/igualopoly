@@ -63,7 +63,7 @@ export default function MinisalaGame() {
   // Versión retrasada de roomPlayers y boardPosition para sincronizar CapitalRace con la carta
   const [displayedPlayers, setDisplayedPlayers] = useState<RoomPlayer[]>([]);
   const playersInitialized = useRef(false);
-  const [displayedBoardPosition, setDisplayedBoardPosition] = useState(0);
+  const [displayedCardNumber, setDisplayedCardNumber] = useState(0);
 
   // Variables del jugador
   const [userVars, setUserVars] = useState<Record<string, string>>({});
@@ -337,11 +337,11 @@ export default function MinisalaGame() {
     return () => clearTimeout(timer);
   }, [roomPlayers]);
 
-  // Retrasa la posición del tablero para los arquetipos del CapitalRace
+  // Retrasa el número de carta para sincronizar CapitalRace con la carta mostrada
   useEffect(() => {
-    const timer = setTimeout(() => setDisplayedBoardPosition(boardPosition), 2300);
+    const timer = setTimeout(() => setDisplayedCardNumber(currentCardNumber), 2300);
     return () => clearTimeout(timer);
-  }, [boardPosition]);
+  }, [currentCardNumber]);
 
   // Subscripcion para saber si es lider y la fase actual
   useEffect(() => {
@@ -646,7 +646,7 @@ export default function MinisalaGame() {
                     margen_error: profile.margen_error,
                     responsabilidades: profile.responsabilidades
                   },
-                  displayedBoardPosition,
+                  displayedCardNumber,
                   allCards
                 )
               }))}
@@ -1016,7 +1016,7 @@ export default function MinisalaGame() {
                 margen_error: profile.margen_error,
                 responsabilidades: profile.responsabilidades
               },
-              boardPosition,
+              currentCardNumber,
               allCards
             )
           }))}

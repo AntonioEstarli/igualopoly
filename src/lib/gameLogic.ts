@@ -11,6 +11,17 @@ export interface ParticipantVariables {
 }
 
 /**
+ * Invierte el nivel de una variable si es "responsabilidades" (inversa: más carga = menos privilegio)
+ */
+const applyVariableModifier = (variable: string, level: VariableLevel): VariableLevel => {
+  if (variable.toLowerCase() === 'responsabilidades') {
+    if (level === 'ALTO') return 'BAJO';
+    if (level === 'BAJO') return 'ALTO';
+  }
+  return level;
+};
+
+/**
  * Calcula el nivel combinado cuando hay dos variables de impacto
  * - Si las dos variables son ALTO → ALTO
  * - Si solo una de ellas es ALTO → MEDIO
@@ -42,8 +53,8 @@ export const calculateCardImpact = (
 
   // Caso 2: La regla depende de combinaciones (ej: Calle Promoción -> Visibilidad + Red)
   if (impactVariable2 && typeof impactVariable === 'string' && typeof impactVariable2 === 'string') {
-    const level1 = variables[impactVariable as keyof ParticipantVariables];
-    const level2 = variables[impactVariable2 as keyof ParticipantVariables];
+    const level1 = applyVariableModifier(impactVariable, variables[impactVariable as keyof ParticipantVariables]);
+    const level2 = applyVariableModifier(impactVariable2, variables[impactVariable2 as keyof ParticipantVariables]);
 
     if (level1 && level2) {
       const combinedLevel = calculateCombinedLevel(level1, level2);
@@ -93,8 +104,8 @@ export const getImpactDetail = (
 
   // Caso 2: Combinación de dos variables
   if (impactVar2) {
-    const level1 = userVars[impactVar.toLowerCase()] as VariableLevel || 'MEDIO';
-    const level2 = userVars[impactVar2.toLowerCase()] as VariableLevel || 'MEDIO';
+    const level1 = applyVariableModifier(impactVar, userVars[impactVar.toLowerCase()] as VariableLevel || 'MEDIO');
+    const level2 = applyVariableModifier(impactVar2, userVars[impactVar2.toLowerCase()] as VariableLevel || 'MEDIO');
     const combinedLevel = calculateCombinedLevel(level1, level2);
     const amount = impactValues[combinedLevel] || 0;
 
@@ -129,8 +140,8 @@ export function calculateSystemMoney(profileVars: any, currentStep: number, allC
 
       // Caso 2: Dos variables de impacto
       if (card.impact_variable_2) {
-        const level1 = (profileVars[card.impact_variable.toLowerCase()] || 'MEDIO') as VariableLevel;
-        const level2 = (profileVars[card.impact_variable_2.toLowerCase()] || 'MEDIO') as VariableLevel;
+        const level1 = applyVariableModifier(card.impact_variable, (profileVars[card.impact_variable.toLowerCase()] || 'MEDIO') as VariableLevel);
+        const level2 = applyVariableModifier(card.impact_variable_2, (profileVars[card.impact_variable_2.toLowerCase()] || 'MEDIO') as VariableLevel);
         const combinedLevel = calculateCombinedLevel(level1, level2);
         impact = card.impact_values[combinedLevel] || 0;
       } else {
