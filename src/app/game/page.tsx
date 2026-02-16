@@ -729,7 +729,7 @@ export default function MinisalaGame() {
 
               {/* CARTA (Aparece encajo del panel del dado con animación) - No mostrar en simulación final */}
               {card && cardVisible && !isFinalSimulation && !isDiceRolling && (
-                <div className="absolute inset-0 flex items-start justify-center pt-[10%] pointer-events-none z-20" style={{ transform: 'scale(0.95)' }}>
+                <div className="absolute inset-0 flex items-start justify-center pt-[11%] pointer-events-none z-20" style={{ transform: 'scale(0.95)' }}>
                   <div
                     className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-w-xl w-full mx-4 pointer-events-auto animate-zoom-in"
                     style={{
@@ -794,30 +794,80 @@ export default function MinisalaGame() {
                           <div>
                             <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardScore', language)}</h4>
                             <div className="bg-slate-50 p-4 rounded-xl space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-slate-700">
-                                  {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.ALTO', language)}
-                                </span>
-                                <span className="text-sm font-black text-green-600">
-                                  {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}€
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-slate-700">
-                                  {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.MEDIO', language)}
-                                </span>
-                                <span className="text-sm font-black text-yellow-600">
-                                  {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}€
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-slate-700">
-                                  {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.BAJO', language)}
-                                </span>
-                                <span className="text-sm font-black text-red-600">
-                                  {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}€
-                                </span>
-                              </div>
+                              {card.impact_variable_2 ? (
+                                <>
+                                  {/* Para el tier ALTO: mostrar el nivel raw real de cada variable que produce nivel efectivo ALTO
+                                      (responsabilidades se invierte: necesita raw BAJO para ser efectivo ALTO) */}
+                                  {(() => {
+                                    const rawForEffectiveAlto = (v: string) =>
+                                      v?.toLowerCase() === 'responsabilidades' ? 'BAJO' : 'ALTO';
+                                    const raw1 = rawForEffectiveAlto(card.impact_variable);
+                                    const raw2 = rawForEffectiveAlto(card.impact_variable_2);
+                                    return (
+                                      <>
+                                        <div className="flex justify-between items-start">
+                                          <div className="text-sm font-bold text-slate-700 flex-1 flex flex-col gap-0.5">
+                                            <span>
+                                              {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)}{' '}
+                                              {getTranslation(`characterCreation.levels.${raw1}`, language)}
+                                            </span>
+                                            <span>
+                                              {getTranslation(`characterCreation.variableLabels.${card.impact_variable_2}`, language)}{' '}
+                                              {getTranslation(`characterCreation.levels.${raw2}`, language)}
+                                            </span>
+                                          </div>
+                                          <span className="text-sm font-black text-green-600 ml-2 whitespace-nowrap">
+                                            {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}€
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-sm font-bold text-slate-700">
+                                            {getTranslation('game.scoreComboOneAlto', language)}
+                                          </span>
+                                          <span className="text-sm font-black text-yellow-600">
+                                            {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}€
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-sm font-bold text-slate-700">
+                                            {getTranslation('game.scoreComboNoneAlto', language)}
+                                          </span>
+                                          <span className="text-sm font-black text-red-600">
+                                            {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}€
+                                          </span>
+                                        </div>
+                                      </>
+                                    );
+                                  })()}
+                                </>
+                              ) : (
+                                <>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm font-bold text-slate-700">
+                                      {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.ALTO', language)}
+                                    </span>
+                                    <span className="text-sm font-black text-green-600">
+                                      {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}€
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm font-bold text-slate-700">
+                                      {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.MEDIO', language)}
+                                    </span>
+                                    <span className="text-sm font-black text-yellow-600">
+                                      {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}€
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm font-bold text-slate-700">
+                                      {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.BAJO', language)}
+                                    </span>
+                                    <span className="text-sm font-black text-red-600">
+                                      {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}€
+                                    </span>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </div>
 

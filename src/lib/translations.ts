@@ -305,6 +305,21 @@ export const translations = {
       ES: '¡Simulación Completa!',
       EN: 'Simulation Complete!',
       CAT: 'Simulació Completa!'
+    },
+    scoreComboAltoAlto: {
+      ES: 'Ambas en ALTO',
+      EN: 'Both at HIGH',
+      CAT: 'Ambdues en ALT'
+    },
+    scoreComboOneAlto: {
+      ES: 'Una en ALTO',
+      EN: 'One at HIGH',
+      CAT: 'Una en ALT'
+    },
+    scoreComboNoneAlto: {
+      ES: 'Ninguna en ALTO',
+      EN: 'None at HIGH',
+      CAT: 'Cap en ALT'
     }
   },
 
