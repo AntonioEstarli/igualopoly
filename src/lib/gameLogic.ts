@@ -104,14 +104,16 @@ export const getImpactDetail = (
 
   // Caso 2: Combinación de dos variables
   if (impactVar2) {
-    const level1 = applyVariableModifier(impactVar, userVars[impactVar.toLowerCase()] as VariableLevel || 'MEDIO');
-    const level2 = applyVariableModifier(impactVar2, userVars[impactVar2.toLowerCase()] as VariableLevel || 'MEDIO');
+    const rawLevel1 = userVars[impactVar.toLowerCase()] as VariableLevel || 'MEDIO';
+    const rawLevel2 = userVars[impactVar2.toLowerCase()] as VariableLevel || 'MEDIO';
+    const level1 = applyVariableModifier(impactVar, rawLevel1);
+    const level2 = applyVariableModifier(impactVar2, rawLevel2);
     const combinedLevel = calculateCombinedLevel(level1, level2);
     const amount = impactValues[combinedLevel] || 0;
 
     return {
       amount,
-      reason: reasonTemplates.combined[lang as keyof typeof reasonTemplates.combined](label(impactVar), level1, label(impactVar2), level2, combinedLevel)
+      reason: reasonTemplates.combined[lang as keyof typeof reasonTemplates.combined](label(impactVar), rawLevel1, label(impactVar2), rawLevel2, combinedLevel)
     };
   }
 
