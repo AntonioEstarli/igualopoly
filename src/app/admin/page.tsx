@@ -17,10 +17,6 @@ export default function AdminPanel() {
   const [systemProfiles, setSystemProfiles] = useState<any[]>([]); // Para guardar los perfiles de la DB
   const [editingProfile, setEditingProfile] = useState<any>(null); // Perfil que se está editando
   const [isAddingProfile, setIsAddingProfile] = useState(false); // Para crear nuevo perfil
-  // perfiles del sistema FINAL
-  const [systemProfilesFinal, setSystemProfilesFinal] = useState<any[]>([]);
-  const [editingProfileFinal, setEditingProfileFinal] = useState<any>(null);
-  const [isAddingProfileFinal, setIsAddingProfileFinal] = useState(false);
   const variables = ['red', 'visibilidad', 'tiempo', 'margen_error', 'responsabilidades'];
   const variableLabels: Record<string, string> = {
     red: '🤝 Red',
@@ -149,19 +145,6 @@ export default function AdminPanel() {
     }
   };
 
-  // Función para cargar los perfiles del sistema FINAL
-  const fetchSystemProfilesFinal = async () => {
-    const { data, error } = await supabase
-      .from('system_profiles_final')
-      .select('*')
-      .order('id', { ascending: true });
-
-    if (error) {
-      console.error("Error cargando perfiles de sistema final:", error);
-    } else {
-      setSystemProfilesFinal(data || []);
-    }
-  };
 
   // Función para cargar las cartas del sistema
   const fetchCards = async () => {
@@ -307,76 +290,6 @@ export default function AdminPanel() {
     }
   };
 
-  // Funciones para gestionar perfiles del sistema FINAL (Arquetipos FINAL)
-  const createSystemProfileFinal = async (profile: any) => {
-    const maxNum = systemProfilesFinal.reduce((max, p) => {
-      const num = parseInt(p.id.replace('p', '')) || 0;
-      return num > max ? num : max;
-    }, 0);
-    const newId = `p${maxNum + 1}`;
-
-    const { error } = await supabase
-      .from('system_profiles_final')
-      .insert([{
-        id: newId,
-        alias: profile.alias,
-        color: profile.color,
-        emoji: profile.emoji,
-        red: profile.red,
-        visibilidad: profile.visibilidad,
-        tiempo: profile.tiempo,
-        margen_error: profile.margen_error,
-        responsabilidades: profile.responsabilidades
-      }]);
-
-    if (error) {
-      alert("Error al crear arquetipo final: " + error.message);
-    } else {
-      setIsAddingProfileFinal(false);
-      setEditingProfileFinal(null);
-      fetchSystemProfilesFinal();
-    }
-  };
-
-  const updateSystemProfileFinal = async (profile: any) => {
-    const { error } = await supabase
-      .from('system_profiles_final')
-      .update({
-        alias: profile.alias,
-        color: profile.color,
-        emoji: profile.emoji,
-        red: profile.red,
-        visibilidad: profile.visibilidad,
-        tiempo: profile.tiempo,
-        margen_error: profile.margen_error,
-        responsabilidades: profile.responsabilidades
-      })
-      .eq('id', profile.id);
-
-    if (error) {
-      alert("Error al actualizar arquetipo final: " + error.message);
-    } else {
-      setEditingProfileFinal(null);
-      fetchSystemProfilesFinal();
-    }
-  };
-
-  const deleteSystemProfileFinal = async (profileId: string) => {
-    const confirmar = confirm("¿Estás seguro de eliminar este arquetipo final?");
-    if (!confirmar) return;
-
-    const { error } = await supabase
-      .from('system_profiles_final')
-      .delete()
-      .eq('id', profileId);
-
-    if (error) {
-      alert("Error al eliminar arquetipo final: " + error.message);
-    } else {
-      fetchSystemProfilesFinal();
-    }
-  };
-
   // Funciones para gestionar cartas
   const createCard = async (card: any) => {
     const { error } = await supabase
@@ -418,7 +331,8 @@ export default function AdminPanel() {
         impact_variable_2: card.impact_variable_2,
         impact_values: card.impact_values,
         color: card.color,
-        tipo: card.tipo
+        tipo: card.tipo,
+        final_simulation_values: card.final_simulation_values ?? null
       })
       .eq('id', card.id);
 
@@ -707,7 +621,6 @@ export default function AdminPanel() {
     fetchUsuarios();
 
     fetchSystemProfiles();
-    fetchSystemProfilesFinal();
     fetchCards();
     fetchDiceValues();
     fetchRooms();
@@ -894,7 +807,7 @@ export default function AdminPanel() {
                 Los jugadores mantendrán su perfil pero verán cómo habría sido el resultado con condiciones más equitativas.
               </p>
               <p className="text-[10px] text-slate-400 italic">
-                El dinero se reiniciará a 0, el peón volverá a la salida y se usarán los arquetipos de la tabla "system_profiles_final".
+                El dinero se reiniciará a 0, el peón volverá a la salida y los arquetipos usarán los valores fijos definidos en cada carta.
               </p>
             </div>
             <button
@@ -1189,106 +1102,6 @@ export default function AdminPanel() {
               </div>
             </section>
 
-            {/* SECCIÓN 2.5: PERFILES DE SISTEMA FINAL */}
-            <section className="mt-12">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  🏁 Configuración del Sistema (Arquetipos FINAL)
-                </h2>
-                <button
-                  onClick={() => {
-                    setEditingProfileFinal({
-                      alias: '',
-                      color: '#6366f1',
-                      red: 'MEDIO',
-                      visibilidad: 'MEDIO',
-                      tiempo: 'MEDIO',
-                      margen_error: 'MEDIO',
-                      responsabilidades: 'MEDIO'
-                    });
-                    setIsAddingProfileFinal(true);
-                  }}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 shadow-sm"
-                >
-                  + Nuevo Arquetipo Final
-                </button>
-              </div>
-              <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
-                    <tr>
-                      <th className="p-4">Color</th>
-                      <th className="p-4">Nombre</th>
-                      <th className="p-4">🤝 Red</th>
-                      <th className="p-4">👀 Visibilidad</th>
-                      <th className="p-4">🕒 Disponibilidad</th>
-                      <th className="p-4">⚠️ Margen Error</th>
-                      <th className="p-4">🎒 Cargas invisibles</th>
-                      <th className="p-4">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {systemProfilesFinal.map(p => (
-                      <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: p.color }} />
-                            {p.emoji && <img src={`/images/${p.emoji}.png`} className="w-8 h-8 object-contain" alt={p.emoji} />}
-                          </div>
-                        </td>
-                        <td className="p-4 font-bold text-slate-700">{p.alias}</td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${p.red === 'ALTO' ? 'bg-green-100 text-green-700' : p.red === 'MEDIO' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                            {p.red}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${p.visibilidad === 'ALTO' ? 'bg-green-100 text-green-700' : p.visibilidad === 'MEDIO' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                            {p.visibilidad}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${p.tiempo === 'ALTO' ? 'bg-green-100 text-green-700' : p.tiempo === 'MEDIO' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                            {p.tiempo}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${p.margen_error === 'ALTO' ? 'bg-green-100 text-green-700' : p.margen_error === 'MEDIO' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                            {p.margen_error}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${p.responsabilidades === 'ALTO' ? 'bg-green-100 text-green-700' : p.responsabilidades === 'MEDIO' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                            {p.responsabilidades}
-                          </span>
-                        </td>
-                        <td className="p-4 flex gap-2">
-                          <button
-                            onClick={() => {
-                              setEditingProfileFinal(p);
-                              setIsAddingProfileFinal(false);
-                            }}
-                            className="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg text-xs font-bold border border-blue-100"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => deleteSystemProfileFinal(p.id)}
-                            className="text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg text-xs font-bold border border-red-100"
-                          >
-                            Eliminar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {systemProfilesFinal.length === 0 && (
-                  <p className="p-8 text-center text-slate-400 italic">No hay arquetipos finales configurados...</p>
-                )}
-              </div>
-            </section>
-
         {/* SECCIÓN 3: CONFIGURACIÓN DE CARTAS */}
         <section className="mt-12">
           <div className="flex justify-between items-center mb-4">
@@ -1320,7 +1133,8 @@ export default function AdminPanel() {
                   impact_variable_2: '',
                   impact_values: { ALTO: 0, MEDIO: 0, BAJO: 0 },
                   color: '#6366f1',
-                  tipo: 'OPORTUNIDAD'
+                  tipo: 'OPORTUNIDAD',
+                  final_simulation_values: null
                 });
                 setIsAddingCard(true);
               }}
@@ -1560,103 +1374,6 @@ export default function AdminPanel() {
                   className="flex-1 py-3 bg-green-600 text-white rounded-2xl font-bold shadow-lg shadow-green-200 hover:bg-green-700"
                 >
                   {isAddingProfile ? 'Crear Arquetipo' : 'Guardar Cambios'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL DE EDICIÓN/CREACIÓN DE PERFILES FINAL */}
-        {editingProfileFinal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
-              <h3 className="text-2xl font-black mb-6">
-                {isAddingProfileFinal ? 'Nuevo Arquetipo Final' : `Editar ${editingProfileFinal.alias}`}
-              </h3>
-              <div className="space-y-4">
-                {/* Nombre del arquetipo */}
-                <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Nombre</label>
-                  <input
-                    type="text"
-                    value={editingProfileFinal.alias || ''}
-                    onChange={(e) => setEditingProfileFinal({ ...editingProfileFinal, alias: e.target.value })}
-                    className="w-full p-3 border rounded-lg text-sm font-bold"
-                    placeholder="Ej: Perfil Ejecutivo"
-                  />
-                </div>
-                {/* Color del arquetipo */}
-                <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Color</label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={editingProfileFinal.color || '#6366f1'}
-                      onChange={(e) => setEditingProfileFinal({ ...editingProfileFinal, color: e.target.value })}
-                      className="w-12 h-12 rounded-lg border cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={editingProfileFinal.color || '#6366f1'}
-                      onChange={(e) => setEditingProfileFinal({ ...editingProfileFinal, color: e.target.value })}
-                      className="flex-1 p-3 border rounded-lg text-sm font-mono"
-                      placeholder="#6366f1"
-                    />
-                  </div>
-                </div>
-                {/* Avatar */}
-                <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">Avatar</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {[1, 2, 3, 4, 5].map(n => {
-                      const id = `bot${n}`;
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setEditingProfileFinal({ ...editingProfileFinal, emoji: id })}
-                          className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${editingProfileFinal.emoji === id ? 'border-blue-500 scale-105 shadow-md' : 'border-transparent opacity-50'}`}
-                        >
-                          <img src={`/images/${id}.png`} className="w-full h-full object-contain" alt={id} />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                {/* Variables */}
-                <div className="border-t pt-4 mt-4">
-                  <label className="text-xs font-bold text-slate-600 uppercase mb-3 block">Variables del Arquetipo</label>
-                  {variables.map(v => (
-                    <div key={v} className="flex justify-between items-center bg-slate-50 p-3 rounded-xl mb-2">
-                      <span className="text-sm font-bold text-slate-600">{variableLabels[v]}</span>
-                      <select
-                        value={editingProfileFinal[v]}
-                        onChange={(e) => setEditingProfileFinal({ ...editingProfileFinal, [v]: e.target.value })}
-                        className="bg-white border rounded-lg px-2 py-1 text-sm font-bold"
-                      >
-                        <option value="ALTO">ALTO</option>
-                        <option value="MEDIO">MEDIO</option>
-                        <option value="BAJO">BAJO</option>
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-3 mt-8">
-                <button
-                  onClick={() => {
-                    setEditingProfileFinal(null);
-                    setIsAddingProfileFinal(false);
-                  }}
-                  className="flex-1 py-3 font-bold text-slate-400 hover:bg-slate-50 rounded-lg"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => isAddingProfileFinal ? createSystemProfileFinal(editingProfileFinal) : updateSystemProfileFinal(editingProfileFinal)}
-                  className="flex-1 py-3 bg-green-600 text-white rounded-2xl font-bold shadow-lg shadow-green-200 hover:bg-green-700"
-                >
-                  {isAddingProfileFinal ? 'Crear Arquetipo Final' : 'Guardar Cambios'}
                 </button>
               </div>
             </div>
@@ -1994,6 +1711,43 @@ export default function AdminPanel() {
                   <p className="text-xs text-slate-400 mt-2 italic">
                     Valores positivos suman dinero, negativos restan
                   </p>
+                </div>
+
+                {/* Valores fijos para la simulación final */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">
+                    Simulación Final — Valor fijo por perfil
+                  </label>
+                  <p className="text-xs text-slate-400 mb-3 italic">
+                    Si se rellena algún perfil, en la simulación final se usarán estos valores en lugar del cálculo por variables. Los perfiles sin valor suman 0.
+                  </p>
+                  <div className="space-y-2">
+                    {systemProfiles.map(profile => (
+                      <div key={profile.id} className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl">
+                        <span className="text-lg">{profile.emoji ? `${profile.emoji}` : '🤖'}</span>
+                        <span className="flex-1 text-sm font-medium text-slate-700">{profile.alias}</span>
+                        <input
+                          type="number"
+                          value={editingCard.final_simulation_values?.[profile.id] ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                            const current: Record<string, number> = { ...(editingCard.final_simulation_values || {}) };
+                            if (val === undefined) {
+                              delete current[profile.id];
+                            } else {
+                              current[profile.id] = val;
+                            }
+                            setEditingCard({
+                              ...editingCard,
+                              final_simulation_values: Object.keys(current).length > 0 ? current : null
+                            });
+                          }}
+                          className="w-20 p-2 border rounded-lg text-sm font-bold text-center"
+                          placeholder="0"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 

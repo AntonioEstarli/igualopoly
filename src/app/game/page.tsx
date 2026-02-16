@@ -19,7 +19,9 @@ interface RoomPlayer {
   alias: string;
   money: number;
   minisala_id: string;
-  color?: string; // Opcional, por si quieres asignar colores distintos
+  color?: string;
+  emoji?: string;
+  variables?: Record<string, string>;
 }
 
 export default function MinisalaGame() {
@@ -42,7 +44,6 @@ export default function MinisalaGame() {
   const [gamePhase, setGamePhase] = useState<'playing' | 'ranking' | 'voting' | 'podium' | 'final'>('playing');
   // Estado para la simulación final
   const [isFinalSimulation, setIsFinalSimulation] = useState(false);
-  const [systemProfilesFinal, setSystemProfilesFinal] = useState<any[]>([]);
   const [isAutoSimulating, setIsAutoSimulating] = useState(false); // Indica si la simulación automática está corriendo
 
   // Estado para detectar cuando el dado está girando
@@ -132,23 +133,6 @@ export default function MinisalaGame() {
     fetchSystemData();
   }, []);
 
-  // carga inicial de Perfiles de sistema FINAL (para la simulación final)
-  useEffect(() => {
-    const fetchSystemDataFinal = async () => {
-      const { data, error } = await supabase
-        .from('system_profiles_final')
-        .select('*')
-        .order('id', { ascending: true });
-
-      if (data) {
-        setSystemProfilesFinal(data);
-      } else {
-        console.error("Error cargando perfiles de sistema final:", error);
-      }
-    };
-
-    fetchSystemDataFinal();
-  }, []);
 
   // Suscripción para detectar el cambio de fase en participants (voting/podium/final)
   useEffect(() => {
@@ -214,7 +198,7 @@ export default function MinisalaGame() {
     const fetchRoomPlayers = async () => {
       const { data, error } = await supabase
         .from('participants')
-        .select('id, alias, money, minisala_id, color, emoji') // Asegúrarse de que los nombres coinciden con la DB
+        .select('id, alias, money, minisala_id, color, emoji, variables')
         .eq('minisala_id', minisalaId);
 
       if (cancelled) return;
@@ -631,9 +615,16 @@ export default function MinisalaGame() {
           {/* COLUMNA IZQUIERDA: CARRERA DE CAPITAL (Vertical) */}
           <div className="w-full md:w-80 h-1/3 md:h-full p-2 bg-slate-900 shadow-2xl z-10">
             <CapitalRace
-              players={displayedPlayers}
+              players={displayedPlayers.map(player => isFinalSimulation ? {
+                ...player,
+                money: calculateSystemMoney(
+                  player.variables || {},
+                  displayedCardNumber,
+                  allCards
+                )
+              } : player)}
               language={language}
-              systemProfiles={(isFinalSimulation ? systemProfilesFinal : systemProfiles).map(profile => ({
+              systemProfiles={systemProfiles.map(profile => ({
                 id: profile.id,
                 alias: profile.alias,
                 color: profile.color,
@@ -647,7 +638,8 @@ export default function MinisalaGame() {
                     responsabilidades: profile.responsabilidades
                   },
                   displayedCardNumber,
-                  allCards
+                  allCards,
+                  { isFinalSimulation, profileId: profile.id }
                 )
               }))}
             />
@@ -1003,7 +995,7 @@ export default function MinisalaGame() {
         /* FASE 2: RANKING */
         <RankingView
           players={roomPlayers}
-          systemProfiles={(isFinalSimulation ? systemProfilesFinal : systemProfiles).map(profile => ({
+          systemProfiles={systemProfiles.map(profile => ({
             id: profile.id,
             alias: profile.alias,
             color: profile.color,
