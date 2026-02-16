@@ -128,14 +128,31 @@ export const getImpactDetail = (
 /**
  * Calcula el capital acumulado de un perfil basado en sus variables
  * y el histórico de cartas jugadas hasta el momento.
+ *
+ * En la simulación final (isFinalSimulation=true) usa los valores fijos
+ * definidos por carta en `final_simulation_values[profileId]`, si existen.
  */
-export function calculateSystemMoney(profileVars: any, currentStep: number, allCards: any[]) {
+export function calculateSystemMoney(
+  profileVars: any,
+  currentStep: number,
+  allCards: any[],
+  options?: { isFinalSimulation?: boolean; profileId?: string }
+) {
   let total = 10; // Capital inicial igual que los jugadores
 
   // Recorremos las cartas desde la primera hasta la actual
   for (let i = 0; i < currentStep; i++) {
     const card = allCards[i];
-    if (card && card.impact_variable && card.impact_values) {
+    if (!card) continue;
+
+    // Simulación final: usar valor fijo por perfil (0 si no está definido), nunca el cálculo por variables
+    if (options?.isFinalSimulation && options?.profileId) {
+      const fsv = card.final_simulation_values;
+      total += (fsv && typeof fsv === 'object' ? fsv[options.profileId] ?? 0 : 0);
+      continue;
+    }
+
+    if (card.impact_variable && card.impact_values) {
       let impact: number;
 
       // Caso 2: Dos variables de impacto
