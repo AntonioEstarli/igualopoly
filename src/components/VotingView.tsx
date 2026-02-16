@@ -15,7 +15,7 @@ const TIPO_CONFIG: Record<Tipo, { color: string; bg: string; border: string; act
 
 const MAX_VOTES = 3;
 
-export function VotingView({ minisalaId, participantId }: { minisalaId: string, participantId: string }) {
+export function VotingView({ minisalaId, participantId, isLeader = false }: { minisalaId: string, participantId: string, isLeader?: boolean }) {
   const [proposals, setProposals] = useState<any[]>([]);
   const [userVotes, setUserVotes] = useState<any[]>([]);
   const [language, setLanguage] = useState<Language>('ES');
@@ -97,7 +97,11 @@ export function VotingView({ minisalaId, participantId }: { minisalaId: string, 
         <h2 className="text-2xl font-black text-slate-800 uppercase italic">
           {getTranslation('voting.title', language)}
         </h2>
-        <p className="text-slate-500 text-sm">{getTranslation('voting.subtitle', language)}</p>
+        <p className="text-slate-500 text-sm">
+          {isLeader
+            ? getTranslation('voting.subtitle', language)
+            : getTranslation('voting.subtitleObserver', language)}
+        </p>
         <div className="mt-2 flex justify-center gap-1">
           {[...Array(MAX_VOTES)].map((_, i) => (
             <div key={i} className={`w-3 h-3 rounded-full transition-colors ${i < votesInTipo ? config.dot : 'bg-slate-200'}`} />
@@ -115,11 +119,14 @@ export function VotingView({ minisalaId, participantId }: { minisalaId: string, 
             return (
               <button
                 key={p.id}
-                onClick={() => handleVote(p.id)}
+                onClick={() => isLeader && handleVote(p.id)}
+                disabled={!isLeader}
                 className={`w-full flex justify-between items-center p-4 rounded-2xl border-2 transition-all ${
                   isSelected
                     ? 'border-red-500 bg-red-50 shadow-inner scale-[0.98]'
-                    : 'border-slate-100 bg-white hover:border-slate-300 shadow-sm'
+                    : isLeader
+                      ? 'border-slate-100 bg-white hover:border-slate-300 shadow-sm'
+                      : 'border-slate-100 bg-white cursor-default'
                 }`}
               >
                 <div className="flex gap-4 items-center">
