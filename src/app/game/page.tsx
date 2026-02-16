@@ -706,7 +706,7 @@ export default function MinisalaGame() {
                             onRollComplete={(val) => advanceGame(val)}
                             onRollStart={handleDiceRollStart}
                             getNextValue={getNextDiceValue}
-                            showButton={isLeader}
+                            showButton={isLeader && !card}
                             externalRoll={externalDiceRoll}
                             broadcastRoll={isLeader ? handleLeaderDiceRoll : undefined}
                             language={language}
