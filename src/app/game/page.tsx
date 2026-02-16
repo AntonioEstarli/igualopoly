@@ -108,6 +108,9 @@ export default function MinisalaGame() {
         // Sincronizar el lanzamiento del dado para todos los jugadores
         setExternalDiceRoll({ value: payload.diceValue, timestamp: payload.timestamp });
       })
+      .on('broadcast', { event: 'dismiss_card' }, () => {
+        setCard(null);
+      })
       .subscribe();
 
     return () => {
@@ -136,9 +139,10 @@ export default function MinisalaGame() {
 
   // Suscripción para detectar el cambio de fase en participants (voting/podium/final)
   useEffect(() => {
+    if (!minisalaId) return;
     const channel = supabase.channel(`phase_sync_${minisalaId}`)
       .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'participants' },
+        { event: 'UPDATE', schema: 'public', table: 'participants', filter: `minisala_id=eq.${minisalaId}` },
         (payload) => {
           if (payload.new.current_phase) {
             const newPhase = payload.new.current_phase;
@@ -217,8 +221,8 @@ export default function MinisalaGame() {
     // Suscripción para ver cómo se mueven los demás en tiempo real
     // Escucha INSERT (nuevo jugador entra) y UPDATE (dinero cambia)
     const channel = supabase.channel(`room_players_${minisalaId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'participants' }, fetchRoomPlayers)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'participants' }, fetchRoomPlayers)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'participants', filter: `minisala_id=eq.${minisalaId}` }, fetchRoomPlayers)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'participants', filter: `minisala_id=eq.${minisalaId}` }, fetchRoomPlayers)
       .subscribe();
 
     return () => {
@@ -369,14 +373,18 @@ export default function MinisalaGame() {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'participants'
-          // Eliminamos el filtro 'filter' aquí momentáneamente si da problemas
+          table: 'participants',
+          filter: `id=eq.${usuarioId}`
         },
         (payload) => {
           // Solo actualizamos si el ID coincide
           if (payload.new.id === usuarioId || payload.new.id == usuarioId) {
-            console.log("Nuevo estado de líder recibido:", payload.new.is_leader);
             setIsLeader(payload.new.is_leader);
+            // Si el admin ha movido al jugador a otra sala, migramos todos los canales
+            if (payload.new.minisala_id && payload.new.minisala_id !== payload.old?.minisala_id) {
+              sessionStorage.setItem('minisala_id', payload.new.minisala_id);
+              setMinisalaId(payload.new.minisala_id);
+            }
           }
         }
       )
@@ -386,6 +394,16 @@ export default function MinisalaGame() {
   }, []);
 
   // Ya no se usa MAX_CARDS: ahora el fin de partida se determina cuando no hay más cartas disponibles (allCards.length)
+
+  // Función para que el líder descarte la carta y notifique a todos los de la sala
+  const leaderDismissCard = async () => {
+    await supabase.channel(`room:${minisalaId}`).send({
+      type: 'broadcast',
+      event: 'dismiss_card',
+      payload: {}
+    });
+    setCard(null);
+  };
 
   // Función para manejar el inicio del lanzamiento del dado
   const handleDiceRollStart = () => {
@@ -910,55 +928,39 @@ export default function MinisalaGame() {
                           {/* Propuesta */}
                           <div className="pt-2 border-t border-slate-100">
                             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">{getTranslation('game.proposeChange', language)}</h4>
-                            {isLeader ? (
-                              <>
-                                {!hasSubmittedProposal ? (
-                                  <div className="space-y-3">
-                                    <textarea
-                                      value={proposalText}
-                                      onChange={(e) => setProposalText(e.target.value)}
-                                      placeholder={getTranslation('game.proposalPlaceholder', language)}
-                                      className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
-                                    />
-                                    {proposalText.trim() ? (
-                                      <button
-                                        onClick={submitProposal}
-                                        disabled={isSubmitting}
-                                        className="w-full py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
-                                      >
-                                        {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
-                                      </button>
-                                    ) : (
-                                      <button
-                                        onClick={() => setCard(null)}
-                                        className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
-                                      >
-                                        {getTranslation('game.next', language)}
-                                      </button>
-                                    )}
-                                  </div>
+                            {!hasSubmittedProposal ? (
+                              <div className="space-y-3">
+                                <textarea
+                                  value={proposalText}
+                                  onChange={(e) => setProposalText(e.target.value)}
+                                  placeholder={getTranslation('game.proposalPlaceholder', language)}
+                                  className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
+                                />
+                                {proposalText.trim() ? (
+                                  <button
+                                    onClick={submitProposal}
+                                    disabled={isSubmitting}
+                                    className="w-full py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
+                                  >
+                                    {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
+                                  </button>
                                 ) : (
-                                  <div className="space-y-3">
-                                    <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
-                                      <span className="text-2xl">✅</span>
-                                      <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
-                                    </div>
-                                    <button
-                                      onClick={() => setCard(null)}
-                                      className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
-                                    >
-                                      {getTranslation('game.next', language)}
-                                    </button>
-                                  </div>
+                                  <button
+                                    onClick={isLeader ? leaderDismissCard : () => setCard(null)}
+                                    className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                                  >
+                                    {getTranslation('game.next', language)}
+                                  </button>
                                 )}
-                              </>
+                              </div>
                             ) : (
                               <div className="space-y-3">
-                                <p className="text-xs text-slate-400 italic text-center py-2">
-                                  {getTranslation('game.onlyLeaderPropose', language)}
-                                </p>
+                                <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
+                                  <span className="text-2xl">✅</span>
+                                  <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
+                                </div>
                                 <button
-                                  onClick={() => setCard(null)}
+                                  onClick={isLeader ? leaderDismissCard : () => setCard(null)}
                                   className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
                                 >
                                   {getTranslation('game.next', language)}
@@ -1086,6 +1088,7 @@ export default function MinisalaGame() {
           <VotingView
             minisalaId={minisalaId}
             participantId={sessionStorage.getItem('participant_id') || ''}
+            isLeader={isLeader}
           />
         </div>
 

@@ -340,6 +340,11 @@ export const translations = {
       EN: 'Vote for the ideas you think would improve the system',
       CAT: 'Vota per les idees que creus que millorarien el sistema'
     },
+    subtitleObserver: {
+      ES: 'Solo el líder puede votar en nombre de la sala',
+      EN: 'Only the leader can vote on behalf of the room',
+      CAT: 'Només el líder pot votar en nom de la sala'
+    },
     yourVotes: {
       ES: 'Tus votos',
       EN: 'Your votes',

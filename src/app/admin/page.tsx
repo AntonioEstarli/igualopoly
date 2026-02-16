@@ -853,11 +853,9 @@ export default function AdminPanel() {
                           onChange={(e) => reasignarSala(u.id, e.target.value)}
                           className="bg-slate-100 border-none text-xs font-bold rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
                         >
-                          <option value="sala_1">Sala 1</option>
-                          <option value="sala_2">Sala 2</option>
-                          <option value="sala_3">Sala 3</option>
-                          <option value="sala_4">Sala 4</option>
-                          <option value="sala_5">Sala 5</option>
+                          {rooms.map(room => (
+                            <option key={room.id} value={room.id}>{room.name || room.id}</option>
+                          ))}
                         </select>
                       </td>
                       <td className="p-4 flex gap-2">
