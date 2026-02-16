@@ -417,7 +417,8 @@ export default function AdminPanel() {
         impact_variable: card.impact_variable,
         impact_variable_2: card.impact_variable_2,
         impact_values: card.impact_values,
-        color: card.color
+        color: card.color,
+        tipo: card.tipo
       })
       .eq('id', card.id);
 
@@ -1318,7 +1319,8 @@ export default function AdminPanel() {
                   impact_variable: 'red',
                   impact_variable_2: '',
                   impact_values: { ALTO: 0, MEDIO: 0, BAJO: 0 },
-                  color: '#6366f1'
+                  color: '#6366f1',
+                  tipo: 'OPORTUNIDAD'
                 });
                 setIsAddingCard(true);
               }}
@@ -1333,6 +1335,7 @@ export default function AdminPanel() {
                 <tr>
                   <th className="p-4">ID</th>
                   <th className="p-4">Color</th>
+                  <th className="p-4">Tipo</th>
                   <th className="p-4">Nombre</th>
                   <th className="p-4">Situación</th>
                   <th className="p-4">Variable Impacto</th>
@@ -1346,8 +1349,21 @@ export default function AdminPanel() {
                     <td className="p-4">
                       <div className="w-8 h-8 rounded-lg border-2 border-white shadow-sm" style={{ backgroundColor: card.color || '#6366f1' }} />
                     </td>
-                    <td className="p-4 font-bold text-slate-700">{card.name_es}</td>
-                    <td className="p-4 text-sm text-slate-600 max-w-md truncate">{card.situation_es}</td>
+                    <td className="p-4">
+                      {card.tipo && (
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-bold ${
+                          card.tipo === 'OPORTUNIDAD' ? 'bg-green-100 text-green-700' :
+                          card.tipo === 'COSTE INVISIBLE' ? 'bg-orange-100 text-orange-700' :
+                          card.tipo === 'SISTEMA' ? 'bg-blue-100 text-blue-700' :
+                          card.tipo === 'PRIVILEGIO' ? 'bg-purple-100 text-purple-700' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {card.tipo}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4 font-bold text-slate-700 max-w-[8rem] leading-snug">{card.name_es}</td>
+                    <td className="p-4 text-sm text-slate-600 max-w-[14rem] truncate">{card.situation_es}</td>
                     <td className="p-4">
                       <div className="flex flex-col gap-1">
                         <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">
@@ -1690,6 +1706,21 @@ export default function AdminPanel() {
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* Tipo de carta */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">Tipo de carta</label>
+                  <select
+                    value={editingCard.tipo || 'OPORTUNIDAD'}
+                    onChange={(e) => setEditingCard({ ...editingCard, tipo: e.target.value })}
+                    className="w-full p-3 border rounded-lg text-sm font-bold"
+                  >
+                    <option value="OPORTUNIDAD">OPORTUNIDAD</option>
+                    <option value="COSTE INVISIBLE">COSTE INVISIBLE</option>
+                    <option value="SISTEMA">SISTEMA</option>
+                    <option value="PRIVILEGIO">PRIVILEGIO</option>
+                  </select>
                 </div>
 
                 {/* Color de la carta */}
