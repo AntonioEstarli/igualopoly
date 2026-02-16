@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect, useRef } from 'react';
 import { getTranslation, Language } from '@/src/lib/translations';
 
 interface Participant {
@@ -16,19 +17,98 @@ interface CapitalRaceProps {
   language?: Language;
 }
 
+interface Particle {
+  id: number;
+  emoji: string;
+  laneIdx: number;
+  positionPercent: number;
+  type: 'advance' | 'retreat';
+  txEnd: number;
+  ty: number;
+  rot: number;
+  delay: number;
+  bottomOffset: number;
+}
+
+const TOTAL_LANES = 10;
+const PLAYER_LANES = 5;
+const ADVANCE_EMOJIS = ['🎉', '✨', '⭐', '🎊', '💫', '🌟'];
+const RETREAT_EMOJIS = ['💸', '💵', '🪙', '💰', '💸', '💵'];
+
+let particleId = 0;
+
 export function CapitalRace({ players, systemProfiles, maxCapital = 20, language = 'ES' }: CapitalRaceProps) {
-  const TOTAL_LANES = 10;
-  const PLAYER_LANES = 5;
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const prevMoney = useRef<Map<string, number>>(new Map());
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    const all = [
+      ...players.map((p, i) => ({ p, laneIdx: i % PLAYER_LANES })),
+      ...systemProfiles.map((p, i) => ({ p, laneIdx: PLAYER_LANES + i })),
+    ];
+
+    if (!initialized.current) {
+      all.forEach(({ p }) => prevMoney.current.set(p.id, p.money));
+      initialized.current = true;
+      return;
+    }
+
+    const newParticles: Particle[] = [];
+
+    all.forEach(({ p, laneIdx }) => {
+      const prev = prevMoney.current.get(p.id);
+      prevMoney.current.set(p.id, p.money);
+      if (prev === undefined || p.money === prev) return;
+
+      const type = p.money > prev ? 'advance' : 'retreat';
+      const emojis = type === 'advance' ? ADVANCE_EMOJIS : RETREAT_EMOJIS;
+      const pos = Math.max(0, Math.min((p.money / maxCapital) * 90, 95));
+
+      for (let k = 0; k < 6; k++) {
+        newParticles.push({
+          id: particleId++,
+          emoji: emojis[k],
+          laneIdx,
+          positionPercent: pos,
+          type,
+          txEnd: (Math.random() - 0.5) * 44,
+          ty: type === 'advance' ? -(42 + Math.random() * 28) : (22 + Math.random() * 28),
+          rot: (Math.random() - 0.5) * 70,
+          delay: k * 0.07,
+          bottomOffset: type === 'advance' ? 30 : -20,
+        });
+      }
+    });
+
+    if (!newParticles.length) return;
+
+    setParticles(prev => [...prev, ...newParticles]);
+    const ids = new Set(newParticles.map(p => p.id));
+    setTimeout(() => setParticles(prev => prev.filter(p => !ids.has(p.id))), 2200);
+  }, [players, systemProfiles, maxCapital]);
 
   return (
     <div className="flex flex-col h-full bg-slate-100 p-4 rounded-2xl shadow-xl border border-slate-300 min-w-[380px]">
+      <style>{`
+        @keyframes particle-up {
+          0%   { opacity: 1; transform: translate(0, 0) scale(1.4); }
+          100% { opacity: 0; transform: translate(var(--tx-end), var(--ty)) scale(0.5) rotate(var(--rot)); }
+        }
+        @keyframes particle-down {
+          0%   { opacity: 1; transform: translate(0, 0) scale(1.4); }
+          60%  { opacity: 0.9; }
+          100% { opacity: 0; transform: translate(var(--tx-end), var(--ty)) scale(0.5) rotate(var(--rot)); }
+        }
+      `}</style>
+
       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 text-center">
         {getTranslation('game.stadiumTitle', language)}
       </h3>
 
       {/* PISTA DE ATLETISMO */}
       <div className="flex-1 flex relative bg-orange-700 rounded-sm p-1 border-x-4 border-white shadow-inner overflow-hidden">
-        
+
         {/* LÍNEAS DE CALLE (Pintura blanca de pista) */}
         <div className="absolute inset-1 flex pointer-events-none">
           {Array.from({ length: TOTAL_LANES }).map((_, i) => (
@@ -86,7 +166,7 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20, language
           }
 
           // Posicionamiento: 0€ está en la línea de salida (bottom 40px aprox)
-          const positionPercent = participant 
+          const positionPercent = participant
             ? Math.max(0, Math.min((participant.money / maxCapital) * 90, 95))
             : 0;
 
@@ -99,11 +179,11 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20, language
 
               {/* ATLETA */}
               {participant && (
-                <div 
-                  className="absolute transition-all duration-1000 ease-in-out z-20 flex flex-col items-center"
-                  style={{ 
-                    bottom: `calc(${positionPercent}% + 10px)`, 
-                    transform: 'translateY(50%)' 
+                <div
+                  className="absolute transition-all duration-[2000ms] ease-in-out z-20 flex flex-col items-center"
+                  style={{
+                    bottom: `calc(${positionPercent}% + 10px)`,
+                    transform: 'translateY(50%)'
                   }}
                 >
                   {/* Alias flotante */}
@@ -141,6 +221,25 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20, language
             </div>
           );
         })}
+
+        {/* PARTÍCULAS DE ANIMACIÓN */}
+        {particles.map(particle => (
+          <div
+            key={particle.id}
+            className="absolute z-30 pointer-events-none select-none text-sm leading-none"
+            style={{
+              left: `calc(${(particle.laneIdx + 0.5) * (100 / TOTAL_LANES)}%)`,
+              bottom: `calc(${particle.positionPercent}% + ${particle.bottomOffset}px)`,
+              transform: 'translateX(-50%)',
+              '--tx-end': `${particle.txEnd}px`,
+              '--ty': `${particle.ty}px`,
+              '--rot': `${particle.rot}deg`,
+              animation: `${particle.type === 'advance' ? 'particle-up' : 'particle-down'} 1.5s ${particle.delay}s ease-out forwards`,
+            } as React.CSSProperties}
+          >
+            {particle.emoji}
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -187,15 +187,13 @@ export default function Dice({ onRollComplete, onRollStart, getNextValue, showBu
       </div>
 
       {/* Botón de lanzar - solo visible para el líder */}
-      {showButton && (
-        <button
-          onClick={rollDice}
-          disabled={isRolling}
-          className="bg-red-600 text-white px-8 py-3 rounded-full font-black uppercase tracking-wider shadow-lg shadow-red-200 hover:bg-red-700 hover:scale-105 transition-all disabled:bg-slate-400 disabled:shadow-none disabled:scale-100"
-        >
-          {isRolling ? getTranslation('game.rolling', language) : getTranslation('game.rollDice', language)}
-        </button>
-      )}
+      <button
+        onClick={rollDice}
+        disabled={isRolling || !showButton}
+        className={`bg-red-600 text-white px-8 py-3 rounded-full font-black uppercase tracking-wider shadow-lg shadow-red-200 hover:bg-red-700 hover:scale-105 transition-all disabled:bg-slate-400 disabled:shadow-none disabled:scale-100 ${!showButton ? 'invisible' : ''}`}
+      >
+        {isRolling ? getTranslation('game.rolling', language) : getTranslation('game.rollDice', language)}
+      </button>
     </div>
   );
 }
