@@ -181,6 +181,11 @@ export const translations = {
       EN: 'Proposal sent successfully',
       CAT: 'Proposta enviada amb èxit'
     },
+    onlyLeaderPropose: {
+      ES: 'Solo el líder de tu sala puede proponer una nueva regla.',
+      EN: 'Only your room leader can propose a new rule.',
+      CAT: 'Només el líder de la teva sala pot proposar una nova regla.'
+    },
     waitingLeader: {
       ES: 'Esperando al líder para empezar...',
       EN: 'Waiting for the leader to start...',
