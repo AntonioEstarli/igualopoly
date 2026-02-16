@@ -910,37 +910,53 @@ export default function MinisalaGame() {
                           {/* Propuesta */}
                           <div className="pt-2 border-t border-slate-100">
                             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">{getTranslation('game.proposeChange', language)}</h4>
-                            {!hasSubmittedProposal ? (
-                              <div className="space-y-3">
-                                <textarea
-                                  value={proposalText}
-                                  onChange={(e) => setProposalText(e.target.value)}
-                                  placeholder={getTranslation('game.proposalPlaceholder', language)}
-                                  className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
-                                />
-                                {proposalText.trim() ? (
-                                  <button
-                                    onClick={submitProposal}
-                                    disabled={isSubmitting}
-                                    className="w-full py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
-                                  >
-                                    {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
-                                  </button>
+                            {isLeader ? (
+                              <>
+                                {!hasSubmittedProposal ? (
+                                  <div className="space-y-3">
+                                    <textarea
+                                      value={proposalText}
+                                      onChange={(e) => setProposalText(e.target.value)}
+                                      placeholder={getTranslation('game.proposalPlaceholder', language)}
+                                      className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
+                                    />
+                                    {proposalText.trim() ? (
+                                      <button
+                                        onClick={submitProposal}
+                                        disabled={isSubmitting}
+                                        className="w-full py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
+                                      >
+                                        {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => setCard(null)}
+                                        className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                                      >
+                                        {getTranslation('game.next', language)}
+                                      </button>
+                                    )}
+                                  </div>
                                 ) : (
-                                  <button
-                                    onClick={() => setCard(null)}
-                                    className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
-                                  >
-                                    {getTranslation('game.next', language)}
-                                  </button>
+                                  <div className="space-y-3">
+                                    <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
+                                      <span className="text-2xl">✅</span>
+                                      <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
+                                    </div>
+                                    <button
+                                      onClick={() => setCard(null)}
+                                      className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                                    >
+                                      {getTranslation('game.next', language)}
+                                    </button>
+                                  </div>
                                 )}
-                              </div>
+                              </>
                             ) : (
                               <div className="space-y-3">
-                                <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
-                                  <span className="text-2xl">✅</span>
-                                  <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
-                                </div>
+                                <p className="text-xs text-slate-400 italic text-center py-2">
+                                  {getTranslation('game.onlyLeaderPropose', language)}
+                                </p>
                                 <button
                                   onClick={() => setCard(null)}
                                   className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"

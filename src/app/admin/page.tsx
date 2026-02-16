@@ -728,265 +728,256 @@ export default function AdminPanel() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
-        {/* SECCIÓN NUEVA: CONFIGURACIÓN DE PARTIDA */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100">
-          <h2 className="font-bold mb-4 text-red-600 flex items-center gap-2">
-            🚀 Nueva Partida
-          </h2>
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs text-slate-500 font-bold uppercase">Número de salas</label>
-              <input
-                type="number"
-                value={numSalas}
-                onChange={(e) => setNumSalas(parseInt(e.target.value))}
-                min="1" max="20"
-                className="w-full mt-1 p-2 border rounded-lg font-bold"
-              />
+          {/* 🚀 Nueva Partida — línea completa */}
+          <div className="md:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-red-100">
+            <h2 className="font-bold mb-4 text-red-600 flex items-center gap-2">
+              🚀 Nueva Partida
+            </h2>
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+              <div>
+                <label className="text-xs text-slate-500 font-bold uppercase">Número de salas</label>
+                <input
+                  type="number"
+                  value={numSalas}
+                  onChange={(e) => setNumSalas(parseInt(e.target.value))}
+                  min="1" max="20"
+                  className="w-full mt-1 p-2 border rounded-lg font-bold"
+                />
+              </div>
+              <button
+                onClick={iniciarNuevaPartida}
+                disabled={isResetting}
+                className={`py-3 px-8 rounded-xl font-black text-white shadow-lg transition-all ${
+                  isResetting ? 'bg-slate-400' : 'bg-red-600 hover:bg-red-700 active:scale-95'
+                }`}
+              >
+                {isResetting ? 'Limpiando...' : 'COMENZAR NUEVO JUEGO'}
+              </button>
+              <p className="text-[10px] text-slate-400 italic">
+                Borrará jugadores, votos y propuestas actuales.
+              </p>
             </div>
+          </div>
+
+          {/* 🏠 Salas */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              🏠 Salas
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {rooms.map(room => {
+                const phaseColors: Record<string, string> = {
+                  playing: 'bg-green-100 text-green-700 border-green-200',
+                  ranking: 'bg-purple-100 text-purple-700 border-purple-200',
+                  voting: 'bg-blue-100 text-blue-700 border-blue-200',
+                  podium: 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                };
+                const phaseLabels: Record<string, string> = {
+                  playing: '▶️ Jugando',
+                  ranking: '🏆 Ranking',
+                  voting: '🗳️ Votando',
+                  podium: '🥇 Podio'
+                };
+                const phaseClass = phaseColors[room.current_phase] || 'bg-slate-100 text-slate-600 border-slate-200';
+                const phaseLabel = phaseLabels[room.current_phase] || room.current_phase;
+
+                return (
+                  <div
+                    key={room.id}
+                    className="bg-white p-3 rounded-xl border shadow-sm flex flex-col items-center gap-2"
+                  >
+                    <span className="font-black text-slate-700 text-sm">{room.name}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${phaseClass}`}>
+                      {phaseLabel}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {rooms.length === 0 && (
+              <div className="bg-slate-50 p-8 rounded-xl text-center">
+                <p className="text-slate-400 italic">No hay salas configuradas. Crea una nueva partida.</p>
+              </div>
+            )}
+          </div>
+
+          {/* 👥 Participantes en Vivo */}
+          <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              👥 Participantes en Vivo
+            </h2>
+            <div className="rounded-xl overflow-hidden border">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
+                  <tr>
+                    <th className="p-4">Alias</th>
+                    <th className="p-4">Capital Actual</th>
+                    <th className="p-4">Sala Actual</th>
+                    <th className="p-4">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {usuarios.map(u => (
+                    <tr key={u.id} className="hover:bg-slate-50 transition-colors animate-fade-in">
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm overflow-hidden"
+                            style={{
+                              backgroundColor: u.color + '20',
+                              border: `2px solid ${u.color}`
+                            }}
+                          >
+                            {u.emoji?.startsWith('avatar-')
+                              ? <img src={`/images/${u.emoji}.png`} className="w-full h-full object-contain p-0.5" alt="avatar" />
+                              : (u.emoji || '👤')
+                            }
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-700">{u.alias}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-block px-3 py-1 rounded-full font-black text-sm ${u.money >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                          {u.money} €
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <select
+                          value={u.minisala_id}
+                          onChange={(e) => reasignarSala(u.id, e.target.value)}
+                          className="bg-slate-100 border-none text-xs font-bold rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                        >
+                          <option value="sala_1">Sala 1</option>
+                          <option value="sala_2">Sala 2</option>
+                          <option value="sala_3">Sala 3</option>
+                          <option value="sala_4">Sala 4</option>
+                          <option value="sala_5">Sala 5</option>
+                        </select>
+                      </td>
+                      <td className="p-4 flex gap-2">
+                        <button
+                          onClick={() => asignarLider(u.id, u.minisala_id)}
+                          className={`px-4 py-1.5 rounded-full text-xs font-black transition-all shadow-sm ${u.is_leader
+                            ? 'bg-yellow-400 text-yellow-900 ring-2 ring-yellow-200'
+                            : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                            }`}
+                        >
+                          {u.is_leader ? '🌟 LÍDER' : 'HACER LÍDER'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {usuarios.length === 0 && (
+                <p className="p-8 text-center text-slate-400 italic">No hay jugadores conectados...</p>
+              )}
+            </div>
+          </div>
+
+          {/* Banco de Reglas Sugeridas — línea completa */}
+          <div className="md:col-span-3 bg-white p-6 rounded-xl shadow-sm border">
+            <h2 className="font-bold mb-4 border-b pb-2 text-slate-600">Banco de Reglas Sugeridas</h2>
+            <div className="max-h-60 overflow-y-auto space-y-2">
+              {propuestas.length > 0 ? propuestas.map((p) => (
+                <div key={p.id} className="p-3 bg-slate-50 border-l-4 border-slate-400 rounded flex justify-between items-center">
+                  <span className="text-sm italic">"{p.proposal_text}"</span>
+                  <span className="text-xs font-black bg-white px-2 py-1 rounded shadow-sm text-slate-700">
+                    {p.votes} VOTOS
+                  </span>
+                </div>
+              )) : <p className="text-slate-400 text-sm italic py-4">Esperando propuestas...</p>}
+            </div>
+          </div>
+
+          {/* 🗳️ Activar Voto */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100">
+            <h2 className="font-bold mb-4 text-purple-600 flex items-center gap-2">
+              🗳️ Activar Voto
+            </h2>
             <button
-              onClick={iniciarNuevaPartida}
-              disabled={isResetting}
-              className={`w-full py-3 rounded-xl font-black text-white shadow-lg transition-all ${
-                isResetting ? 'bg-slate-400' : 'bg-red-600 hover:bg-red-700 active:scale-95'
-              }`}
+              onClick={() => activateGlobalVoting()}
+              className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-purple-700 transition-all active:scale-95 flex items-center justify-center gap-3"
             >
-              {isResetting ? 'Limpiando...' : 'COMENZAR NUEVO JUEGO'}
+              <span>ACTIVAR VOTACIÓN</span>
+              <span className="text-2xl">🗳️</span>
             </button>
-            <p className="text-[10px] text-slate-400 italic text-center">
-              Borrará jugadores, votos y propuestas actuales.
+            <p className="text-center text-[10px] text-slate-400 mt-2 italic">
+              Verifica que todas las salas estén en "Ranking" antes de activar.
             </p>
           </div>
-        </div>
 
-        {/* Activar Votación Global */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100">
-          <h2 className="font-bold mb-4 text-purple-600 flex items-center gap-2">
-            🗳️ Activar Voto
-          </h2>
-          <button
-            onClick={() => activateGlobalVoting()}
-            className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-purple-700 transition-all active:scale-95 flex items-center justify-center gap-3"
-          >
-            <span>ACTIVAR VOTACIÓN</span>
-            <span className="text-2xl">🗳️</span>
-          </button>
-          <p className="text-center text-[10px] text-slate-400 mt-2 italic">
-            Verifica que todas las salas estén en "Ranking" antes de activar.
-          </p>
-        </div>
+          {/* 🏆 Cierre del Taller */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+            <h2 className="font-bold mb-4 text-blue-600 flex items-center gap-2">
+              🏆 Cierre del Taller
+            </h2>
+            <button
+              onClick={() => finalizarYVerPodio()}
+              className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+            >
+              <span>MOSTRAR PODIO</span>
+              <span className="text-2xl">🥇</span>
+            </button>
+            <p className="text-center text-[10px] text-slate-400 mt-2 italic">
+              Esto cambiará la pantalla de todos los jugadores a los resultados finales.
+            </p>
+          </div>
 
-        {/* Finalizar Votación y Ver Podio */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-          <h2 className="font-bold mb-4 text-blue-600 flex items-center gap-2">
-            🏆 Cierre del Taller
-          </h2>
-          <button
-            onClick={() => finalizarYVerPodio()}
-            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3"
-          >
-            <span>MOSTRAR PODIO</span>
-            <span className="text-2xl">🥇</span>
-          </button>
-          <p className="text-center text-[10px] text-slate-400 mt-2 italic">
-            Esto cambiará la pantalla de todos los jugadores a los resultados finales.
-          </p>
-        </div>
-
-        {/* Simulación Final */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-emerald-100 md:col-span-3">
-          <h2 className="font-bold mb-4 text-emerald-600 flex items-center gap-2">
-            🎯 Simulación Final
-          </h2>
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="flex-1">
-              <p className="text-sm text-slate-600 mb-2">
+          {/* 🎯 Simulación Final */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-emerald-100">
+            <h2 className="font-bold mb-4 text-emerald-600 flex items-center gap-2">
+              🎯 Simulación Final
+            </h2>
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-slate-600">
                 Reinicia el juego usando los <strong>arquetipos finales</strong> (más igualados).
                 Los jugadores mantendrán su perfil pero verán cómo habría sido el resultado con condiciones más equitativas.
               </p>
               <p className="text-[10px] text-slate-400 italic">
                 El dinero se reiniciará a 0, el peón volverá a la salida y los arquetipos usarán los valores fijos definidos en cada carta.
               </p>
+              <button
+                onClick={() => iniciarSimulacionFinal()}
+                className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+              >
+                <span>INICIAR SIMULACIÓN</span>
+                <span className="text-2xl">🎯</span>
+              </button>
             </div>
-            <button
-              onClick={() => iniciarSimulacionFinal()}
-              className="w-full md:w-auto px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-3"
-            >
-              <span>INICIAR SIMULACIÓN</span>
-              <span className="text-2xl">🎯</span>
-            </button>
           </div>
-        </div>
 
-        {/* Exportar Resultados */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 md:col-span-3">
-          <h2 className="font-bold mb-4 text-slate-600 flex items-center gap-2">
-            📥 Exportar Datos
-          </h2>
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="flex-1">
-              <p className="text-sm text-slate-600 mb-2">
-                Exporta todos los resultados de la partida en formato CSV: participantes ordenados por puntos (con sala, rol), propuestas con votos, y fecha de la partida.
-              </p>
-              <p className="text-[10px] text-slate-400 italic">
-                El archivo incluirá la fecha actual como fecha de la partida.
-              </p>
-            </div>
-            <button
-              onClick={exportToCSV}
-              className="w-full md:w-auto px-8 py-4 bg-slate-800 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-slate-900 transition-all active:scale-95 flex items-center justify-center gap-3"
-            >
-              <span>EXPORTAR CSV</span>
-              <span className="text-2xl">📥</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Monitor de Propuestas - Ocupa toda la fila */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border md:col-span-3">
-          <h2 className="font-bold mb-4 border-b pb-2 text-slate-600">Banco de Reglas Sugeridas</h2>
-          <div className="max-h-60 overflow-y-auto space-y-2">
-            {propuestas.length > 0 ? propuestas.map((p) => (
-              <div key={p.id} className="p-3 bg-slate-50 border-l-4 border-slate-400 rounded flex justify-between items-center">
-                <span className="text-sm italic">"{p.proposal_text}"</span>
-                <span className="text-xs font-black bg-white px-2 py-1 rounded shadow-sm text-slate-700">
-                  {p.votes} VOTOS
-                </span>
+          {/* 📥 Exportar Datos — línea completa */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 md:col-span-3">
+            <h2 className="font-bold mb-4 text-slate-600 flex items-center gap-2">
+              📥 Exportar Datos
+            </h2>
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="flex-1">
+                <p className="text-sm text-slate-600 mb-2">
+                  Exporta todos los resultados de la partida en formato CSV: participantes ordenados por puntos (con sala, rol), propuestas con votos, y fecha de la partida.
+                </p>
+                <p className="text-[10px] text-slate-400 italic">
+                  El archivo incluirá la fecha actual como fecha de la partida.
+                </p>
               </div>
-            )) : <p className="text-slate-400 text-sm italic py-4">Esperando propuestas...</p>}
-          </div>
-        </div>
-
-      </div>
-
-      {/* Usuarios y salas */}
-      <div className="p-8 max-w-6xl mx-auto">
-        {/* SECCIÓN 0: ESTADO DE LAS SALAS */}
-        <section className="mb-12">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            🏠 Salas
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {rooms.map(room => {
-              const phaseColors: Record<string, string> = {
-                playing: 'bg-green-100 text-green-700 border-green-200',
-                ranking: 'bg-purple-100 text-purple-700 border-purple-200',
-                voting: 'bg-blue-100 text-blue-700 border-blue-200',
-                podium: 'bg-yellow-100 text-yellow-700 border-yellow-200'
-              };
-              const phaseLabels: Record<string, string> = {
-                playing: '▶️ Jugando',
-                ranking: '🏆 Ranking',
-                voting: '🗳️ Votando',
-                podium: '🥇 Podio'
-              };
-              const phaseClass = phaseColors[room.current_phase] || 'bg-slate-100 text-slate-600 border-slate-200';
-              const phaseLabel = phaseLabels[room.current_phase] || room.current_phase;
-
-              return (
-                <div
-                  key={room.id}
-                  className="bg-white p-4 rounded-xl border shadow-sm flex flex-col items-center gap-2"
-                >
-                  <span className="font-black text-slate-700 text-sm">{room.name}</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${phaseClass}`}>
-                    {phaseLabel}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          {rooms.length === 0 && (
-            <div className="bg-white p-8 rounded-xl border text-center">
-              <p className="text-slate-400 italic">No hay salas configuradas. Crea una nueva partida.</p>
+              <button
+                onClick={exportToCSV}
+                className="w-full md:w-auto px-8 py-4 bg-slate-800 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-slate-900 transition-all active:scale-95 flex items-center justify-center gap-3"
+              >
+                <span>EXPORTAR CSV</span>
+                <span className="text-2xl">📥</span>
+              </button>
             </div>
-          )}
-        </section>
-
-        {/* SECCIÓN 1: PARTICIPANTES REALES */}
-        <section className="mb-12">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            👥 Participantes en Vivo
-          </h2>
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden border">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
-                <tr>
-                  <th className="p-4">Alias</th>
-                  <th className="p-4">Capital Actual</th>
-                  <th className="p-4">Sala Actual</th>
-                  <th className="p-4">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {usuarios.map(u => (
-                  <tr key={u.id} className="hover:bg-slate-50 transition-colors animate-fade-in">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        {/* Avatar circular con el color y emoji elegido */}
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm overflow-hidden"
-                          style={{
-                            backgroundColor: u.color + '20',
-                            border: `2px solid ${u.color}`
-                          }}
-                        >
-                          {u.emoji?.startsWith('avatar-')
-                            ? <img src={`/images/${u.emoji}.png`} className="w-full h-full object-contain p-0.5" alt="avatar" />
-                            : (u.emoji || '👤')
-                          }
-                        </div>
-                        <div>
-                          <div className="font-bold text-slate-700">{u.alias}</div>
-                          {/* <div className="text-[10px] text-slate-400 font-mono">{u.id}</div> */}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* MOSTRAR PUNTOS EN TIEMPO REAL */}
-                    <td className="p-4">
-                      <span className={`inline-block px-3 py-1 rounded-full font-black text-sm ${u.money >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}>
-                        {u.money} €
-                      </span>
-                    </td>
-
-                    <td className="p-4">
-                      <select
-                        value={u.minisala_id}
-                        onChange={(e) => reasignarSala(u.id, e.target.value)}
-                        className="bg-slate-100 border-none text-xs font-bold rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
-                      >
-                        {/* Generar opciones dinámicamente según numSalas si quieres, o dejarlas fijas */}
-                        <option value="sala_1">Sala 1</option>
-                        <option value="sala_2">Sala 2</option>
-                        <option value="sala_3">Sala 3</option>
-                        <option value="sala_4">Sala 4</option>
-                        <option value="sala_5">Sala 5</option>
-                      </select>
-                    </td>
-                    <td className="p-4 flex gap-2">
-                      <button
-                        onClick={() => asignarLider(u.id, u.minisala_id)}
-                        className={`px-4 py-1.5 rounded-full text-xs font-black transition-all shadow-sm ${u.is_leader
-                          ? 'bg-yellow-400 text-yellow-900 ring-2 ring-yellow-200'
-                          : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                          }`}
-                      >
-                        {u.is_leader ? '🌟 LÍDER' : 'HACER LÍDER'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {usuarios.length === 0 && (
-              <p className="p-8 text-center text-slate-400 italic">No hay jugadores conectados...</p>
-            )}
           </div>
-        </section>
+
+        </div>
 
         {/* Botón para mostrar/ocultar configuración avanzada */}
         <div className="mt-8 mb-4">
