@@ -89,7 +89,7 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20, language
   }, [players, systemProfiles, maxCapital]);
 
   return (
-    <div className="flex flex-col h-full bg-slate-100 p-4 rounded-2xl shadow-xl border border-slate-300 min-w-[380px]">
+    <div className="flex flex-col h-full bg-slate-100 p-4 rounded-2xl shadow-xl border border-slate-300 w-full">
       <style>{`
         @keyframes particle-up {
           0%   { opacity: 1; transform: translate(0, 0) scale(1.4); }

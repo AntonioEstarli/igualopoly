@@ -682,7 +682,7 @@ export default function MinisalaGame() {
         <div className="flex flex-col md:flex-row h-screen overflow-hidden">
 
           {/* COLUMNA IZQUIERDA: CARRERA DE CAPITAL (Vertical) */}
-          <div className="w-full md:w-80 h-1/3 md:h-full p-2 bg-slate-900 shadow-2xl z-10">
+          <div className="w-full md:w-[380px] md:shrink-0 h-1/3 md:h-full p-2 bg-slate-800 shadow-2xl">
             <CapitalRace
               players={displayedPlayers.map(player => gamePhase === 'start' ? { ...player, money: 0 } : isFinalSimulation ? {
                 ...player,
@@ -715,11 +715,11 @@ export default function MinisalaGame() {
           </div>
 
           {/* COLUMNA DERECHA: TABLERO, CONTROLES E HISTORIAL */}
-          <div className="flex-1 flex flex-col overflow-y-auto relative">
+          <div className="flex-1 flex flex-col overflow-y-auto relative isolate">
 
             {/* 1. EL TABLERO (Arriba derecha) */}
             <div className="w-full bg-slate-800 px-6 pb-6 pt-2 shadow-lg relative">
-<div className="max-w-4xl mx-auto" style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
+<div className="max-w-[700px] mx-auto">
                 <BoardView currentStep={boardPosition} />
               </div>
 
@@ -817,15 +817,15 @@ export default function MinisalaGame() {
 
               {/* CARTA (Aparece encajo del panel del dado con animación) - No mostrar en simulación final */}
               {card && cardVisible && !isFinalSimulation && !isDiceRolling && (
-                <div className="absolute inset-0 flex items-start justify-center pt-[11%] pointer-events-none z-20" style={{ transform: 'scale(0.95)' }}>
+                <div className="absolute inset-0 flex items-start justify-center pt-[9.5%] pointer-events-none z-20" style={{ transform: 'scale(0.95)' }}>
                   <div
-                    className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-w-xl w-full mx-4 pointer-events-auto animate-zoom-in"
+                    className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-w-lg w-full mx-4 pointer-events-auto animate-zoom-in"
                     style={{
                       animation: 'zoomIn 0.6s ease-out 0.5s both'
                     }}
                   >
                     <div
-                      className="p-5 flex justify-between items-center text-white"
+                      className="p-3 flex justify-between items-center text-white"
                       style={{ backgroundColor: card.color || '#ef4444' }}
                     >
                       <span className="font-black uppercase text-sm tracking-widest">
@@ -833,7 +833,7 @@ export default function MinisalaGame() {
                       </span>
                     </div>
 
-                    <div className="p-6 flex-1">
+                    <div className="p-4 flex-1">
                       {/* PASO 1: Situación */}
                       {cardStep === 1 && (
                         <div className="space-y-4">
