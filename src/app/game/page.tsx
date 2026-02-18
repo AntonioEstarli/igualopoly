@@ -65,6 +65,7 @@ export default function MinisalaGame() {
   // Versión retrasada de roomPlayers y boardPosition para sincronizar CapitalRace con la carta
   const [displayedPlayers, setDisplayedPlayers] = useState<RoomPlayer[]>([]);
   const playersInitialized = useRef(false);
+  const isStartTransition = useRef(false);
   const [displayedCardNumber, setDisplayedCardNumber] = useState(0);
 
   // Variables del jugador
@@ -187,6 +188,7 @@ export default function MinisalaGame() {
             setGamePhase('ranking');
           } else if (payload.new.current_phase === 'playing' && !isFinalSimulationRef.current) {
             // Transición de 'start' a 'playing': el líder ha iniciado el juego
+            isStartTransition.current = true;
             setGamePhase('playing');
             // Actualizamos el dinero del jugador desde la DB (el líder lo ha puesto a 10)
             const usuarioId = sessionStorage.getItem('participant_id');
@@ -345,6 +347,12 @@ export default function MinisalaGame() {
       setDisplayedPlayers(roomPlayers);
       return;
     }
+    // Sin retraso en la transición start → playing
+    if (isStartTransition.current) {
+      isStartTransition.current = false;
+      setDisplayedPlayers(roomPlayers);
+      return;
+    }
     const timer = setTimeout(() => setDisplayedPlayers(roomPlayers), 2300);
     return () => clearTimeout(timer);
   }, [roomPlayers]);
@@ -442,6 +450,7 @@ export default function MinisalaGame() {
       .eq('id', sId);
 
     // 3. Actualizar estado local del líder
+    isStartTransition.current = true;
     setMyMoney(10);
     setGamePhase('playing');
   };
