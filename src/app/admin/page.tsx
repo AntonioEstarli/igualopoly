@@ -97,7 +97,7 @@ export default function AdminPanel() {
         id: `sala_${i + 1}`,
         name: `Sala ${i + 1}`,
         capacity: 5,
-        current_phase: 'playing',
+        current_phase: 'start',
         next_dice_index: 0
       }));
 

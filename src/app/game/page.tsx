@@ -41,9 +41,10 @@ export default function MinisalaGame() {
   const [hasSubmittedProposal, setHasSubmittedProposal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // 1. Estado para la fase (que escuchará de Supabase)
-  const [gamePhase, setGamePhase] = useState<'playing' | 'ranking' | 'voting' | 'podium' | 'final'>('playing');
+  const [gamePhase, setGamePhase] = useState<'start' | 'playing' | 'ranking' | 'voting' | 'podium' | 'final'>('start');
   // Estado para la simulación final
   const [isFinalSimulation, setIsFinalSimulation] = useState(false);
+  const isFinalSimulationRef = useRef(false); // Ref para leer en callbacks de Supabase sin closure stale
   const [isAutoSimulating, setIsAutoSimulating] = useState(false); // Indica si la simulación automática está corriendo
 
   // Estado para detectar cuando el dado está girando
@@ -137,7 +138,9 @@ export default function MinisalaGame() {
   }, []);
 
 
-  // Suscripción para detectar el cambio de fase en participants (voting/podium/final)
+  // Suscripción para detectar el cambio de fase en participants (voting/podium/final/simulación)
+  // IMPORTANTE: Esta suscripción se dispara ante CUALQUIER UPDATE de participantes (ej: is_leader, money),
+  // por lo que NO debe reaccionar a 'playing' genérico — solo cuando venimos de 'final' (simulación).
   useEffect(() => {
     if (!minisalaId) return;
     const channel = supabase.channel(`phase_sync_${minisalaId}`)
@@ -146,17 +149,25 @@ export default function MinisalaGame() {
         (payload) => {
           if (payload.new.current_phase) {
             const newPhase = payload.new.current_phase;
-            setGamePhase(newPhase);
 
-            // Si entramos en fase 'final', reiniciamos el estado del juego
             if (newPhase === 'final') {
+              // Entramos en simulación final: reiniciamos estado
+              setGamePhase('final');
               setBoardPosition(0);
               setCurrentCardNumber(0);
               setCard(null);
               setHistory([]);
               setMyMoney(0);
+              isFinalSimulationRef.current = true;
               setIsFinalSimulation(true);
+            } else if (newPhase === 'voting' || newPhase === 'podium') {
+              setGamePhase(newPhase);
+            } else if (newPhase === 'playing' && isFinalSimulationRef.current) {
+              // Transición de 'final' → 'playing': arranca la simulación automática (jugadores no-líder)
+              setGamePhase('playing');
             }
+            // 'playing' sin isFinalSimulationRef: lo gestiona la suscripción de rooms
+            // Ignoramos el resto para evitar saltar desde 'start' cuando admin cambia is_leader o money
           }
         }
       )
@@ -164,7 +175,7 @@ export default function MinisalaGame() {
     return () => { supabase.removeChannel(channel); };
   }, [minisalaId]);
 
-  // Suscripción para detectar el cambio de fase en rooms (ranking)
+  // Suscripción para detectar el cambio de fase en rooms (ranking, playing desde start)
   useEffect(() => {
     if (!minisalaId) return;
 
@@ -174,6 +185,19 @@ export default function MinisalaGame() {
         (payload) => {
           if (payload.new.current_phase === 'ranking') {
             setGamePhase('ranking');
+          } else if (payload.new.current_phase === 'playing' && !isFinalSimulationRef.current) {
+            // Transición de 'start' a 'playing': el líder ha iniciado el juego
+            setGamePhase('playing');
+            // Actualizamos el dinero del jugador desde la DB (el líder lo ha puesto a 10)
+            const usuarioId = sessionStorage.getItem('participant_id');
+            if (usuarioId) {
+              supabase
+                .from('participants')
+                .select('money')
+                .eq('id', usuarioId)
+                .single()
+                .then(({ data }) => { if (data) setMyMoney(data.money); });
+            }
           }
         }
       )
@@ -341,17 +365,22 @@ export default function MinisalaGame() {
 
     // Función para obtener el estado actual
     const syncRole = async () => {
-      const { data } = await supabase
-        .from('participants')
-        .select('is_leader, current_phase, money')
-        .eq('id', usuarioId)
-        .single();
+      const sId = sessionStorage.getItem('minisala_id') || 'sala_1';
+
+      const [{ data }, { data: roomData }] = await Promise.all([
+        supabase.from('participants').select('is_leader, current_phase, money').eq('id', usuarioId).single(),
+        supabase.from('rooms').select('current_phase').eq('id', sId).single(),
+      ]);
+
       if (data) {
         setIsLeader(data.is_leader);
-        // Inicializar el dinero siempre desde la DB (incluye el valor inicial de 10€)
+        // Inicializar el dinero desde la DB (0 antes del inicio, 10 después)
         setMyMoney(data.money || 0);
-        // Sincronizar la fase actual
-        if (data.current_phase) {
+        // Sincronizar la fase actual: la sala manda si está en 'start'
+        const roomPhase = roomData?.current_phase;
+        if (roomPhase === 'start') {
+          setGamePhase('start');
+        } else if (data.current_phase) {
           setGamePhase(data.current_phase);
           // Si entramos en fase 'final', reiniciamos el estado del juego
           if (data.current_phase === 'final') {
@@ -359,6 +388,7 @@ export default function MinisalaGame() {
             setCurrentCardNumber(0);
             setCard(null);
             setHistory([]);
+            isFinalSimulationRef.current = true;
             setIsFinalSimulation(true);
           }
         }
@@ -394,6 +424,27 @@ export default function MinisalaGame() {
   }, []);
 
   // Ya no se usa MAX_CARDS: ahora el fin de partida se determina cuando no hay más cartas disponibles (allCards.length)
+
+  // Función para que el líder inicie el juego: da 10€ a todos y cambia la fase a 'playing'
+  const startGame = async () => {
+    const sId = minisalaId || sessionStorage.getItem('minisala_id') || 'sala_1';
+
+    // 1. Dar 10€ a todos los participantes de la sala
+    await supabase
+      .from('participants')
+      .update({ money: 10 })
+      .eq('minisala_id', sId);
+
+    // 2. Cambiar la fase de la sala a 'playing'
+    await supabase
+      .from('rooms')
+      .update({ current_phase: 'playing' })
+      .eq('id', sId);
+
+    // 3. Actualizar estado local del líder
+    setMyMoney(10);
+    setGamePhase('playing');
+  };
 
   // Función para que el líder descarte la carta y notifique a todos los de la sala
   const leaderDismissCard = async () => {
@@ -626,14 +677,14 @@ export default function MinisalaGame() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      {/* FASE 1: JUEGO ACTIVO */}
-      {gamePhase === 'playing' ? (
+      {/* FASE 1: JUEGO ACTIVO (incluye 'start' mientras esperamos que el líder arranque) */}
+      {(gamePhase === 'playing' || gamePhase === 'start') ? (
         <div className="flex flex-col md:flex-row h-screen overflow-hidden">
 
           {/* COLUMNA IZQUIERDA: CARRERA DE CAPITAL (Vertical) */}
           <div className="w-full md:w-80 h-1/3 md:h-full p-2 bg-slate-900 shadow-2xl z-10">
             <CapitalRace
-              players={displayedPlayers.map(player => isFinalSimulation ? {
+              players={displayedPlayers.map(player => gamePhase === 'start' ? { ...player, money: 0 } : isFinalSimulation ? {
                 ...player,
                 money: calculateSystemMoney(
                   player.variables || {},
@@ -647,7 +698,7 @@ export default function MinisalaGame() {
                 alias: profile.alias,
                 color: profile.color,
                 emoji: profile.emoji, // Asegúrate de que el backend traiga esto
-                money: calculateSystemMoney(
+                money: gamePhase === 'start' ? 0 : calculateSystemMoney(
                   {
                     red: profile.red,
                     visibilidad: profile.visibilidad,
@@ -675,7 +726,26 @@ export default function MinisalaGame() {
               {/* 2. PANEL DE CONTROL DEL LÍDER / ESPERA (encima del tablero) */}
               <div className="absolute top-[12%] left-0 right-0 flex justify-center z-10 pointer-events-none">
                 <div className="max-w-md w-full mx-4 pointer-events-auto" style={{ transform: 'scale(0.8)' }}>
-                  {isFinalSimulation ? (
+                  {gamePhase === 'start' ? (
+                    /* FASE INICIO: El líder arranca el juego */
+                    isLeader ? (
+                      <div className="bg-white p-6 rounded-3xl shadow-xl border-4 border-dashed border-red-100 flex flex-col items-center justify-center gap-4">
+                        <p className="text-red-600 font-black uppercase tracking-widest text-sm">{getTranslation('game.youAreLeader', language)}</p>
+                        <p className="text-slate-500 text-xs text-center">{getTranslation('game.startGameDesc', language)}</p>
+                        <button
+                          onClick={startGame}
+                          className="w-full py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all active:scale-95"
+                        >
+                          {getTranslation('game.startGame', language)}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="bg-white p-6 rounded-3xl shadow-xl border-4 border-dashed border-slate-100 flex flex-col items-center justify-center gap-3">
+                        <div className="w-10 h-10 border-4 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                        <p className="text-slate-600 font-black uppercase tracking-widest text-sm text-center">{getTranslation('game.waitingGameStart', language)}</p>
+                      </div>
+                    )
+                  ) : isFinalSimulation ? (
                     /* SIMULACIÓN FINAL: Indicador de progreso automático */
                     <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-3xl shadow-xl border-4 border-emerald-300 flex flex-col items-center justify-center">
                       {currentCardNumber <= allCards.length ? (

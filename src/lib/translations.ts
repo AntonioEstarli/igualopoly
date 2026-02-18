@@ -286,6 +286,21 @@ export const translations = {
       EN: 'Let\'s replay the game with more equal conditions to see how the result would have been.',
       CAT: 'Repetirem el joc amb condicions més igualitàries per veure com hauria estat el resultat.'
     },
+    startGame: {
+      ES: 'INICIAR EL JUEGO',
+      EN: 'START THE GAME',
+      CAT: 'INICIAR EL JOC'
+    },
+    startGameDesc: {
+      ES: 'Los jugadores comenzarán la partida con 10€',
+      EN: 'Players will start the game with 10€',
+      CAT: 'Els jugadors començaran la partida amb 10€'
+    },
+    waitingGameStart: {
+      ES: 'Esperando al líder para iniciar el juego...',
+      EN: 'Waiting for the leader to start the game...',
+      CAT: 'Esperant el líder per iniciar el joc...'
+    },
     startSimulation: {
       ES: 'EMPEZAR SIMULACIÓN',
       EN: 'START SIMULATION',
