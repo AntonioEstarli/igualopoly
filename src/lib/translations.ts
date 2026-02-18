@@ -340,6 +340,26 @@ export const translations = {
       ES: 'Ninguna en ALTO',
       EN: 'None at HIGH',
       CAT: 'Cap en ALT'
+    },
+    finalReflectionTitle: {
+      ES: '¿Qué reflexión te llevas del juego?',
+      EN: 'What reflection do you take from the game?',
+      CAT: 'Quina reflexió t\'emportes del joc?'
+    },
+    finalReflectionPlaceholder: {
+      ES: 'Escribe aquí tu reflexión...',
+      EN: 'Write your reflection here...',
+      CAT: 'Escriu aquí la teva reflexió...'
+    },
+    finalReflectionSave: {
+      ES: 'Guardar reflexión',
+      EN: 'Save reflection',
+      CAT: 'Desa la reflexió'
+    },
+    finalReflectionSaved: {
+      ES: '¡Reflexión guardada!',
+      EN: 'Reflection saved!',
+      CAT: 'Reflexió desada!'
     }
   },
 

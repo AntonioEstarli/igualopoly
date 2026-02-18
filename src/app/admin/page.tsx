@@ -387,6 +387,13 @@ export default function AdminPanel() {
       .select('proposal_text, votes')
       .order('votes', { ascending: false });
 
+    // 3b. Obtener reflexiones finales
+    const { data: reflexiones } = await supabase
+      .from('participants')
+      .select('alias, reflexion_final')
+      .not('reflexion_final', 'is', null)
+      .order('alias', { ascending: true });
+
     if (!participants && !proposals) {
       alert("No hay datos para exportar");
       return;
@@ -429,6 +436,18 @@ export default function AdminPanel() {
     if (proposals && proposals.length > 0) {
       proposals.forEach(prop => {
         csvContent += `"${prop.proposal_text}",${prop.votes}\n`;
+      });
+    }
+
+    csvContent += `\n`;
+
+    // Sección 4: Reflexiones
+    csvContent += `REFLEXIONES\n`;
+    csvContent += `Reflexión,Alias\n`;
+
+    if (reflexiones && reflexiones.length > 0) {
+      reflexiones.forEach(r => {
+        csvContent += `"${r.reflexion_final}","${r.alias}"\n`;
       });
     }
 
@@ -961,6 +980,23 @@ export default function AdminPanel() {
                 <span>INICIAR SIMULACIÓN</span>
                 <span className="text-2xl">🎯</span>
               </button>
+            </div>
+          </div>
+
+          {/* 💭 Reflexiones Finales — línea completa */}
+          <div className="md:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-emerald-100">
+            <h2 className="font-bold mb-4 border-b pb-2 text-emerald-700">💭 Reflexiones Finales</h2>
+            <div className="max-h-60 overflow-y-auto space-y-2">
+              {usuarios.filter(u => u.reflexion_final).length > 0
+                ? usuarios.filter(u => u.reflexion_final).map((u) => (
+                  <div key={u.id} className="p-3 bg-slate-50 border-l-4 border-emerald-400 rounded flex justify-between items-start gap-3">
+                    <span className="text-sm italic flex-1">"{u.reflexion_final}"</span>
+                    <span className="text-xs font-black bg-white px-2 py-1 rounded shadow-sm text-emerald-700 shrink-0">
+                      {u.alias}
+                    </span>
+                  </div>
+                ))
+                : <p className="text-slate-400 text-sm italic py-4">Esperando reflexiones...</p>}
             </div>
           </div>
 
