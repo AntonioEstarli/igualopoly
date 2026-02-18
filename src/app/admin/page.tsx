@@ -10,6 +10,7 @@ export default function AdminPanel() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [faseActual, setFaseActual] = useState('setup');
+  const [podiumLang, setPodiumLang] = useState<'ES' | 'EN' | 'CAT'>('ES');
   const [propuestas, setPropuestas] = useState<any[]>([]);
   const [stats, setStats] = useState({ totalJugadores: 0, salasActivas: 0 });
   const [usuarios, setUsuarios] = useState<any[]>([]);
@@ -537,7 +538,7 @@ export default function AdminPanel() {
     if (roomsError) {
       alert("Error al actualizar salas: " + roomsError.message);
     } else {
-      alert("¡Podio activado para todos los jugadores!");
+      window.open(`/podium?lang=${podiumLang}`, '_blank');
     }
   };
 
@@ -923,6 +924,18 @@ export default function AdminPanel() {
               <span>MOSTRAR PODIO</span>
               <span className="text-2xl">🥇</span>
             </button>
+            <div className="mt-3 flex items-center gap-2">
+              <label className="text-xs text-slate-500 font-semibold shrink-0">Idioma del podio:</label>
+              <select
+                value={podiumLang}
+                onChange={e => setPodiumLang(e.target.value as 'ES' | 'EN' | 'CAT')}
+                className="flex-1 text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              >
+                <option value="ES">🇪🇸 Español</option>
+                <option value="EN">🇬🇧 English</option>
+                <option value="CAT">🏴󠁥󠁳󠁣󠁴󠀭󠁿 Català</option>
+              </select>
+            </div>
             <p className="text-center text-[10px] text-slate-400 mt-2 italic">
               Esto cambiará la pantalla de todos los jugadores a los resultados finales.
             </p>

@@ -14,15 +14,16 @@ const TIPO_CONFIG: Record<Tipo, { color: string; border: string; glow: string; b
   'PRIVILEGIO':     { color: 'text-purple-400', border: 'border-purple-500', glow: 'shadow-[0_0_30px_rgba(168,85,247,0.2)]',  badge: 'bg-purple-500/20 border-purple-500/50 text-purple-400' },
 };
 
-export function PodiumView() {
+export function PodiumView({ initialLanguage }: { initialLanguage?: Language } = {}) {
   const [allProposals, setAllProposals] = useState<any[]>([]);
-  const [language, setLanguage] = useState<Language>('ES');
+  const [language, setLanguage] = useState<Language>(initialLanguage ?? 'ES');
   const [activeTipo, setActiveTipo] = useState<Tipo>('OPORTUNIDAD');
 
   useEffect(() => {
+    if (initialLanguage) return;
     const storedLang = sessionStorage.getItem('idioma') as Language;
     if (storedLang) setLanguage(storedLang);
-  }, []);
+  }, [initialLanguage]);
 
   useEffect(() => {
     const fetchAll = async () => {
