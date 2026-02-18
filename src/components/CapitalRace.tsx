@@ -37,7 +37,7 @@ const RETREAT_EMOJIS = ['💸', '💵', '🪙', '💰', '💸', '💵'];
 
 let particleId = 0;
 
-export function CapitalRace({ players, systemProfiles, maxCapital = 20, language = 'ES' }: CapitalRaceProps) {
+export function CapitalRace({ players, systemProfiles, maxCapital = 25, language = 'ES' }: CapitalRaceProps) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const prevMoney = useRef<Map<string, number>>(new Map());
   const initialized = useRef(false);
@@ -135,17 +135,20 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 20, language
             backgroundPosition: '0 0, 0 6px, 6px -6px, -6px 0px'
           }}
         >
-          <span className="absolute -bottom-5 right-2 text-[8px] font-black text-white/80 uppercase">Finish (20€)</span>
+          <span className="absolute -bottom-5 right-2 text-[8px] font-black text-white/80 uppercase">Finish (25€)</span>
         </div>
 
         {/* Líneas intermedias de progreso */}
-        <div className="absolute inset-x-0 h-px bg-white/30 z-10" style={{ bottom: '67.5%' }}>
+        <div className="absolute inset-x-0 h-px bg-white/30 z-10" style={{ bottom: '72%' }}>
+          <span className="absolute -right-1 -top-2 text-[7px] font-bold text-white/60">20€</span>
+        </div>
+        <div className="absolute inset-x-0 h-px bg-white/30 z-10" style={{ bottom: '54%' }}>
           <span className="absolute -right-1 -top-2 text-[7px] font-bold text-white/60">15€</span>
         </div>
-        <div className="absolute inset-x-0 h-px bg-white/30 z-10" style={{ bottom: '45%' }}>
+        <div className="absolute inset-x-0 h-px bg-white/30 z-10" style={{ bottom: '36%' }}>
           <span className="absolute -right-1 -top-2 text-[7px] font-bold text-white/60">10€</span>
         </div>
-        <div className="absolute inset-x-0 h-px bg-white/30 z-10" style={{ bottom: '22.5%' }}>
+        <div className="absolute inset-x-0 h-px bg-white/30 z-10" style={{ bottom: '18%' }}>
           <span className="absolute -right-1 -top-2 text-[7px] font-bold text-white/60">5€</span>
         </div>
 
