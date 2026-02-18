@@ -47,6 +47,10 @@ export default function MinisalaGame() {
   const isFinalSimulationRef = useRef(false); // Ref para leer en callbacks de Supabase sin closure stale
   const [isAutoSimulating, setIsAutoSimulating] = useState(false); // Indica si la simulación automática está corriendo
 
+  // Estado para la reflexión final
+  const [reflexionFinal, setReflexionFinal] = useState('');
+  const [reflexionSaved, setReflexionSaved] = useState(false);
+
   // Estado para detectar cuando el dado está girando
   const [isDiceRolling, setIsDiceRolling] = useState(false);
 
@@ -684,6 +688,16 @@ export default function MinisalaGame() {
     return diceData[nextIndex].value;
   };
 
+  const saveReflexion = async () => {
+    const usuarioId = sessionStorage.getItem('participant_id');
+    if (!usuarioId || !reflexionFinal.trim()) return;
+    await supabase
+      .from('participants')
+      .update({ reflexion_final: reflexionFinal.trim() })
+      .eq('id', usuarioId);
+    setReflexionSaved(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-100">
       {/* FASE 1: JUEGO ACTIVO (incluye 'start' mientras esperamos que el líder arranque) */}
@@ -757,7 +771,7 @@ export default function MinisalaGame() {
                   ) : isFinalSimulation ? (
                     /* SIMULACIÓN FINAL: Indicador de progreso automático */
                     <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-3xl shadow-xl border-4 border-emerald-300 flex flex-col items-center justify-center">
-                      {currentCardNumber <= allCards.length ? (
+                      {currentCardNumber < allCards.length ? (
                         <>
                           <p className="text-white font-black mb-2 uppercase tracking-widest text-sm">{getTranslation('game.finalSimulation', language)}</p>
                           <p className="text-emerald-100 text-xs mb-4">{getTranslation('game.simulatingProgress', language)}</p>
@@ -770,14 +784,31 @@ export default function MinisalaGame() {
                           </div>
                         </>
                       ) : (
-                        <div className="text-center space-y-4">
+                        <div className="text-center space-y-4 w-full">
                           <p className="text-white font-black text-xl uppercase italic">{getTranslation('game.simulationComplete', language)}</p>
-                          <button
-                            onClick={activateRanking}
-                            className="bg-white text-emerald-600 px-8 py-4 rounded-2xl font-black shadow-2xl hover:scale-105 transition-transform"
-                          >
-                            {getTranslation('game.openRanking', language)}
-                          </button>
+                          {/* Caja de reflexión final */}
+                          <div className="bg-white/10 rounded-2xl p-4 text-left space-y-2">
+                            <p className="text-emerald-100 text-sm font-bold">{getTranslation('game.finalReflectionTitle', language)}</p>
+                            <textarea
+                              value={reflexionFinal}
+                              onChange={(e) => setReflexionFinal(e.target.value)}
+                              placeholder={getTranslation('game.finalReflectionPlaceholder', language)}
+                              disabled={reflexionSaved}
+                              rows={3}
+                              className="w-full rounded-xl p-3 text-sm text-slate-800 bg-white resize-none outline-none disabled:opacity-60"
+                            />
+                            {reflexionSaved ? (
+                              <p className="text-white text-sm font-black text-center">{getTranslation('game.finalReflectionSaved', language)}</p>
+                            ) : (
+                              <button
+                                onClick={saveReflexion}
+                                disabled={!reflexionFinal.trim()}
+                                className="w-full py-2 bg-white text-emerald-600 rounded-xl font-black text-sm disabled:opacity-40 hover:bg-emerald-50 transition-colors"
+                              >
+                                {getTranslation('game.finalReflectionSave', language)}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
