@@ -45,6 +45,8 @@ export default function MinisalaGame() {
   // Estado para la simulación final
   const [isFinalSimulation, setIsFinalSimulation] = useState(false);
   const isFinalSimulationRef = useRef(false); // Ref para leer en callbacks de Supabase sin closure stale
+  const isRestoringRef = useRef(false); // Evita que el useEffect de carta aplique dinero al restaurar sesión
+  const lastAppliedCardRef = useRef(0); // Último nº de carta cuyo impacto económico fue aplicado
   const [isAutoSimulating, setIsAutoSimulating] = useState(false); // Indica si la simulación automática está corriendo
 
   // Estado para la reflexión final
@@ -76,12 +78,12 @@ export default function MinisalaGame() {
   const [userVars, setUserVars] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const storedLang = sessionStorage.getItem('idioma') as Language;
+    const storedLang = localStorage.getItem('idioma') as Language;
     if (storedLang) {
       setLanguage(storedLang);
     }
     // Cargar variables del jugador
-    const storedVars = sessionStorage.getItem('vars');
+    const storedVars = localStorage.getItem('vars');
     if (storedVars) {
       setUserVars(JSON.parse(storedVars));
     }
@@ -97,7 +99,7 @@ export default function MinisalaGame() {
   ];*/
 
   useEffect(() => {
-    const sId = sessionStorage.getItem('minisala_id') || 'sala_1';
+    const sId = localStorage.getItem('minisala_id') || 'sala_1';
     setMinisalaId(sId);
 
     // Suscripción al estado de la minisala específica
@@ -165,6 +167,7 @@ export default function MinisalaGame() {
               setMyMoney(0);
               isFinalSimulationRef.current = true;
               setIsFinalSimulation(true);
+              localStorage.setItem('is_final_simulation', 'true');
             } else if (newPhase === 'voting' || newPhase === 'podium') {
               setGamePhase(newPhase);
             } else if (newPhase === 'playing' && isFinalSimulationRef.current) {
@@ -195,7 +198,7 @@ export default function MinisalaGame() {
             isStartTransition.current = true;
             setGamePhase('playing');
             // Actualizamos el dinero del jugador desde la DB (el líder lo ha puesto a 10)
-            const usuarioId = sessionStorage.getItem('participant_id');
+            const usuarioId = localStorage.getItem('participant_id');
             if (usuarioId) {
               supabase
                 .from('participants')
@@ -287,8 +290,33 @@ export default function MinisalaGame() {
     if (data) {
       setCard(data);
 
+      // Si estamos restaurando sesión, reconstruimos el historial y no re-aplicamos dinero
+      if (isRestoringRef.current) {
+        isRestoringRef.current = false;
+        lastAppliedCardRef.current = currentCardNumber; // Marca esta carta como ya procesada
+        const restoredVars = JSON.parse(localStorage.getItem('vars') || '{}');
+        const reconstructed: {cardName: string, amount: number, reason: string}[] = [];
+        for (let i = 1; i <= currentCardNumber; i++) {
+          const c = allCards[i - 1];
+          if (!c) break;
+          const d = getImpactDetail(restoredVars, c.impact_variable, c.impact_values, c.impact_variable_2, language);
+          reconstructed.unshift({
+            cardName: language === 'EN' ? c.name_en : language === 'CAT' ? c.name_cat : c.name_es,
+            amount: d.amount,
+            reason: d.reason
+          });
+        }
+        setHistory(reconstructed);
+        return;
+      }
+
+      // Si el useEffect se re-dispara por cambio de idioma o recarga de allCards
+      // para una carta ya procesada, no volvemos a aplicar el dinero
+      if (currentCardNumber <= lastAppliedCardRef.current) return;
+      lastAppliedCardRef.current = currentCardNumber;
+
       // 2. Recuperamos las variables que el usuario eligió al inicio
-      const userVars = JSON.parse(sessionStorage.getItem('vars') || '{}');
+      const userVars = JSON.parse(localStorage.getItem('vars') || '{}');
 
       // 3. Calculamos el impacto del detalle (monto y razón)
       const detail = getImpactDetail(userVars, data.impact_variable, data.impact_values, data.impact_variable_2, language);
@@ -300,7 +328,7 @@ export default function MinisalaGame() {
         const nuevoTotal = prevMoney + detail.amount;
 
         // 5. Guardamos en Supabase para que el marcador global se actualice
-        const usuarioId = sessionStorage.getItem('participant_id');
+        const usuarioId = localStorage.getItem('participant_id');
         if (usuarioId) {
           // Ejecutamos la actualización en segundo plano
           supabase
@@ -369,40 +397,66 @@ export default function MinisalaGame() {
 
   // Subscripcion para saber si es lider y la fase actual
   useEffect(() => {
-    const usuarioId = sessionStorage.getItem('participant_id');
+    const usuarioId = localStorage.getItem('participant_id');
     if (!usuarioId) {
-      console.error("No se encontró participant_id en sessionStorage");
+      console.error("No se encontró participant_id en localStorage");
       return;
     }
 
     // Función para obtener el estado actual
     const syncRole = async () => {
-      const sId = sessionStorage.getItem('minisala_id') || 'sala_1';
+      const sId = localStorage.getItem('minisala_id') || 'sala_1';
 
       const [{ data }, { data: roomData }] = await Promise.all([
         supabase.from('participants').select('is_leader, current_phase, money').eq('id', usuarioId).single(),
-        supabase.from('rooms').select('current_phase').eq('id', sId).single(),
+        supabase.from('rooms').select('current_phase, current_step, next_dice_index').eq('id', sId).single(),
       ]);
 
       if (data) {
         setIsLeader(data.is_leader);
         // Inicializar el dinero desde la DB (0 antes del inicio, 10 después)
         setMyMoney(data.money || 0);
-        // Sincronizar la fase actual: la sala manda si está en 'start'
+        // Sincronizar la fase al reconectar.
+        // Prioridad: las fases avanzadas del participante ('final','voting','podium')
+        // mandan sobre la sala. Para el resto, la sala manda ('start','ranking').
         const roomPhase = roomData?.current_phase;
-        if (roomPhase === 'start') {
+        const participantPhase = data.current_phase;
+
+        if (participantPhase === 'final' || roomPhase === 'final') {
+          // Simulación final: arrancamos desde 0 (no hace falta restaurar progreso)
+          setGamePhase('final');
+          setBoardPosition(0);
+          setCurrentCardNumber(0);
+          setCard(null);
+          setHistory([]);
+          isFinalSimulationRef.current = true;
+          setIsFinalSimulation(true);
+          localStorage.setItem('is_final_simulation', 'true');
+        } else if (participantPhase === 'voting' || participantPhase === 'podium') {
+          setGamePhase(participantPhase);
+        } else if (roomPhase === 'start') {
           setGamePhase('start');
-        } else if (data.current_phase) {
-          setGamePhase(data.current_phase);
-          // Si entramos en fase 'final', reiniciamos el estado del juego
-          if (data.current_phase === 'final') {
-            setBoardPosition(0);
-            setCurrentCardNumber(0);
-            setCard(null);
-            setHistory([]);
+          localStorage.removeItem('is_final_simulation');
+        } else if (roomPhase === 'ranking') {
+          setGamePhase('ranking');
+          isRestoringRef.current = true;
+          setBoardPosition(roomData?.current_step || 0);
+          setCurrentCardNumber(roomData?.next_dice_index || 0);
+        } else if (participantPhase) {
+          // 'playing': puede ser juego normal O simulación final ya en marcha
+          const wasInFinalSimulation = localStorage.getItem('is_final_simulation') === 'true';
+          if (wasInFinalSimulation) {
             isFinalSimulationRef.current = true;
             setIsFinalSimulation(true);
+            // Si el líder reconecta, reanuda la simulación automática desde el paso actual
+            if (data.is_leader) {
+              setIsAutoSimulating(true);
+            }
           }
+          setGamePhase(participantPhase);
+          isRestoringRef.current = true;
+          setBoardPosition(roomData?.current_step || 0);
+          setCurrentCardNumber(roomData?.next_dice_index || 0);
         }
       }
     };
@@ -424,7 +478,7 @@ export default function MinisalaGame() {
             setIsLeader(payload.new.is_leader);
             // Si el admin ha movido al jugador a otra sala, migramos todos los canales
             if (payload.new.minisala_id && payload.new.minisala_id !== payload.old?.minisala_id) {
-              sessionStorage.setItem('minisala_id', payload.new.minisala_id);
+              localStorage.setItem('minisala_id', payload.new.minisala_id);
               setMinisalaId(payload.new.minisala_id);
             }
           }
@@ -439,7 +493,7 @@ export default function MinisalaGame() {
 
   // Función para que el líder inicie el juego: da 10€ a todos y cambia la fase a 'playing'
   const startGame = async () => {
-    const sId = minisalaId || sessionStorage.getItem('minisala_id') || 'sala_1';
+    const sId = minisalaId || localStorage.getItem('minisala_id') || 'sala_1';
 
     // 1. Dar 10€ a todos los participantes de la sala
     await supabase
@@ -530,12 +584,12 @@ export default function MinisalaGame() {
 
     setIsSubmitting(true);
 
-    // Usamos el ID del participante del sessionStorage
-    const usuarioId = sessionStorage.getItem('participant_id');
+    // Usamos el ID del participante del localStorage
+    const usuarioId = localStorage.getItem('participant_id');
 
     // Priorizamos el estado 'minisalaId' del componente, 
-    // y si está vacío, lo buscamos en el sessionStorage
-    const sId = minisalaId || sessionStorage.getItem('minisala_id');
+    // y si está vacío, lo buscamos en el localStorage
+    const sId = minisalaId || localStorage.getItem('minisala_id');
 
     console.log("Intentando enviar propuesta:", {
       texto: proposalText,
@@ -689,7 +743,7 @@ export default function MinisalaGame() {
   };
 
   const saveReflexion = async () => {
-    const usuarioId = sessionStorage.getItem('participant_id');
+    const usuarioId = localStorage.getItem('participant_id');
     if (!usuarioId || !reflexionFinal.trim()) return;
     await supabase
       .from('participants')
@@ -1197,7 +1251,7 @@ export default function MinisalaGame() {
         <div className="pt-12 pb-20 px-4 max-w-4xl mx-auto">
           <VotingView
             minisalaId={minisalaId}
-            participantId={sessionStorage.getItem('participant_id') || ''}
+            participantId={localStorage.getItem('participant_id') || ''}
             isLeader={isLeader}
           />
         </div>

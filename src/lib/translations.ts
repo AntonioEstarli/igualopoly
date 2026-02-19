@@ -33,6 +33,26 @@ export const translations = {
       ES: 'Entrar a la sesión',
       EN: 'Join session',
       CAT: 'Entrar a la sessió'
+    },
+    recoveryTitle: {
+      ES: 'Sesión guardada',
+      EN: 'Saved session',
+      CAT: 'Sessió guardada'
+    },
+    recoveryMessage: {
+      ES: 'Se encontró tu perfil de jugador. ¿Quieres continuar la partida?',
+      EN: 'Your player profile was found. Do you want to continue the game?',
+      CAT: 'S\'ha trobat el teu perfil de jugador. Vols continuar la partida?'
+    },
+    continueButton: {
+      ES: 'Continuar partida',
+      EN: 'Continue game',
+      CAT: 'Continua la partida'
+    },
+    newGameButton: {
+      ES: 'Empezar de nuevo',
+      EN: 'Start fresh',
+      CAT: 'Comença de nou'
     }
   },
 

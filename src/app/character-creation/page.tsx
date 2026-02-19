@@ -27,7 +27,7 @@ export default function CharacterCreation() {
   const [language, setLanguage] = useState<Language>('ES');
 
   useEffect(() => {
-    const storedLang = sessionStorage.getItem('idioma') as Language;
+    const storedLang = localStorage.getItem('idioma') as Language;
     if (storedLang) {
       setLanguage(storedLang);
     }
@@ -50,12 +50,12 @@ export default function CharacterCreation() {
   }, []);
 
   const handleSave = async () => {
-    const nombre = sessionStorage.getItem('participante_nombre');
+    const nombre = localStorage.getItem('participante_nombre');
 
-    // Guardamos la sala seleccionada en sessionStorage para el juego
-    sessionStorage.setItem('minisala_id', minisalaId);
+    // Guardamos la sala seleccionada en localStorage para el juego
+    localStorage.setItem('minisala_id', minisalaId);
     // Guardamos las variables para los cálculos de impacto
-    sessionStorage.setItem('vars', JSON.stringify(vars));
+    localStorage.setItem('vars', JSON.stringify(vars));
     
     const { data, error } = await supabase
       .from('participants')
@@ -73,7 +73,8 @@ export default function CharacterCreation() {
 
     if (data && data[0]) {
       // Guardamos el ID real de la base de datos
-      sessionStorage.setItem('participant_id', data[0].id);
+      localStorage.setItem('participant_id', data[0].id);
+      localStorage.removeItem('is_final_simulation');
       router.push('/game');
     }
 
