@@ -882,9 +882,9 @@ export default function AdminPanel() {
                 </thead>
                 <tbody className="divide-y">
                   {usuarios.map(u => {
-                    // Calcular si el usuario está online (last_activity < 60 segundos)
+                    // Calcular si el usuario está online (last_activity < 30 segundos)
                     const isOnline = u.last_activity
-                      ? (new Date().getTime() - new Date(u.last_activity).getTime()) < 60000
+                      ? (new Date().getTime() - new Date(u.last_activity).getTime()) < 30000
                       : false;
 
                     return (
