@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/src/lib/supabaseClient';
 import { getTranslation, Language } from '@/src/lib/translations';
+import { generateRecoveryCode, formatRecoveryCode } from '@/src/lib/recoveryCode';
 
 const VARIABLES = ['tiempo', 'visibilidad', 'red', 'margen_error', 'responsabilidades'] as const;
 
@@ -20,6 +21,10 @@ export default function CharacterCreation() {
   const [selectedEmoji, setSelectedEmoji] = useState('avatar-hombre-1');
   const [avatarGender, setAvatarGender] = useState<'hombre' | 'mujer'>('hombre');
   const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#64748b'];
+
+  // Estado para el código de recuperación
+  const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
 
   const router = useRouter();
 
@@ -52,11 +57,14 @@ export default function CharacterCreation() {
   const handleSave = async () => {
     const nombre = localStorage.getItem('participante_nombre');
 
+    // Generar código de recuperación único
+    const newRecoveryCode = generateRecoveryCode();
+
     // Guardamos la sala seleccionada en localStorage para el juego
     localStorage.setItem('minisala_id', minisalaId);
     // Guardamos las variables para los cálculos de impacto
     localStorage.setItem('vars', JSON.stringify(vars));
-    
+
     const { data, error } = await supabase
       .from('participants')
       .insert([{
@@ -68,14 +76,18 @@ export default function CharacterCreation() {
         minisala_id: minisalaId,
         current_phase: 'playing', // Aseguramos que empieza en fase juego
         color: selectedColor,
-        emoji: selectedEmoji
+        emoji: selectedEmoji,
+        recovery_code: newRecoveryCode // Guardamos el código de recuperación
       }]).select();
 
     if (data && data[0]) {
       // Guardamos el ID real de la base de datos
       localStorage.setItem('participant_id', data[0].id);
       localStorage.removeItem('is_final_simulation');
-      router.push('/game');
+
+      // Mostrar el código de recuperación antes de ir al juego
+      setRecoveryCode(newRecoveryCode);
+      setShowRecoveryModal(true);
     }
 
     if (error) {
@@ -197,6 +209,52 @@ export default function CharacterCreation() {
       >
         {getTranslation('characterCreation.readyToPlay', language)}
       </button>
+
+      {/* Modal de Código de Recuperación */}
+      {showRecoveryModal && recoveryCode && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🔑</span>
+              </div>
+              <h3 className="text-2xl font-black text-slate-800 mb-2">
+                {getTranslation('characterCreation.recoveryCodeTitle', language)}
+              </h3>
+              <p className="text-sm text-slate-600">
+                {getTranslation('characterCreation.recoveryCodeMessage', language)}
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-2xl border-2 border-blue-200 mb-6">
+              <p className="text-xs text-slate-500 font-bold uppercase text-center mb-2">
+                {getTranslation('characterCreation.yourCode', language)}
+              </p>
+              <p className="text-4xl font-black text-center tracking-wider text-blue-600 font-mono">
+                {formatRecoveryCode(recoveryCode)}
+              </p>
+            </div>
+
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-6">
+              <p className="text-xs text-yellow-800">
+                <span className="font-bold">⚠️ {getTranslation('characterCreation.important', language)}</span>
+                <br />
+                {getTranslation('characterCreation.saveCodeWarning', language)}
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowRecoveryModal(false);
+                router.push('/game');
+              }}
+              className="w-full py-4 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-green-700 transition-all active:scale-95"
+            >
+              {getTranslation('characterCreation.continueToGame', language)}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
