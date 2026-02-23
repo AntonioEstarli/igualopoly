@@ -81,7 +81,7 @@ export function PodiumView({ initialLanguage }: { initialLanguage?: Language } =
               className={`py-2 px-2 rounded-xl text-xs font-bold border-2 transition-all leading-tight ${
                 isActive
                   ? `${tc.badge} shadow-sm`
-                  : 'bg-white/5 text-white/40 border-white/10 hover:border-white/20'
+                  : 'bg-white/5 text-white/60 border-white/20 hover:border-white/30 hover:text-white/80'
               }`}
             >
               {tipo}
@@ -93,7 +93,7 @@ export function PodiumView({ initialLanguage }: { initialLanguage?: Language } =
       {/* Propuestas ganadoras */}
       <div className="space-y-6 mt-4">
         {winners.length === 0 ? (
-          <p className="text-white/40 italic py-10">No hay propuestas de tipo {activeTipo}.</p>
+          <p className="text-white/60 italic py-10">No hay propuestas de tipo {activeTipo}.</p>
         ) : (
           winners.map((rule, index) => (
             <div
@@ -107,7 +107,7 @@ export function PodiumView({ initialLanguage }: { initialLanguage?: Language } =
               <div className="flex items-center justify-center gap-4 mb-4">
                 <span className="text-4xl">{index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}</span>
                 <div className="text-left">
-                  <p className="font-black text-xs uppercase opacity-40 leading-none">
+                  <p className="font-black text-xs uppercase opacity-60 leading-none">
                     {getTranslation('podium.position', language)} {index + 1}
                   </p>
                   <p className={`font-bold text-sm ${index === 0 ? 'text-yellow-500' : config.color}`}>
@@ -116,11 +116,11 @@ export function PodiumView({ initialLanguage }: { initialLanguage?: Language } =
                 </div>
               </div>
 
-              <p className={`font-serif italic leading-snug ${index === 0 ? 'text-3xl font-bold' : 'text-xl opacity-80'}`}>
+              <p className={`font-serif italic leading-snug ${index === 0 ? 'text-3xl font-bold' : 'text-xl opacity-90'}`}>
                 "{rule.proposal_text}"
               </p>
 
-              <div className="mt-6 flex justify-center items-center gap-2 opacity-30">
+              <div className="mt-6 flex justify-center items-center gap-2 opacity-50">
                 <div className="h-[1px] w-8 bg-white"></div>
                 <p className="text-[10px] uppercase font-black tracking-widest">
                   {getTranslation('podium.author', language)}: {rule.participants?.alias}
@@ -137,19 +137,19 @@ export function PodiumView({ initialLanguage }: { initialLanguage?: Language } =
         <button
           onClick={() => setActiveTipo(TIPOS[currentIndex - 1])}
           disabled={currentIndex === 0}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-sm bg-white/10 text-white/60 hover:bg-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+          className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-sm bg-white/10 text-white/80 hover:bg-white/20 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all"
         >
           ← Anterior
         </button>
 
-        <span className="text-xs text-white/30 font-bold">
+        <span className="text-xs text-white/50 font-bold">
           {currentIndex + 1} / {TIPOS.length}
         </span>
 
         <button
           onClick={() => setActiveTipo(TIPOS[currentIndex + 1])}
           disabled={currentIndex === TIPOS.length - 1}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-sm bg-white/10 text-white/60 hover:bg-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+          className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-sm bg-white/10 text-white/80 hover:bg-white/20 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all"
         >
           Siguiente →
         </button>

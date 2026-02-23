@@ -72,15 +72,15 @@ export function RankingView({ players, systemProfiles }: RankingViewProps) {
               {getTranslation('ranking.title', language)}
             </span>
           </h1>
-          <p className="text-slate-400 text-sm uppercase tracking-widest">
+          <p className="text-slate-200 text-sm uppercase tracking-widest">
             {getTranslation('ranking.subtitle', language)}
           </p>
         </div>
 
         {/* Ranking Table */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20 overflow-hidden shadow-2xl">
+        <div className="bg-white/15 backdrop-blur-sm rounded-3xl border border-white/30 overflow-hidden shadow-2xl">
           {/* Table Header */}
-          <div className="bg-white/5 px-6 py-4 border-b border-white/10 grid grid-cols-12 gap-4 text-xs font-black uppercase tracking-widest text-slate-400">
+          <div className="bg-white/10 px-6 py-4 border-b border-white/20 grid grid-cols-12 gap-4 text-xs font-black uppercase tracking-widest text-slate-200">
             <div className="col-span-2 text-center">{getTranslation('ranking.position', language)}</div>
             <div className="col-span-7">{getTranslation('ranking.name', language)}</div>
             <div className="col-span-3 text-right">{getTranslation('ranking.capital', language)}</div>
@@ -97,7 +97,7 @@ export function RankingView({ players, systemProfiles }: RankingViewProps) {
               >
                 {/* Position */}
                 <div className="col-span-2 text-center">
-                  <span className={`text-2xl ${index < 3 ? '' : 'text-slate-500 text-lg font-bold'}`}>
+                  <span className={`text-2xl ${index < 3 ? '' : 'text-slate-300 text-lg font-bold'}`}>
                     {getMedalEmoji(index)}
                   </span>
                 </div>
@@ -124,7 +124,7 @@ export function RankingView({ players, systemProfiles }: RankingViewProps) {
                   <div className="flex flex-col">
                     <span className="text-white font-bold text-sm">{participant.alias}</span>
                     {participant.isSystem && (
-                      <span className="text-slate-500 text-[10px] uppercase tracking-wider">
+                      <span className="text-slate-300 text-[10px] uppercase tracking-wider">
                         {getTranslation('ranking.systemProfiles', language)}
                       </span>
                     )}
@@ -148,13 +148,13 @@ export function RankingView({ players, systemProfiles }: RankingViewProps) {
         <div className="flex justify-center gap-8 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-            <span className="text-slate-400">{getTranslation('ranking.participants', language)}</span>
+            <span className="text-slate-200">{getTranslation('ranking.participants', language)}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-slate-600 rounded-full overflow-hidden flex items-center justify-center">
               <img src="/images/bot1.png" className="w-full h-full object-contain" alt="bot" />
             </div>
-            <span className="text-slate-400">{getTranslation('ranking.systemProfiles', language)}</span>
+            <span className="text-slate-200">{getTranslation('ranking.systemProfiles', language)}</span>
           </div>
         </div>
       </div>
