@@ -804,6 +804,10 @@ export default function AdminPanel() {
                 const phaseClass = phaseColors[room.current_phase] || 'bg-slate-100 text-slate-600 border-slate-200';
                 const phaseLabel = phaseLabels[room.current_phase] || room.current_phase;
 
+                // Mostrar número de carta si está jugando
+                const isPlaying = room.current_phase === 'playing';
+                const cardNumber = room.next_dice_index || 0;
+
                 return (
                   <div
                     key={room.id}
@@ -813,6 +817,11 @@ export default function AdminPanel() {
                     <span className={`px-3 py-1 rounded-full text-xs font-bold border ${phaseClass}`}>
                       {phaseLabel}
                     </span>
+                    {isPlaying && cardNumber > 0 && (
+                      <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded">
+                        🃏 Carta {cardNumber}
+                      </span>
+                    )}
                   </div>
                 );
               })}
