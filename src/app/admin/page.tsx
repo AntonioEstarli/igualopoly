@@ -859,6 +859,7 @@ export default function AdminPanel() {
               <table className="w-full text-left">
                 <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
                   <tr>
+                    <th className="p-4">Estado</th>
                     <th className="p-4">Alias</th>
                     <th className="p-4">Capital Actual</th>
                     <th className="p-4">Sala Actual</th>
@@ -867,27 +868,38 @@ export default function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {usuarios.map(u => (
-                    <tr key={u.id} className="hover:bg-slate-50 transition-colors animate-fade-in">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm overflow-hidden"
-                            style={{
-                              backgroundColor: u.color + '20',
-                              border: `2px solid ${u.color}`
-                            }}
-                          >
-                            {u.emoji?.startsWith('avatar-')
-                              ? <img src={`/images/${u.emoji}.png`} className="w-full h-full object-contain p-0.5" alt="avatar" />
-                              : (u.emoji || '👤')
-                            }
+                  {usuarios.map(u => {
+                    // Calcular si el usuario está online (last_activity < 60 segundos)
+                    const isOnline = u.last_activity
+                      ? (new Date().getTime() - new Date(u.last_activity).getTime()) < 60000
+                      : false;
+
+                    return (
+                      <tr key={u.id} className="hover:bg-slate-50 transition-colors animate-fade-in">
+                        <td className="p-4">
+                          <div className="flex items-center gap-1">
+                            <div className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`} title={isOnline ? 'Online' : 'Offline'} />
                           </div>
-                          <div>
-                            <div className="font-bold text-slate-700">{u.alias}</div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm overflow-hidden"
+                              style={{
+                                backgroundColor: u.color + '20',
+                                border: `2px solid ${u.color}`
+                              }}
+                            >
+                              {u.emoji?.startsWith('avatar-')
+                                ? <img src={`/images/${u.emoji}.png`} className="w-full h-full object-contain p-0.5" alt="avatar" />
+                                : (u.emoji || '👤')
+                              }
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-700">{u.alias}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
                       <td className="p-4">
                         <span className={`inline-block px-3 py-1 rounded-full font-black text-sm ${u.money >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                           }`}>
@@ -935,7 +947,8 @@ export default function AdminPanel() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
               {usuarios.length === 0 && (
