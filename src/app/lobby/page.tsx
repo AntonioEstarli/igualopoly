@@ -3,12 +3,16 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/src/lib/supabaseClient';
 import { getTranslation, Language } from '@/src/lib/translations';
+import { normalizeRecoveryCode } from '@/src/lib/recoveryCode';
 
 export default function Lobby() {
   const [nombre, setNombre] = useState('');
   const [idioma, setIdioma] = useState<Language>('ES');
   const [savedSession, setSavedSession] = useState<{ alias: string } | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [showRecoveryInput, setShowRecoveryInput] = useState(false);
+  const [recoveryError, setRecoveryError] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -62,6 +66,33 @@ export default function Lobby() {
       localStorage.setItem('idioma', idioma);
       router.push('/character-creation');
     }
+  };
+
+  const handleRecoverByCode = async () => {
+    const normalized = normalizeRecoveryCode(recoveryCode);
+
+    if (normalized.length !== 6) {
+      setRecoveryError(true);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('participants')
+      .select('id, alias, minisala_id, variables')
+      .eq('recovery_code', normalized)
+      .single();
+
+    if (error || !data) {
+      setRecoveryError(true);
+      return;
+    }
+
+    // Recuperar sesión exitosamente
+    localStorage.setItem('participant_id', data.id);
+    localStorage.setItem('minisala_id', data.minisala_id);
+    localStorage.setItem('vars', JSON.stringify(data.variables));
+    localStorage.setItem('idioma', idioma);
+    router.push('/game');
   };
 
   if (checkingSession) {
@@ -120,41 +151,124 @@ export default function Lobby() {
             {getTranslation('lobby.title', idioma)}
           </h1>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              {getTranslation('lobby.nameLabel', idioma)}
-            </label>
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full border p-2 rounded"
-              placeholder={getTranslation('lobby.namePlaceholder', idioma)}
-            />
-          </div>
+          {!showRecoveryInput ? (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">
+                  {getTranslation('lobby.nameLabel', idioma)}
+                </label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="w-full border p-2 rounded"
+                  placeholder={getTranslation('lobby.namePlaceholder', idioma)}
+                />
+              </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-1">
-              {getTranslation('lobby.languageLabel', idioma)}
-            </label>
-            <select
-              value={idioma}
-              onChange={(e) => setIdioma(e.target.value as Language)}
-              className="w-full border p-2 rounded"
-            >
-              <option value="ES">Español</option>
-              <option value="EN">English</option>
-              <option value="CAT">Català</option>
-            </select>
-          </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-1">
+                  {getTranslation('lobby.languageLabel', idioma)}
+                </label>
+                <select
+                  value={idioma}
+                  onChange={(e) => setIdioma(e.target.value as Language)}
+                  className="w-full border p-2 rounded"
+                >
+                  <option value="ES">Español</option>
+                  <option value="EN">English</option>
+                  <option value="CAT">Català</option>
+                </select>
+              </div>
 
-          <button
-            onClick={handleJoin}
-            disabled={nombre.length < 2}
-            className="w-full bg-blue-600 text-white py-2 rounded font-bold disabled:bg-gray-400"
-          >
-            {getTranslation('lobby.enterButton', idioma)}
-          </button>
+              <button
+                onClick={handleJoin}
+                disabled={nombre.length < 2}
+                className="w-full bg-blue-600 text-white py-2 rounded font-bold disabled:bg-gray-400 mb-3"
+              >
+                {getTranslation('lobby.enterButton', idioma)}
+              </button>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">o</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowRecoveryInput(true)}
+                className="w-full bg-gray-100 text-gray-700 py-2 rounded font-bold hover:bg-gray-200 transition-colors"
+              >
+                🔑 {getTranslation('lobby.haveRecoveryCode', idioma)}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">
+                  {getTranslation('lobby.enterRecoveryCode', idioma)}
+                </label>
+                <input
+                  type="text"
+                  value={recoveryCode}
+                  onChange={(e) => {
+                    setRecoveryCode(e.target.value.toUpperCase());
+                    setRecoveryError(false);
+                  }}
+                  className={`w-full border-2 p-3 rounded font-mono text-lg tracking-wider text-center ${
+                    recoveryError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="ABC-123"
+                  maxLength={7}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {getTranslation('lobby.codeHelper', idioma)}
+                </p>
+                {recoveryError && (
+                  <p className="text-xs text-red-600 mt-2 font-bold">
+                    ⚠️ {getTranslation('lobby.invalidCode', idioma)}
+                  </p>
+                )}
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-1">
+                  {getTranslation('lobby.languageLabel', idioma)}
+                </label>
+                <select
+                  value={idioma}
+                  onChange={(e) => setIdioma(e.target.value as Language)}
+                  className="w-full border p-2 rounded"
+                >
+                  <option value="ES">Español</option>
+                  <option value="EN">English</option>
+                  <option value="CAT">Català</option>
+                </select>
+              </div>
+
+              <button
+                onClick={handleRecoverByCode}
+                disabled={recoveryCode.length < 6}
+                className="w-full bg-green-600 text-white py-3 rounded font-bold disabled:bg-gray-400 mb-3"
+              >
+                {getTranslation('lobby.recoverButton', idioma)}
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowRecoveryInput(false);
+                  setRecoveryCode('');
+                  setRecoveryError(false);
+                }}
+                className="w-full bg-gray-200 text-gray-700 py-2 rounded font-bold hover:bg-gray-300 transition-colors"
+              >
+                ← Volver
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

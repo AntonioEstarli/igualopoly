@@ -41,6 +41,8 @@ export default function AdminPanel() {
   const [rooms, setRooms] = useState<any[]>([]);
   // Mostrar/ocultar configuración avanzada
   const [showConfig, setShowConfig] = useState(false);
+  // Estado para forzar recálculo de online/offline cada 5 segundos
+  const [, setRefreshTick] = useState(0);
 
   // Verificar autenticación al cargar
   useEffect(() => {
@@ -485,6 +487,23 @@ export default function AdminPanel() {
       .eq('id', usuarioId);
   };
 
+  const eliminarParticipante = async (usuarioId: string, alias: string) => {
+    const confirmar = confirm(`⚠️ ¿Estás seguro de eliminar a "${alias}"?\n\nEsta acción no se puede deshacer.`);
+    if (!confirmar) return;
+
+    const { error } = await supabase
+      .from('participants')
+      .delete()
+      .eq('id', usuarioId);
+
+    if (error) {
+      alert("Error al eliminar participante: " + error.message);
+    } else {
+      // La lista se actualizará automáticamente gracias al realtime subscription
+      alert(`✅ Participante "${alias}" eliminado correctamente.`);
+    }
+  };
+
   // Activar votación global en todas las salas
   const activateGlobalVoting = async () => {
     // Verificar el estado de todas las salas
@@ -623,6 +642,17 @@ export default function AdminPanel() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
+  }, [isAuthenticated]);
+
+  // useEffect para forzar recálculo de estados online/offline cada 5 segundos
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(() => {
+      setRefreshTick(prev => prev + 1);
+    }, 5000); // Cada 5 segundos
+
+    return () => clearInterval(interval);
   }, [isAuthenticated]);
 
   // useEffect para cargar usuarios, perfiles y cartas - solo si está autenticado
@@ -804,6 +834,10 @@ export default function AdminPanel() {
                 const phaseClass = phaseColors[room.current_phase] || 'bg-slate-100 text-slate-600 border-slate-200';
                 const phaseLabel = phaseLabels[room.current_phase] || room.current_phase;
 
+                // Mostrar número de carta si está jugando
+                const isPlaying = room.current_phase === 'playing';
+                const cardNumber = room.next_dice_index || 0;
+
                 return (
                   <div
                     key={room.id}
@@ -813,6 +847,11 @@ export default function AdminPanel() {
                     <span className={`px-3 py-1 rounded-full text-xs font-bold border ${phaseClass}`}>
                       {phaseLabel}
                     </span>
+                    {isPlaying && cardNumber > 0 && (
+                      <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded">
+                        🃏 Carta {cardNumber}
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -833,34 +872,47 @@ export default function AdminPanel() {
               <table className="w-full text-left">
                 <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
                   <tr>
+                    <th className="p-4">Estado</th>
                     <th className="p-4">Alias</th>
                     <th className="p-4">Capital Actual</th>
                     <th className="p-4">Sala Actual</th>
+                    <th className="p-4">Código</th>
                     <th className="p-4">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {usuarios.map(u => (
-                    <tr key={u.id} className="hover:bg-slate-50 transition-colors animate-fade-in">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm overflow-hidden"
-                            style={{
-                              backgroundColor: u.color + '20',
-                              border: `2px solid ${u.color}`
-                            }}
-                          >
-                            {u.emoji?.startsWith('avatar-')
-                              ? <img src={`/images/${u.emoji}.png`} className="w-full h-full object-contain p-0.5" alt="avatar" />
-                              : (u.emoji || '👤')
-                            }
+                  {usuarios.map(u => {
+                    // Calcular si el usuario está online (last_activity < 30 segundos)
+                    const isOnline = u.last_activity
+                      ? (new Date().getTime() - new Date(u.last_activity).getTime()) < 30000
+                      : false;
+
+                    return (
+                      <tr key={u.id} className="hover:bg-slate-50 transition-colors animate-fade-in">
+                        <td className="p-4">
+                          <div className="flex items-center gap-1">
+                            <div className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`} title={isOnline ? 'Online' : 'Offline'} />
                           </div>
-                          <div>
-                            <div className="font-bold text-slate-700">{u.alias}</div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm overflow-hidden"
+                              style={{
+                                backgroundColor: u.color + '20',
+                                border: `2px solid ${u.color}`
+                              }}
+                            >
+                              {u.emoji?.startsWith('avatar-')
+                                ? <img src={`/images/${u.emoji}.png`} className="w-full h-full object-contain p-0.5" alt="avatar" />
+                                : (u.emoji || '👤')
+                              }
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-700">{u.alias}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
                       <td className="p-4">
                         <span className={`inline-block px-3 py-1 rounded-full font-black text-sm ${u.money >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                           }`}>
@@ -878,19 +930,38 @@ export default function AdminPanel() {
                           ))}
                         </select>
                       </td>
-                      <td className="p-4 flex gap-2">
-                        <button
-                          onClick={() => asignarLider(u.id, u.minisala_id)}
-                          className={`px-4 py-1.5 rounded-full text-xs font-black transition-all shadow-sm ${u.is_leader
-                            ? 'bg-yellow-400 text-yellow-900 ring-2 ring-yellow-200'
-                            : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                            }`}
-                        >
-                          {u.is_leader ? '🌟 LÍDER' : 'HACER LÍDER'}
-                        </button>
+                      <td className="p-4">
+                        {u.recovery_code ? (
+                          <span className="inline-block px-2 py-1 bg-blue-50 text-blue-700 rounded font-mono text-xs font-bold border border-blue-200">
+                            🔑 {u.recovery_code.slice(0, 3)}-{u.recovery_code.slice(3)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">—</span>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => asignarLider(u.id, u.minisala_id)}
+                            className={`px-4 py-1.5 rounded-full text-xs font-black transition-all shadow-sm ${u.is_leader
+                              ? 'bg-yellow-400 text-yellow-900 ring-2 ring-yellow-200'
+                              : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                              }`}
+                          >
+                            {u.is_leader ? '🌟 LÍDER' : 'HACER LÍDER'}
+                          </button>
+                          <button
+                            onClick={() => eliminarParticipante(u.id, u.alias)}
+                            className="px-3 py-1.5 rounded-full text-xs font-black bg-red-100 text-red-700 hover:bg-red-200 transition-all shadow-sm border border-red-200"
+                            title="Eliminar participante"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
               {usuarios.length === 0 && (

@@ -53,6 +53,31 @@ export const translations = {
       ES: 'Empezar de nuevo',
       EN: 'Start fresh',
       CAT: 'Comença de nou'
+    },
+    haveRecoveryCode: {
+      ES: '¿Tienes un código de recuperación?',
+      EN: 'Have a recovery code?',
+      CAT: 'Tens un codi de recuperació?'
+    },
+    enterRecoveryCode: {
+      ES: 'Introduce tu código',
+      EN: 'Enter your code',
+      CAT: 'Introdueix el teu codi'
+    },
+    recoverButton: {
+      ES: 'Recuperar sesión',
+      EN: 'Recover session',
+      CAT: 'Recuperar sessió'
+    },
+    invalidCode: {
+      ES: 'Código inválido o no encontrado',
+      EN: 'Invalid or not found code',
+      CAT: 'Codi invàlid o no trobat'
+    },
+    codeHelper: {
+      ES: 'Introduce el código de 6 caracteres (ej: ABC-123)',
+      EN: 'Enter the 6-character code (e.g., ABC-123)',
+      CAT: 'Introdueix el codi de 6 caràcters (ex: ABC-123)'
     }
   },
 
@@ -112,6 +137,36 @@ export const translations = {
       ES: 'Listo para jugar',
       EN: 'Ready to play',
       CAT: 'A punt per jugar'
+    },
+    recoveryCodeTitle: {
+      ES: '¡Tu código de recuperación!',
+      EN: 'Your recovery code!',
+      CAT: 'El teu codi de recuperació!'
+    },
+    recoveryCodeMessage: {
+      ES: 'Guarda este código para recuperar tu sesión si pierdes la conexión o cambias de dispositivo.',
+      EN: 'Save this code to recover your session if you lose connection or change devices.',
+      CAT: 'Guarda aquest codi per recuperar la teva sessió si perds la connexió o canvies de dispositiu.'
+    },
+    yourCode: {
+      ES: 'Tu código',
+      EN: 'Your code',
+      CAT: 'El teu codi'
+    },
+    important: {
+      ES: 'Importante',
+      EN: 'Important',
+      CAT: 'Important'
+    },
+    saveCodeWarning: {
+      ES: 'Anota este código en papel o haz una captura de pantalla. Lo necesitarás si tienes que volver a entrar.',
+      EN: 'Write down this code on paper or take a screenshot. You\'ll need it if you have to log in again.',
+      CAT: 'Anota aquest codi en paper o fes una captura de pantalla. El necessitaràs si has de tornar a entrar.'
+    },
+    continueToGame: {
+      ES: 'Continuar al juego',
+      EN: 'Continue to game',
+      CAT: 'Continuar al joc'
     },
     variableLabels: {
       tiempo: {

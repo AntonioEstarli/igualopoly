@@ -89,6 +89,27 @@ export default function MinisalaGame() {
     }
   }, []);
 
+  // Heartbeat: actualizar last_activity cada 30 segundos para detectar usuarios online
+  useEffect(() => {
+    const updateActivity = async () => {
+      const participantId = localStorage.getItem('participant_id');
+      if (!participantId) return;
+
+      await supabase
+        .from('participants')
+        .update({ last_activity: new Date().toISOString() })
+        .eq('id', participantId);
+    };
+
+    // Actualizar inmediatamente al entrar
+    updateActivity();
+
+    // Luego cada 30 segundos
+    const interval = setInterval(updateActivity, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // TODO: REvisar que los valores son correctos, aunque de hecho debería coger estos valores de la base de datos
   /*const SYSTEM_PROFILES = [
     { id: 'p1', alias: 'Hombre Blanco Cis', color: '#1e293b', vars: { red: 'ALTO', visibilidad: 'ALTO', tiempo: 'ALTO', margen_error: 'ALTO', responsabilidades: 'BAJO' } },
