@@ -41,6 +41,8 @@ export default function AdminPanel() {
   const [rooms, setRooms] = useState<any[]>([]);
   // Mostrar/ocultar configuración avanzada
   const [showConfig, setShowConfig] = useState(false);
+  // Estado para forzar recálculo de online/offline cada 5 segundos
+  const [, setRefreshTick] = useState(0);
 
   // Verificar autenticación al cargar
   useEffect(() => {
@@ -640,6 +642,17 @@ export default function AdminPanel() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
+  }, [isAuthenticated]);
+
+  // useEffect para forzar recálculo de estados online/offline cada 5 segundos
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(() => {
+      setRefreshTick(prev => prev + 1);
+    }, 5000); // Cada 5 segundos
+
+    return () => clearInterval(interval);
   }, [isAuthenticated]);
 
   // useEffect para cargar usuarios, perfiles y cartas - solo si está autenticado
