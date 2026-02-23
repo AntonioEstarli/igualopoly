@@ -59,6 +59,9 @@ export default function MinisalaGame() {
   // Estado para sincronizar el lanzamiento del dado entre todos los jugadores
   const [externalDiceRoll, setExternalDiceRoll] = useState<{ value: number; timestamp: number } | null>(null);
 
+  // Estado para text-to-speech
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
   // Idioma del usuario
   const [language, setLanguage] = useState<Language>('ES');
 
@@ -773,6 +776,40 @@ export default function MinisalaGame() {
     setReflexionSaved(true);
   };
 
+  // Funciones de Text-to-Speech
+  const speakText = (text: string) => {
+    // Detener cualquier voz anterior
+    stopSpeaking();
+
+    // Mapeo de idiomas a códigos de voz
+    const langMap: Record<Language, string> = {
+      ES: 'es-ES',
+      EN: 'en-US',
+      CAT: 'ca-ES'
+    };
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = langMap[language];
+    utterance.rate = 0.9; // Velocidad ligeramente reducida para mejor comprensión
+    utterance.pitch = 1.0;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  // Detener la voz cuando cambia el paso de la carta o se cierra
+  useEffect(() => {
+    return () => stopSpeaking();
+  }, [cardStep, card]);
+
   return (
     <div className="min-h-screen bg-slate-100">
       {/* FASE 1: JUEGO ACTIVO (incluye 'start' mientras esperamos que el líder arranque) */}
@@ -952,10 +989,19 @@ export default function MinisalaGame() {
                       {/* PASO 1: Situación */}
                       {cardStep === 1 && (
                         <div className="space-y-4">
-                          <div className="text-slate-700 font-serif text-xl leading-snug italic prose prose-lg max-w-none">
-                            <ReactMarkdown remarkPlugins={[remarkBreaks]}>
-                              {language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}
-                            </ReactMarkdown>
+                          <div className="relative">
+                            <button
+                              onClick={() => isSpeaking ? stopSpeaking() : speakText(language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat)}
+                              className="absolute -top-2 -right-2 w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-xl transition-all shadow-md z-10"
+                              title={isSpeaking ? 'Detener' : 'Escuchar'}
+                            >
+                              {isSpeaking ? '⏸️' : '🔊'}
+                            </button>
+                            <div className="text-slate-700 font-serif text-xl leading-snug italic prose prose-lg max-w-none">
+                              <ReactMarkdown remarkPlugins={[remarkBreaks]}>
+                                {language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}
+                              </ReactMarkdown>
+                            </div>
                           </div>
                           <button
                             onClick={() => setCardStep(2)}
@@ -968,7 +1014,23 @@ export default function MinisalaGame() {
 
                       {/* PASO 2: Sabías que + Afecta + Puntuación */}
                       {cardStep === 2 && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 relative">
+                          <button
+                            onClick={() => {
+                              if (isSpeaking) {
+                                stopSpeaking();
+                              } else {
+                                const sabiasText = language === 'ES' ? card.sabias_es : language === 'EN' ? card.sabias_en : card.sabias_cat;
+                                const afectaText = language === 'ES' ? card.afecta_es : language === 'EN' ? card.afecta_en : card.afecta_cat;
+                                const fullText = `${sabiasText || ''} ${afectaText || ''}`.trim();
+                                speakText(fullText);
+                              }
+                            }}
+                            className="absolute -top-2 -right-2 w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-xl transition-all shadow-md z-10"
+                            title={isSpeaking ? 'Detener' : 'Escuchar'}
+                          >
+                            {isSpeaking ? '⏸️' : '🔊'}
+                          </button>
                           {/* Sabías que */}
                           {(card.sabias_es || card.sabias_en || card.sabias_cat) && (
                             <div>
@@ -1085,7 +1147,23 @@ export default function MinisalaGame() {
 
                       {/* PASO 3: Reflexión + Reescribe + Propuesta */}
                       {cardStep === 3 && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 relative">
+                          <button
+                            onClick={() => {
+                              if (isSpeaking) {
+                                stopSpeaking();
+                              } else {
+                                const reflexionText = language === 'ES' ? card.reflexion_es : language === 'EN' ? card.reflexion_en : card.reflexion_cat;
+                                const reescribeText = language === 'ES' ? card.reescribe_es : language === 'EN' ? card.reescribe_en : card.reescribe_cat;
+                                const fullText = `${reflexionText || ''} ${reescribeText || ''}`.trim();
+                                speakText(fullText);
+                              }
+                            }}
+                            className="absolute -top-2 -right-2 w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-xl transition-all shadow-md z-10"
+                            title={isSpeaking ? 'Detener' : 'Escuchar'}
+                          >
+                            {isSpeaking ? '⏸️' : '🔊'}
+                          </button>
                           {/* Preguntas de reflexión */}
                           {(card.reflexion_es || card.reflexion_en || card.reflexion_cat) && (
                             <div>
