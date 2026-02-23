@@ -817,7 +817,7 @@ export default function MinisalaGame() {
 
             {/* 1. EL TABLERO (Arriba derecha) */}
             <div className="w-full bg-slate-800 px-6 pb-6 pt-2 shadow-lg relative">
-<div className="max-w-[700px] mx-auto">
+<div className="max-w-[780px] mx-auto">
                 <BoardView currentStep={boardPosition} />
               </div>
 
