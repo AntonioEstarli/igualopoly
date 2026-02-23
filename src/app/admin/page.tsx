@@ -845,6 +845,7 @@ export default function AdminPanel() {
                     <th className="p-4">Alias</th>
                     <th className="p-4">Capital Actual</th>
                     <th className="p-4">Sala Actual</th>
+                    <th className="p-4">Código</th>
                     <th className="p-4">Acciones</th>
                   </tr>
                 </thead>
@@ -886,6 +887,15 @@ export default function AdminPanel() {
                             <option key={room.id} value={room.id}>{room.name || room.id}</option>
                           ))}
                         </select>
+                      </td>
+                      <td className="p-4">
+                        {u.recovery_code ? (
+                          <span className="inline-block px-2 py-1 bg-blue-50 text-blue-700 rounded font-mono text-xs font-bold border border-blue-200">
+                            🔑 {u.recovery_code.slice(0, 3)}-{u.recovery_code.slice(3)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">—</span>
+                        )}
                       </td>
                       <td className="p-4 flex gap-2">
                         <button
