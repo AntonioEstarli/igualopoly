@@ -788,10 +788,47 @@ export default function MinisalaGame() {
       CAT: 'ca-ES'
     };
 
+    const targetLang = langMap[language];
+
+    // Obtener todas las voces disponibles
+    const voices = window.speechSynthesis.getVoices();
+
+    // Buscar la mejor voz disponible para el idioma
+    // Prioridad: Google > Premium/Enhanced > Natural > Cualquier voz del idioma
+    const findBestVoice = () => {
+      const langVoices = voices.filter(v => v.lang.startsWith(targetLang.split('-')[0]));
+
+      // 1. Buscar voces de Google (suelen ser las mejores)
+      const googleVoice = langVoices.find(v => v.name.includes('Google'));
+      if (googleVoice) return googleVoice;
+
+      // 2. Buscar voces Premium o Enhanced
+      const premiumVoice = langVoices.find(v =>
+        v.name.includes('Premium') ||
+        v.name.includes('Enhanced') ||
+        v.name.includes('Natural')
+      );
+      if (premiumVoice) return premiumVoice;
+
+      // 3. Buscar voces de Microsoft (mejor que las básicas)
+      const microsoftVoice = langVoices.find(v => v.name.includes('Microsoft'));
+      if (microsoftVoice) return microsoftVoice;
+
+      // 4. Usar la primera voz disponible del idioma
+      return langVoices[0];
+    };
+
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = langMap[language];
-    utterance.rate = 0.9; // Velocidad ligeramente reducida para mejor comprensión
+    utterance.lang = targetLang;
+    utterance.rate = 1.0; // Velocidad normal
     utterance.pitch = 1.0;
+
+    // Asignar la mejor voz disponible
+    const bestVoice = findBestVoice();
+    if (bestVoice) {
+      utterance.voice = bestVoice;
+      console.log('🔊 Usando voz:', bestVoice.name);
+    }
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
@@ -804,6 +841,25 @@ export default function MinisalaGame() {
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
   };
+
+  // Cargar las voces disponibles al inicio
+  useEffect(() => {
+    // Las voces pueden no estar disponibles inmediatamente en algunos navegadores
+    // Este evento se dispara cuando las voces están listas
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        console.log('✅ Voces TTS cargadas:', voices.length);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, []);
 
   // Detener la voz cuando cambia el paso de la carta o se cierra
   useEffect(() => {
