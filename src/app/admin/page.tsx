@@ -485,6 +485,23 @@ export default function AdminPanel() {
       .eq('id', usuarioId);
   };
 
+  const eliminarParticipante = async (usuarioId: string, alias: string) => {
+    const confirmar = confirm(`⚠️ ¿Estás seguro de eliminar a "${alias}"?\n\nEsta acción no se puede deshacer.`);
+    if (!confirmar) return;
+
+    const { error } = await supabase
+      .from('participants')
+      .delete()
+      .eq('id', usuarioId);
+
+    if (error) {
+      alert("Error al eliminar participante: " + error.message);
+    } else {
+      // La lista se actualizará automáticamente gracias al realtime subscription
+      alert(`✅ Participante "${alias}" eliminado correctamente.`);
+    }
+  };
+
   // Activar votación global en todas las salas
   const activateGlobalVoting = async () => {
     // Verificar el estado de todas las salas
@@ -897,16 +914,25 @@ export default function AdminPanel() {
                           <span className="text-xs text-slate-400 italic">—</span>
                         )}
                       </td>
-                      <td className="p-4 flex gap-2">
-                        <button
-                          onClick={() => asignarLider(u.id, u.minisala_id)}
-                          className={`px-4 py-1.5 rounded-full text-xs font-black transition-all shadow-sm ${u.is_leader
-                            ? 'bg-yellow-400 text-yellow-900 ring-2 ring-yellow-200'
-                            : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                            }`}
-                        >
-                          {u.is_leader ? '🌟 LÍDER' : 'HACER LÍDER'}
-                        </button>
+                      <td className="p-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => asignarLider(u.id, u.minisala_id)}
+                            className={`px-4 py-1.5 rounded-full text-xs font-black transition-all shadow-sm ${u.is_leader
+                              ? 'bg-yellow-400 text-yellow-900 ring-2 ring-yellow-200'
+                              : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                              }`}
+                          >
+                            {u.is_leader ? '🌟 LÍDER' : 'HACER LÍDER'}
+                          </button>
+                          <button
+                            onClick={() => eliminarParticipante(u.id, u.alias)}
+                            className="px-3 py-1.5 rounded-full text-xs font-black bg-red-100 text-red-700 hover:bg-red-200 transition-all shadow-sm border border-red-200"
+                            title="Eliminar participante"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
