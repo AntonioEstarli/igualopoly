@@ -1070,25 +1070,42 @@ export default function MinisalaGame() {
                       <span className="font-black uppercase text-sm tracking-widest">
                         {language === 'ES' ? card.name_es : language === 'EN' ? card.name_en : card.name_cat}
                       </span>
+                      <button
+                        onClick={() => {
+                          if (isSpeaking) {
+                            stopSpeaking();
+                          } else {
+                            // Leer el contenido según el paso actual
+                            let textToRead = '';
+                            if (cardStep === 1) {
+                              textToRead = language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat;
+                            } else if (cardStep === 2) {
+                              const sabiasText = language === 'ES' ? card.sabias_es : language === 'EN' ? card.sabias_en : card.sabias_cat;
+                              const afectaText = language === 'ES' ? card.afecta_es : language === 'EN' ? card.afecta_en : card.afecta_cat;
+                              textToRead = `${sabiasText || ''} ${afectaText || ''}`.trim();
+                            } else if (cardStep === 3) {
+                              const reflexionText = language === 'ES' ? card.reflexion_es : language === 'EN' ? card.reflexion_en : card.reflexion_cat;
+                              const reescribeText = language === 'ES' ? card.reescribe_es : language === 'EN' ? card.reescribe_en : card.reescribe_cat;
+                              textToRead = `${reflexionText || ''} ${reescribeText || ''}`.trim();
+                            }
+                            speakText(textToRead);
+                          }
+                        }}
+                        className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-xl transition-all"
+                        title={isSpeaking ? 'Detener' : 'Escuchar'}
+                      >
+                        {isSpeaking ? '⏸️' : '🔊'}
+                      </button>
                     </div>
 
                     <div className="p-4 flex-1">
                       {/* PASO 1: Situación */}
                       {cardStep === 1 && (
                         <div className="space-y-4">
-                          <div className="relative">
-                            <button
-                              onClick={() => isSpeaking ? stopSpeaking() : speakText(language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat)}
-                              className="absolute -top-2 -right-2 w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-xl transition-all shadow-md z-10"
-                              title={isSpeaking ? 'Detener' : 'Escuchar'}
-                            >
-                              {isSpeaking ? '⏸️' : '🔊'}
-                            </button>
-                            <div className="text-slate-700 font-serif text-xl leading-snug italic prose prose-lg max-w-none">
-                              <ReactMarkdown remarkPlugins={[remarkBreaks]}>
-                                {language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}
-                              </ReactMarkdown>
-                            </div>
+                          <div className="text-slate-700 font-serif text-xl leading-snug italic prose prose-lg max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkBreaks]}>
+                              {language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}
+                            </ReactMarkdown>
                           </div>
                           <button
                             onClick={() => setCardStep(2)}
@@ -1101,23 +1118,7 @@ export default function MinisalaGame() {
 
                       {/* PASO 2: Sabías que + Afecta + Puntuación */}
                       {cardStep === 2 && (
-                        <div className="space-y-4 relative">
-                          <button
-                            onClick={() => {
-                              if (isSpeaking) {
-                                stopSpeaking();
-                              } else {
-                                const sabiasText = language === 'ES' ? card.sabias_es : language === 'EN' ? card.sabias_en : card.sabias_cat;
-                                const afectaText = language === 'ES' ? card.afecta_es : language === 'EN' ? card.afecta_en : card.afecta_cat;
-                                const fullText = `${sabiasText || ''} ${afectaText || ''}`.trim();
-                                speakText(fullText);
-                              }
-                            }}
-                            className="absolute -top-2 -right-2 w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-xl transition-all shadow-md z-10"
-                            title={isSpeaking ? 'Detener' : 'Escuchar'}
-                          >
-                            {isSpeaking ? '⏸️' : '🔊'}
-                          </button>
+                        <div className="space-y-4">
                           {/* Sabías que */}
                           {(card.sabias_es || card.sabias_en || card.sabias_cat) && (
                             <div>
@@ -1234,23 +1235,7 @@ export default function MinisalaGame() {
 
                       {/* PASO 3: Reflexión + Reescribe + Propuesta */}
                       {cardStep === 3 && (
-                        <div className="space-y-4 relative">
-                          <button
-                            onClick={() => {
-                              if (isSpeaking) {
-                                stopSpeaking();
-                              } else {
-                                const reflexionText = language === 'ES' ? card.reflexion_es : language === 'EN' ? card.reflexion_en : card.reflexion_cat;
-                                const reescribeText = language === 'ES' ? card.reescribe_es : language === 'EN' ? card.reescribe_en : card.reescribe_cat;
-                                const fullText = `${reflexionText || ''} ${reescribeText || ''}`.trim();
-                                speakText(fullText);
-                              }
-                            }}
-                            className="absolute -top-2 -right-2 w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-xl transition-all shadow-md z-10"
-                            title={isSpeaking ? 'Detener' : 'Escuchar'}
-                          >
-                            {isSpeaking ? '⏸️' : '🔊'}
-                          </button>
+                        <div className="space-y-4">
                           {/* Preguntas de reflexión */}
                           {(card.reflexion_es || card.reflexion_en || card.reflexion_cat) && (
                             <div>
