@@ -776,10 +776,41 @@ export default function MinisalaGame() {
     setReflexionSaved(true);
   };
 
+  // Función para limpiar Markdown del texto antes de enviarlo al TTS
+  const cleanMarkdownForSpeech = (text: string): string => {
+    return text
+      // Eliminar negritas (** o __)
+      .replace(/\*\*/g, '')
+      .replace(/__/g, '')
+      // Eliminar itálicas (* o _)
+      .replace(/\*/g, '')
+      .replace(/_/g, '')
+      // Eliminar encabezados (#)
+      .replace(/^#+\s/gm, '')
+      // Convertir flechas y símbolos especiales
+      .replace(/→/g, '')
+      .replace(/←/g, '')
+      .replace(/↑/g, '')
+      .replace(/↓/g, '')
+      // Eliminar enlaces [texto](url) -> solo dejar el texto
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // Eliminar bloques de código (`)
+      .replace(/`/g, '')
+      // Limpiar saltos de línea múltiples
+      .replace(/\n\n+/g, '. ')
+      .replace(/\n/g, ' ')
+      // Limpiar espacios múltiples
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
   // Funciones de Text-to-Speech
   const speakText = (text: string) => {
     // Detener cualquier voz anterior
     stopSpeaking();
+
+    // Limpiar el texto de sintaxis Markdown
+    const cleanText = cleanMarkdownForSpeech(text);
 
     // Mapeo de idiomas a códigos de voz
     const langMap: Record<Language, string> = {
@@ -818,7 +849,7 @@ export default function MinisalaGame() {
       return langVoices[0];
     };
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = targetLang;
     utterance.rate = 1.0; // Velocidad normal
     utterance.pitch = 1.0;
