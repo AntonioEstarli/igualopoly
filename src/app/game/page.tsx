@@ -9,7 +9,7 @@ import { CapitalRace } from '@/src/components/CapitalRace';
 import { calculateSystemMoney } from '@/src/lib/gameLogic';
 import { VotingView } from '@/src/components/VotingView';
 import { PodiumView } from '@/src/components/PodiumView';
-import { RankingView } from '@/src/components/RankingView';
+import { MetricsView } from '@/src/components/MetricsView';
 import { getTranslation, Language } from '@/src/lib/translations';
 import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
@@ -41,7 +41,7 @@ export default function MinisalaGame() {
   const [hasSubmittedProposal, setHasSubmittedProposal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // 1. Estado para la fase (que escuchará de Supabase)
-  const [gamePhase, setGamePhase] = useState<'start' | 'playing' | 'ranking' | 'voting' | 'podium' | 'final'>('start');
+  const [gamePhase, setGamePhase] = useState<'start' | 'playing' | 'ranking' | 'voting' | 'podium' | 'final' | 'metrics_final'>('start');
   // Estado para la simulación final
   const [isFinalSimulation, setIsFinalSimulation] = useState(false);
   const isFinalSimulationRef = useRef(false); // Ref para leer en callbacks de Supabase sin closure stale
@@ -192,7 +192,7 @@ export default function MinisalaGame() {
               isFinalSimulationRef.current = true;
               setIsFinalSimulation(true);
               localStorage.setItem('is_final_simulation', 'true');
-            } else if (newPhase === 'voting' || newPhase === 'podium') {
+            } else if (newPhase === 'voting' || newPhase === 'podium' || newPhase === 'metrics_final') {
               setGamePhase(newPhase);
             } else if (newPhase === 'playing' && isFinalSimulationRef.current) {
               // Transición de 'final' → 'playing': arranca la simulación automática (jugadores no-líder)
@@ -456,7 +456,7 @@ export default function MinisalaGame() {
           isFinalSimulationRef.current = true;
           setIsFinalSimulation(true);
           localStorage.setItem('is_final_simulation', 'true');
-        } else if (participantPhase === 'voting' || participantPhase === 'podium') {
+        } else if (participantPhase === 'voting' || participantPhase === 'podium' || participantPhase === 'metrics_final') {
           setGamePhase(participantPhase);
         } else if (roomPhase === 'start') {
           setGamePhase('start');
@@ -695,6 +695,18 @@ export default function MinisalaGame() {
     // Actualizamos el estado local
     setGamePhase('playing');
     setIsAutoSimulating(true); // Iniciar simulación automática
+  };
+
+  // Función para que el Líder active las métricas finales
+  const activateMetricsFinal = async () => {
+    // Actualizamos todos los participantes de la sala a 'metrics_final'
+    await supabase
+      .from('participants')
+      .update({ current_phase: 'metrics_final' })
+      .eq('minisala_id', minisalaId);
+
+    // Actualizamos el estado local inmediatamente para el líder
+    setGamePhase('metrics_final');
   };
 
   // Simulación automática: lanza el dado automáticamente durante la simulación final
@@ -1008,6 +1020,15 @@ export default function MinisalaGame() {
                               </button>
                             )}
                           </div>
+                          {/* Botón para mostrar métricas finales (solo líder) */}
+                          {isLeader && (
+                            <button
+                              onClick={activateMetricsFinal}
+                              className="w-full py-3 bg-white text-emerald-600 rounded-xl font-black shadow-lg hover:bg-emerald-50 transition-colors"
+                            >
+                              {getTranslation('game.showFinalMetrics', language)}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1395,8 +1416,8 @@ export default function MinisalaGame() {
         </div>
 
       ) : gamePhase === 'ranking' ? (
-        /* FASE 2: RANKING */
-        <RankingView
+        /* FASE 2: MÉTRICAS DE DESIGUALDAD */
+        <MetricsView
           players={roomPlayers}
           systemProfiles={systemProfiles.map(profile => ({
             id: profile.id,
@@ -1415,6 +1436,8 @@ export default function MinisalaGame() {
               allCards
             )
           }))}
+          isFinalSimulation={false}
+          minisalaId={minisalaId}
         />
 
       ) : gamePhase === 'voting' ? (
@@ -1458,12 +1481,47 @@ export default function MinisalaGame() {
           </div>
         </div>
 
-      ) : (
+      ) : gamePhase === 'podium' ? (
         /* FASE 4: PODIO */
         <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900 text-white">
           <PodiumView />
         </div>
-      )}
+
+      ) : gamePhase === 'metrics_final' ? (
+        /* FASE 5: MÉTRICAS FINALES (después de la simulación) */
+        <MetricsView
+          players={roomPlayers.map(player => ({
+            ...player,
+            money: calculateSystemMoney(
+              player.variables || {},
+              allCards.length,
+              allCards,
+              { isFinalSimulation: true, profileId: player.id }
+            )
+          }))}
+          systemProfiles={systemProfiles.map(profile => ({
+            id: profile.id,
+            alias: profile.alias,
+            color: profile.color,
+            emoji: profile.emoji,
+            money: calculateSystemMoney(
+              {
+                red: profile.red,
+                visibilidad: profile.visibilidad,
+                tiempo: profile.tiempo,
+                margen_error: profile.margen_error,
+                responsabilidades: profile.responsabilidades
+              },
+              allCards.length,
+              allCards,
+              { isFinalSimulation: true, profileId: profile.id }
+            )
+          }))}
+          isFinalSimulation={true}
+          minisalaId={minisalaId}
+        />
+
+      ) : null}
     </div>
   );
 }

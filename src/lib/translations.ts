@@ -558,6 +558,11 @@ export const translations = {
       ES: '¡Reflexión guardada!',
       EN: 'Reflection saved!',
       CAT: 'Reflexió desada!'
+    },
+    showFinalMetrics: {
+      ES: 'Ver Resultados Finales',
+      EN: 'View Final Results',
+      CAT: 'Veure Resultats Finals'
     }
   },
 
@@ -670,6 +675,102 @@ export const translations = {
       ES: 'Capital',
       EN: 'Capital',
       CAT: 'Capital'
+    }
+  },
+
+  // Metrics
+  metrics: {
+    title: {
+      ES: 'Análisis de Desigualdad',
+      EN: 'Inequality Analysis',
+      CAT: 'Anàlisi de Desigualtat'
+    },
+    subtitle: {
+      ES: 'Impacto del sistema en la distribución de recursos',
+      EN: 'System impact on resource distribution',
+      CAT: 'Impacte del sistema en la distribució de recursos'
+    },
+    titleFinal: {
+      ES: 'Simulación Igualitaria',
+      EN: 'Egalitarian Simulation',
+      CAT: 'Simulació Igualitària'
+    },
+    subtitleFinal: {
+      ES: 'Resultados con condiciones equitativas',
+      EN: 'Results with equitable conditions',
+      CAT: 'Resultats amb condicions equitatives'
+    },
+    brecha: {
+      ES: 'Brecha',
+      EN: 'Gap',
+      CAT: 'Bretxa'
+    },
+    brechaDesc: {
+      ES: 'Diferencia entre el que más y el que menos',
+      EN: 'Difference between highest and lowest',
+      CAT: 'Diferència entre el que més i el que menys'
+    },
+    concentracion: {
+      ES: 'Concentración',
+      EN: 'Concentration',
+      CAT: 'Concentració'
+    },
+    concentracionDesc: {
+      ES: 'Nivel de concentración de recursos',
+      EN: 'Resource concentration level',
+      CAT: 'Nivell de concentració de recursos'
+    },
+    ratioGanador: {
+      ES: 'Ratio Ganador/a',
+      EN: 'Winner Ratio',
+      CAT: 'Ràtio Guanyador/a'
+    },
+    ratioGanadorDesc: {
+      ES: 'Ganador/a acumula X veces más que el último',
+      EN: 'Winner accumulates X times more than last',
+      CAT: 'Guanyador/a acumula X vegades més que l\'últim'
+    },
+    motivacion: {
+      ES: 'Motivación del Equipo',
+      EN: 'Team Motivation',
+      CAT: 'Motivació de l\'Equip'
+    },
+    motivacionDesc: {
+      ES: 'Nivel de motivación basado en la equidad',
+      EN: 'Motivation level based on equity',
+      CAT: 'Nivell de motivació basat en l\'equitat'
+    },
+    propuestas: {
+      ES: 'Ideas Propuestas',
+      EN: 'Proposed Ideas',
+      CAT: 'Idees Proposades'
+    },
+    propuestasDesc: {
+      ES: 'Ideas del equipo para reducir la brecha',
+      EN: 'Team ideas to reduce the gap',
+      CAT: 'Idees de l\'equip per reduir la bretxa'
+    },
+    distribucion: {
+      ES: 'Distribución de Recursos',
+      EN: 'Resource Distribution',
+      CAT: 'Distribució de Recursos'
+    },
+    level: {
+      ALTO: {
+        ES: 'ALTO',
+        EN: 'HIGH',
+        CAT: 'ALT'
+      },
+      MEDIO: {
+        ES: 'MEDIO',
+        EN: 'MEDIUM',
+        CAT: 'MITJÀ'
+      },
+      BAJO: {
+        ES: 'BAJO',
+        EN: 'LOW',
+        CAT: 'BAIX'
+      }
     }
   },
 
