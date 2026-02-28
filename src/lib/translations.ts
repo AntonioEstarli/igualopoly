@@ -211,6 +211,129 @@ export const translations = {
         EN: 'LOW',
         CAT: 'BAIX'
       }
+    },
+    // Preguntas para determinar variables
+    questions: {
+      tiempo: {
+        question: {
+          ES: '¿Cuánta flexibilidad real tienes para dedicar tiempo adicional al trabajo si es necesario?',
+          EN: 'How much real flexibility do you have to dedicate additional time to work if needed?',
+          CAT: 'Quanta flexibilitat real tens per dedicar temps addicional a la feina si cal?'
+        },
+        options: [
+          {
+            ES: 'Puedo alargar jornadas, viajar o trabajar fines de semana si hace falta.',
+            EN: 'I can extend my workday, travel, or work weekends if necessary.',
+            CAT: 'Puc allargar jornades, viatjar o treballar caps de setmana si cal.'
+          },
+          {
+            ES: 'Normalmente cumplo mi horario y puedo hacer algún esfuerzo muy puntual.',
+            EN: 'I usually keep my schedule and can make very occasional extra efforts.',
+            CAT: 'Normalment compleixo el meu horari i puc fer algun esforç molt puntual.'
+          },
+          {
+            ES: 'Tengo limitaciones claras (cuidados, responsabilidades externas u otras circunstancias) que me impiden dedicar tiempo extra o incluso han hecho que me reduzca la jornada.',
+            EN: 'I have clear limitations (caregiving, external responsibilities, or other circumstances) that prevent me from dedicating extra time or have even led to reducing my hours.',
+            CAT: 'Tinc limitacions clares (cures, responsabilitats externes o altres circumstàncies) que m\'impedeixen dedicar temps extra o fins i tot han fet que redueixi la jornada.'
+          }
+        ]
+      },
+      red: {
+        question: {
+          ES: 'Si mañana surgiera una oportunidad interna interesante, ¿con qué red contarías para apoyar tu candidatura?',
+          EN: 'If an interesting internal opportunity arose tomorrow, what network would you count on to support your candidacy?',
+          CAT: 'Si demà sorgís una oportunitat interna interessant, amb quina xarxa comptaries per donar suport a la teva candidatura?'
+        },
+        options: [
+          {
+            ES: 'Conozco a personas influyentes y sé a quién acudir para mover oportunidades.',
+            EN: 'I know influential people and know whom to approach to move opportunities forward.',
+            CAT: 'Conec persones influents i sé a qui acudir per moure oportunitats.'
+          },
+          {
+            ES: 'Tengo algunos contactos, pero no en todos los niveles de decisión.',
+            EN: 'I have some contacts, but not at all decision-making levels.',
+            CAT: 'Tinc alguns contactes, però no en tots els nivells de decisió.'
+          },
+          {
+            ES: 'Mi red es limitada o me cuesta acceder a personas con poder de decisión.',
+            EN: 'My network is limited or I find it difficult to access decision-makers.',
+            CAT: 'La meva xarxa és limitada o em costa accedir a persones amb poder de decisió.'
+          }
+        ]
+      },
+      visibilidad: {
+        question: {
+          ES: '¿Qué nivel de exposición tienes en tu entorno profesional?',
+          EN: 'What level of exposure do you have in your professional environment?',
+          CAT: 'Quin nivell d\'exposició tens en el teu entorn professional?'
+        },
+        options: [
+          {
+            ES: 'Mi trabajo es visible y suelo participar en espacios donde se toman decisiones.',
+            EN: 'My work is visible and I usually participate in decision-making spaces.',
+            CAT: 'La meva feina és visible i solic participar en espais on es prenen decisions.'
+          },
+          {
+            ES: 'Mi trabajo es conocido dentro de mi equipo, pero no siempre más allá.',
+            EN: 'My work is known within my team, but not always beyond.',
+            CAT: 'La meva feina és coneguda dins del meu equip, però no sempre més enllà.'
+          },
+          {
+            ES: 'Mi trabajo pasa bastante desapercibido o no suelo estar en espacios clave.',
+            EN: 'My work goes largely unnoticed or I\'m not usually in key spaces.',
+            CAT: 'La meva feina passa força desapercebuda o no solic estar en espais clau.'
+          }
+        ]
+      },
+      responsabilidades: {
+        question: {
+          ES: 'Más allá de tu desempeño, ¿hasta qué punto sientes que factores personales pueden influir en cómo se percibe tu trabajo (género, origen, edad, responsabilidades de cuidado u otros)?',
+          EN: 'Beyond your performance, to what extent do you feel that personal factors can influence how your work is perceived (gender, origin, age, caregiving responsibilities, or others)?',
+          CAT: 'Més enllà del teu rendiment, fins a quin punt sents que factors personals poden influir en com es percep la teva feina (gènere, origen, edat, responsabilitats de cura o altres)?'
+        },
+        options: [
+          {
+            ES: 'Rara vez siento que estos factores influyan en cómo se valora mi trabajo.',
+            EN: 'I rarely feel that these factors influence how my work is valued.',
+            CAT: 'Rarament sento que aquests factors influeixin en com es valora la meva feina.'
+          },
+          {
+            ES: 'En algunas situaciones noto que pueden influir, dependiendo del contexto.',
+            EN: 'In some situations, I notice they can influence, depending on the context.',
+            CAT: 'En algunes situacions noto que poden influir, depenent del context.'
+          },
+          {
+            ES: 'Con frecuencia siento que debo demostrar más o que estos factores afectan cómo se me percibe profesionalmente.',
+            EN: 'I frequently feel I must prove more or that these factors affect how I\'m perceived professionally.',
+            CAT: 'Amb freqüència sento que haig de demostrar més o que aquests factors afecten com em perceben professionalment.'
+          }
+        ]
+      },
+      margen_error: {
+        question: {
+          ES: 'Si cometieras un error "importante" en el trabajo, ¿qué crees que pasaría?',
+          EN: 'If you made a "significant" mistake at work, what do you think would happen?',
+          CAT: 'Si cometessis un error "important" a la feina, què creus que passaria?'
+        },
+        options: [
+          {
+            ES: 'Probablemente se interpretaría como algo puntual y podría recuperarme fácilmente.',
+            EN: 'It would probably be interpreted as a one-time thing and I could recover easily.',
+            CAT: 'Probablement s\'interpretaria com una cosa puntual i podria recuperar-me fàcilment.'
+          },
+          {
+            ES: 'Dependería mucho del contexto y de quién esté mirando.',
+            EN: 'It would depend heavily on the context and who is watching.',
+            CAT: 'Dependria molt del context i de qui estigui mirant.'
+          },
+          {
+            ES: 'Sentiría que tendría consecuencias duraderas o afectaría mi reputación.',
+            EN: 'I would feel it would have lasting consequences or affect my reputation.',
+            CAT: 'Sentiria que tindria conseqüències duradores o afectaria la meva reputació.'
+          }
+        ]
+      }
     }
   },
 

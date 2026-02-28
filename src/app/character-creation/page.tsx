@@ -2,20 +2,32 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/src/lib/supabaseClient';
-import { getTranslation, Language } from '@/src/lib/translations';
+import { getTranslation, Language, translations } from '@/src/lib/translations';
 import { generateRecoveryCode, formatRecoveryCode } from '@/src/lib/recoveryCode';
 
-const VARIABLES = ['tiempo', 'visibilidad', 'red', 'margen_error', 'responsabilidades'] as const;
+const VARIABLES = ['tiempo', 'red', 'visibilidad', 'responsabilidades', 'margen_error'] as const;
 
 const NIVELES = ['ALTO', 'MEDIO', 'BAJO'] as const;
+
+// Mapeo de índice de respuesta a nivel (la mayoría es 0=ALTO, 1=MEDIO, 2=BAJO)
+// Excepto responsabilidades que está invertido (0=BAJO, 1=MEDIO, 2=ALTO)
+function getVariableLevel(variableName: string, optionIndex: number): string {
+  if (variableName === 'responsabilidades') {
+    // Invertido para cargas invisibles
+    return ['BAJO', 'MEDIO', 'ALTO'][optionIndex];
+  }
+  // Normal para el resto
+  return ['ALTO', 'MEDIO', 'BAJO'][optionIndex];
+}
 
 export default function CharacterCreation() {
   const [alias, setAlias] = useState('');
   const [rooms, setRooms] = useState<any[]>([]); // Estado para las salas de la DB
   const [minisalaId, setMinisalaId] = useState(''); // Empezamos vacío
   const [vars, setVars] = useState<Record<string, string>>({
-    tiempo: 'MEDIO', visibilidad: 'MEDIO', red: 'MEDIO', margen_error: 'MEDIO', responsabilidades: 'MEDIO'
+    tiempo: '', visibilidad: '', red: '', margen_error: '', responsabilidades: ''
   });
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   // color y avatar
   const [selectedColor, setSelectedColor] = useState('#ef4444');
   const [selectedEmoji, setSelectedEmoji] = useState('avatar-hombre-1');
@@ -53,6 +65,14 @@ export default function CharacterCreation() {
     };
     fetchRooms();
   }, []);
+
+  const handleAnswerSelect = (variableName: string, optionIndex: number) => {
+    setSelectedAnswers({ ...selectedAnswers, [variableName]: optionIndex });
+    const level = getVariableLevel(variableName, optionIndex);
+    setVars({ ...vars, [variableName]: level });
+  };
+
+  const allQuestionsAnswered = VARIABLES.every(v => vars[v] !== '');
 
   const handleSave = async () => {
     const nombre = localStorage.getItem('participante_nombre');
@@ -158,24 +178,54 @@ export default function CharacterCreation() {
         </div>
       </div>
 
-      {/* Configuración de las 5 Variables */}
-      <div className="space-y-4 mb-8">
-        {VARIABLES.map((v) => (
-          <div key={v} className="flex flex-col">
-            <label className="text-sm font-medium mb-2">{getTranslation(`characterCreation.variableLabels.${v}`, language)}</label>
-            <div className="flex gap-2">
-              {NIVELES.map((nivel) => (
-                <button
-                  key={nivel}
-                  onClick={() => setVars({...vars, [v]: nivel})}
-                  className={`flex-1 py-2 rounded border ${vars[v] === nivel ? 'bg-blue-600 text-white' : 'bg-gray-50'}`}
-                >
-                  {getTranslation(`characterCreation.levels.${nivel}`, language)}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+      {/* Preguntas para determinar las variables */}
+      <div className="mb-8">
+        <h3 className="text-lg font-bold mb-4 text-slate-800">
+          {language === 'ES' ? 'Responde estas preguntas sobre tu situación profesional' : language === 'EN' ? 'Answer these questions about your professional situation' : 'Respon aquestes preguntes sobre la teva situació professional'}
+        </h3>
+        <div className="space-y-6">
+          {VARIABLES.map((v, index) => {
+            const questionData = translations.characterCreation.questions[v].question[language];
+            const options = translations.characterCreation.questions[v].options;
+
+            return (
+              <div key={v} className="p-4 bg-slate-50 rounded-xl border-2 border-slate-200">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                    {index + 1}
+                  </div>
+                  <p className="font-semibold text-slate-800 leading-snug pt-1">
+                    {questionData}
+                  </p>
+                </div>
+
+                <div className="space-y-2 ml-11">
+                  {options.map((option, optionIndex) => (
+                    <label
+                      key={optionIndex}
+                      className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        selectedAnswers[v] === optionIndex
+                          ? 'bg-blue-50 border-blue-500'
+                          : 'bg-white border-slate-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`question-${v}`}
+                        checked={selectedAnswers[v] === optionIndex}
+                        onChange={() => handleAnswerSelect(v, optionIndex)}
+                        className="mt-1 w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm text-slate-700 flex-1">
+                        {option[language]}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mb-8 p-4 bg-blue-50 rounded-2xl border border-blue-100">
@@ -200,15 +250,20 @@ export default function CharacterCreation() {
 
       <button
         onClick={handleSave}
-        disabled={!minisalaId}
+        disabled={!minisalaId || !allQuestionsAnswered}
         className={`w-full py-4 rounded-2xl font-black text-xl uppercase tracking-wider transition-all shadow-lg ${
-          minisalaId
+          minisalaId && allQuestionsAnswered
             ? 'bg-green-500 text-white hover:bg-green-600 active:scale-95 shadow-green-200'
             : 'bg-slate-200 text-slate-400 cursor-not-allowed'
         }`}
       >
         {getTranslation('characterCreation.readyToPlay', language)}
       </button>
+      {!allQuestionsAnswered && (
+        <p className="text-center text-sm text-orange-600 mt-2">
+          {language === 'ES' ? 'Por favor, responde todas las preguntas' : language === 'EN' ? 'Please answer all questions' : 'Si us plau, respon totes les preguntes'}
+        </p>
+      )}
 
       {/* Modal de Código de Recuperación */}
       {showRecoveryModal && recoveryCode && (
