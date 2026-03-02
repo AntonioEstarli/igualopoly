@@ -124,7 +124,7 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
               <div className={`text-6xl font-black mb-2 ${
                 isFinalSimulation ? 'text-green-400' : 'text-red-400'
               }`}>
-                {brecha}€
+                {brecha}K €
               </div>
               <div className="text-slate-400 text-sm">
                 {getTranslation('metrics.brechaDesc', language)}
