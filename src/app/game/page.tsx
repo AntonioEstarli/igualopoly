@@ -256,7 +256,8 @@ export default function MinisalaGame() {
       const { data, error } = await supabase
         .from('participants')
         .select('id, alias, money, minisala_id, color, emoji, variables')
-        .eq('minisala_id', minisalaId);
+        .eq('minisala_id', minisalaId)
+        .order('id', { ascending: true });
 
       if (cancelled) return;
 
