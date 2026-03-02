@@ -1245,12 +1245,20 @@ export default function MinisalaGame() {
                             </div>
                           </div>
 
-                          <button
-                            onClick={() => setCardStep(3)}
-                            className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
-                          >
-                            {getTranslation('game.next', language)}
-                          </button>
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => setCardStep(1)}
+                              className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
+                            >
+                              {getTranslation('game.back', language)}
+                            </button>
+                            <button
+                              onClick={() => setCardStep(3)}
+                              className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                            >
+                              {getTranslation('game.next', language)}
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -1293,20 +1301,36 @@ export default function MinisalaGame() {
                                   className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
                                 />
                                 {proposalText.trim() ? (
-                                  <button
-                                    onClick={submitProposal}
-                                    disabled={isSubmitting}
-                                    className="w-full py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
-                                  >
-                                    {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
-                                  </button>
+                                  <div className="flex gap-3">
+                                    <button
+                                      onClick={() => setCardStep(2)}
+                                      className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
+                                    >
+                                      {getTranslation('game.back', language)}
+                                    </button>
+                                    <button
+                                      onClick={submitProposal}
+                                      disabled={isSubmitting}
+                                      className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all disabled:opacity-50"
+                                    >
+                                      {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
+                                    </button>
+                                  </div>
                                 ) : (
-                                  <button
-                                    onClick={isLeader ? leaderDismissCard : () => setCard(null)}
-                                    className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
-                                  >
-                                    {getTranslation('game.next', language)}
-                                  </button>
+                                  <div className="flex gap-3">
+                                    <button
+                                      onClick={() => setCardStep(2)}
+                                      className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
+                                    >
+                                      {getTranslation('game.back', language)}
+                                    </button>
+                                    <button
+                                      onClick={isLeader ? leaderDismissCard : () => setCard(null)}
+                                      className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                                    >
+                                      {getTranslation('game.next', language)}
+                                    </button>
+                                  </div>
                                 )}
                               </div>
                             ) : (
@@ -1315,12 +1339,20 @@ export default function MinisalaGame() {
                                   <span className="text-2xl">✅</span>
                                   <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
                                 </div>
-                                <button
-                                  onClick={isLeader ? leaderDismissCard : () => setCard(null)}
-                                  className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
-                                >
-                                  {getTranslation('game.next', language)}
-                                </button>
+                                <div className="flex gap-3">
+                                  <button
+                                    onClick={() => setCardStep(2)}
+                                    className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
+                                  >
+                                    {getTranslation('game.back', language)}
+                                  </button>
+                                  <button
+                                    onClick={isLeader ? leaderDismissCard : () => setCard(null)}
+                                    className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                                  >
+                                    {getTranslation('game.next', language)}
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </div>

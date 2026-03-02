@@ -419,6 +419,11 @@ export const translations = {
       EN: 'Next →',
       CAT: 'Següent →'
     },
+    back: {
+      ES: '← Atrás',
+      EN: '← Back',
+      CAT: '← Enrere'
+    },
     cardDidYouKnow: {
       ES: '💡 ¿Sabías que...?',
       EN: '💡 Did you know...?',
