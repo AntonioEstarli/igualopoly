@@ -21,19 +21,15 @@ interface MetricsViewProps {
 }
 
 export function MetricsView({ players, systemProfiles, isFinalSimulation = false, minisalaId, originalMoneySnapshot }: MetricsViewProps) {
-  const [language, setLanguage] = useState<Language>('ES');
+  const [language] = useState<Language>(() => {
+    if (typeof window === 'undefined') return 'ES';
+    return (sessionStorage.getItem('idioma') as Language) || 'ES';
+  });
   const [proposalCount, setProposalCount] = useState(0);
 
   // Estado para la reflexión final
   const [reflexionFinal, setReflexionFinal] = useState('');
   const [reflexionSaved, setReflexionSaved] = useState(false);
-
-  useEffect(() => {
-    const storedLang = sessionStorage.getItem('idioma') as Language;
-    if (storedLang) {
-      setLanguage(storedLang);
-    }
-  }, []);
 
   // Función para guardar la reflexión final
   const saveReflexion = async () => {
@@ -91,8 +87,8 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
   const allParticipants = [
     ...players.map(p => ({
       ...p,
-      money: isFinalSimulation && originalMoneySnapshot && originalMoneySnapshot[p.id]
-        ? originalMoneySnapshot[p.id]
+      money: isFinalSimulation && originalMoneySnapshot
+        ? (originalMoneySnapshot[p.id] ?? p.money)
         : p.money
     })),
     ...systemProfiles
