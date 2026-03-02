@@ -719,8 +719,8 @@ export default function MinisalaGame() {
     }
 
     const runAutoSimulation = async () => {
-      // Esperar 2 segundos antes de cada lanzamiento
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Esperar 4 segundos antes de cada lanzamiento
+      await new Promise(resolve => setTimeout(resolve, 4000));
 
       // Obtener el siguiente valor del dado y hacer broadcast
       const diceValue = await handleLeaderDiceRoll();
@@ -972,13 +972,25 @@ export default function MinisalaGame() {
                         <>
                           <p className="text-white font-black mb-2 uppercase tracking-widest text-sm">{getTranslation('game.finalSimulation', language)}</p>
                           <p className="text-emerald-100 text-xs mb-4">{getTranslation('game.simulatingProgress', language)}</p>
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-4 mb-4">
                             <div className="w-12 h-12 border-4 border-emerald-200 border-t-white rounded-full animate-spin" />
                             <div className="text-white">
                               <p className="text-3xl font-black">{currentCardNumber}/{allCards.length}</p>
                               <p className="text-xs text-emerald-100">{getTranslation('game.steps', language)}</p>
                             </div>
                           </div>
+                          {/* Mostrar texto de simulación de la carta actual */}
+                          {currentCardNumber > 0 && allCards[currentCardNumber - 1] && (
+                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border-2 border-white/20 w-full">
+                              <p className="text-white text-base leading-relaxed text-center font-medium">
+                                {language === 'ES'
+                                  ? allCards[currentCardNumber - 1].simulation_text_es
+                                  : language === 'EN'
+                                  ? allCards[currentCardNumber - 1].simulation_text_en
+                                  : allCards[currentCardNumber - 1].simulation_text_cat}
+                              </p>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div className="text-center space-y-4 w-full">
