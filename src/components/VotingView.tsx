@@ -20,6 +20,7 @@ export function VotingView({ minisalaId, participantId, isLeader = false }: { mi
   const [userVotes, setUserVotes] = useState<any[]>([]);
   const [language, setLanguage] = useState<Language>('ES');
   const [activeTipo, setActiveTipo] = useState<Tipo>('OPORTUNIDAD');
+  const [timeLeft, setTimeLeft] = useState(120); // 2 minutos en segundos
 
   useEffect(() => {
     const storedLang = sessionStorage.getItem('idioma') as Language;
@@ -29,6 +30,17 @@ export function VotingView({ minisalaId, participantId, isLeader = false }: { mi
   useEffect(() => {
     if (minisalaId) fetchProposals();
   }, [minisalaId]);
+
+  // Temporizador de 2 minutos
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => Math.max(0, prev - 1));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft]);
 
   const fetchProposals = async () => {
     const { data, error } = await supabase
@@ -102,6 +114,23 @@ export function VotingView({ minisalaId, participantId, isLeader = false }: { mi
             ? getTranslation('voting.subtitle', language)
             : getTranslation('voting.subtitleObserver', language)}
         </p>
+
+        {/* Temporizador */}
+        <div className="mt-4 mb-3">
+          <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-mono text-3xl font-black transition-all ${
+            timeLeft > 60
+              ? 'bg-blue-100 text-blue-700'
+              : timeLeft > 30
+                ? 'bg-yellow-100 text-yellow-700'
+                : 'bg-red-100 text-red-700 animate-pulse'
+          }`}>
+            <span>⏱️</span>
+            <span>
+              {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+            </span>
+          </div>
+        </div>
+
         <div className="mt-2 flex justify-center gap-1">
           {[...Array(MAX_VOTES)].map((_, i) => (
             <div key={i} className={`w-3 h-3 rounded-full transition-colors ${i < votesInTipo ? config.dot : 'bg-slate-200'}`} />
