@@ -377,17 +377,32 @@ export default function AdminPanel() {
     // 2. Obtener información del jugador
     const { data: userData } = await supabase
       .from('participants')
-      .select('money')
+      .select('money, is_leader')
       .eq('id', usuarioId)
       .single();
 
-    // 3. Cambiar sala del jugador
+    // 3. Verificar si la nueva sala ya tiene un líder
+    const { data: existingLeader } = await supabase
+      .from('participants')
+      .select('id')
+      .eq('minisala_id', nuevaSala)
+      .eq('is_leader', true)
+      .single();
+
+    // 4. Cambiar sala del jugador
+    const updateData: any = { minisala_id: nuevaSala };
+
+    // Si el jugador es líder y la nueva sala ya tiene líder, quitarle el rol
+    if (userData?.is_leader && existingLeader) {
+      updateData.is_leader = false;
+    }
+
     await supabase
       .from('participants')
-      .update({ minisala_id: nuevaSala })
+      .update(updateData)
       .eq('id', usuarioId);
 
-    // 4. Si la nueva sala ya está jugando y el jugador tiene 0€, darle los 10€ iniciales
+    // 5. Si la nueva sala ya está jugando y el jugador tiene 0€, darle los 10€ iniciales
     if (roomData && userData && roomData.current_phase === 'playing' && userData.money === 0) {
       await supabase
         .from('participants')
