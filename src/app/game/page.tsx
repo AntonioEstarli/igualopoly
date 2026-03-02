@@ -1234,7 +1234,7 @@ export default function MinisalaGame() {
               </div>
 
               {/* 2. PANEL DE CONTROL DEL LÍDER / ESPERA (encima del tablero) */}
-              <div className="absolute top-[12%] left-0 right-0 flex justify-center z-10 pointer-events-none">
+              <div className="absolute top-[13%] left-0 right-0 flex justify-center z-10 pointer-events-none">
                 <div className="max-w-md w-full mx-4 pointer-events-auto" style={{ transform: 'scale(0.8)' }}>
                   {gamePhase === 'start' ? (
                     /* FASE INICIO: El líder arranca el juego */
