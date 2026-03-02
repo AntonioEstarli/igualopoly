@@ -17,9 +17,10 @@ interface MetricsViewProps {
   systemProfiles: Participant[];
   isFinalSimulation?: boolean;
   minisalaId?: string;
+  originalMoneySnapshot?: Record<string, number>; // Dinero original antes de la simulación final
 }
 
-export function MetricsView({ players, systemProfiles, isFinalSimulation = false, minisalaId }: MetricsViewProps) {
+export function MetricsView({ players, systemProfiles, isFinalSimulation = false, minisalaId, originalMoneySnapshot }: MetricsViewProps) {
   const [language, setLanguage] = useState<Language>('ES');
   const [proposalCount, setProposalCount] = useState(0);
 
@@ -235,11 +236,18 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
           </div>
           <div className="space-y-4">
             {allParticipants
-              .sort((a, b) => b.money - a.money)
+              .map(participant => {
+                const isPlayer = players.some(p => p.id === participant.id);
+                // Calcular el dinero que se va a mostrar para cada participante
+                const displayMoney = isFinalSimulation && originalMoneySnapshot && isPlayer
+                  ? originalMoneySnapshot[participant.id] ?? participant.money
+                  : participant.money;
+                return { ...participant, displayMoney, isPlayer };
+              })
+              .sort((a, b) => b.displayMoney - a.displayMoney) // Ordenar por el dinero que se muestra
               .slice(0, 10) // Mostrar solo los top 10
               .map((participant, idx) => {
-                const percentage = maxMoney > 0 ? (participant.money / maxMoney) * 100 : 0;
-                const isPlayer = players.some(p => p.id === participant.id);
+                const percentage = maxMoney > 0 ? (participant.displayMoney / maxMoney) * 100 : 0;
                 return (
                   <div key={participant.id} className="flex items-center gap-4">
                     <div className="w-8 text-slate-400 text-sm font-bold text-right">
@@ -249,7 +257,7 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
                       <div className="h-8 bg-slate-700/50 rounded-full overflow-hidden relative">
                         <div
                           className={`h-full rounded-full transition-all duration-1000 ${
-                            isPlayer ? 'bg-gradient-to-r from-blue-500 to-blue-400' : 'bg-gradient-to-r from-slate-500 to-slate-400'
+                            participant.isPlayer ? 'bg-gradient-to-r from-blue-500 to-blue-400' : 'bg-gradient-to-r from-slate-500 to-slate-400'
                           }`}
                           style={{ width: `${percentage}%` }}
                         />
@@ -258,7 +266,7 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
                             {participant.alias}
                           </span>
                           <span className="text-white text-xs font-black">
-                            {participant.money}K €
+                            {participant.displayMoney}K €
                           </span>
                         </div>
                       </div>

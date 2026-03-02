@@ -1484,37 +1484,54 @@ export default function MinisalaGame() {
 
       ) : gamePhase === 'metrics_final' ? (
         /* FASE 5: MÉTRICAS FINALES (después de la simulación) */
-        <MetricsView
-          players={roomPlayers.map(player => ({
-            ...player,
-            money: calculateSystemMoney(
+        (() => {
+          // Calcular el dinero original de cada jugador usando sus variables reales
+          const originalMoney: Record<string, number> = {};
+          roomPlayers.forEach(player => {
+            originalMoney[player.id] = calculateSystemMoney(
               player.variables || {},
               allCards.length,
               allCards,
-              { isFinalSimulation: true, profileId: player.id }
-            )
-          }))}
-          systemProfiles={systemProfiles.map(profile => ({
-            id: profile.id,
-            alias: profile.alias,
-            color: profile.color,
-            emoji: profile.emoji,
-            money: calculateSystemMoney(
-              {
-                red: profile.red,
-                visibilidad: profile.visibilidad,
-                tiempo: profile.tiempo,
-                margen_error: profile.margen_error,
-                responsabilidades: profile.responsabilidades
-              },
-              allCards.length,
-              allCards,
-              { isFinalSimulation: true, profileId: profile.id }
-            )
-          }))}
-          isFinalSimulation={true}
-          minisalaId={minisalaId}
-        />
+              { isFinalSimulation: false } // Sin simulación final = variables reales del jugador
+            );
+          });
+
+          return (
+            <MetricsView
+              players={roomPlayers.map(player => ({
+                ...player,
+                money: calculateSystemMoney(
+                  player.variables || {},
+                  allCards.length,
+                  allCards,
+                  { isFinalSimulation: true, profileId: player.id }
+                )
+              }))}
+              systemProfiles={systemProfiles.map(profile => ({
+                id: profile.id,
+                alias: profile.alias,
+                color: profile.color,
+                emoji: profile.emoji,
+                money: calculateSystemMoney(
+                  {
+                    red: profile.red,
+                    visibilidad: profile.visibilidad,
+                    tiempo: profile.tiempo,
+                    margen_error: profile.margen_error,
+                    responsabilidades: profile.responsabilidades
+                  },
+                  allCards.length,
+                  allCards,
+                  { isFinalSimulation: true, profileId: profile.id }
+                )
+              }))}
+              isFinalSimulation={true}
+              minisalaId={minisalaId}
+              originalMoneySnapshot={originalMoney}
+            />
+          );
+        })()
+
 
       ) : null}
     </div>
