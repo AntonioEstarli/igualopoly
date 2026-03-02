@@ -367,10 +367,33 @@ export default function AdminPanel() {
   };
 
   const reasignarSala = async (usuarioId: string, nuevaSala: string) => {
+    // 1. Obtener información de la nueva sala
+    const { data: roomData } = await supabase
+      .from('rooms')
+      .select('current_phase')
+      .eq('id', nuevaSala)
+      .single();
+
+    // 2. Obtener información del jugador
+    const { data: userData } = await supabase
+      .from('participants')
+      .select('money')
+      .eq('id', usuarioId)
+      .single();
+
+    // 3. Cambiar sala del jugador
     await supabase
       .from('participants')
       .update({ minisala_id: nuevaSala })
       .eq('id', usuarioId);
+
+    // 4. Si la nueva sala ya está jugando y el jugador tiene 0€, darle los 10€ iniciales
+    if (roomData && userData && roomData.current_phase === 'playing' && userData.money === 0) {
+      await supabase
+        .from('participants')
+        .update({ money: 10 })
+        .eq('id', usuarioId);
+    }
   };
 
   const cambiarFase = async (nuevaFase: string) => {
