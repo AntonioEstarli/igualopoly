@@ -23,12 +23,27 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
   const [language, setLanguage] = useState<Language>('ES');
   const [proposalCount, setProposalCount] = useState(0);
 
+  // Estado para la reflexión final
+  const [reflexionFinal, setReflexionFinal] = useState('');
+  const [reflexionSaved, setReflexionSaved] = useState(false);
+
   useEffect(() => {
     const storedLang = sessionStorage.getItem('idioma') as Language;
     if (storedLang) {
       setLanguage(storedLang);
     }
   }, []);
+
+  // Función para guardar la reflexión final
+  const saveReflexion = async () => {
+    const usuarioId = localStorage.getItem('participant_id');
+    if (!usuarioId || !reflexionFinal.trim()) return;
+    await supabase
+      .from('participants')
+      .update({ reflexion_final: reflexionFinal.trim() })
+      .eq('id', usuarioId);
+    setReflexionSaved(true);
+  };
 
   // Obtener el número de propuestas
   useEffect(() => {
@@ -253,6 +268,38 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
               })}
           </div>
         </div>
+
+        {/* Caja de reflexión final (solo en simulación final) */}
+        {isFinalSimulation && (
+          <div className="bg-white/15 backdrop-blur-sm rounded-3xl border border-white/30 overflow-hidden shadow-2xl p-8">
+            <div className="space-y-4">
+              <p className="text-emerald-100 text-lg font-bold text-center">
+                {getTranslation('game.finalReflectionTitle', language)}
+              </p>
+              <textarea
+                value={reflexionFinal}
+                onChange={(e) => setReflexionFinal(e.target.value)}
+                placeholder={getTranslation('game.finalReflectionPlaceholder', language)}
+                disabled={reflexionSaved}
+                rows={4}
+                className="w-full rounded-xl p-4 text-sm text-slate-800 bg-white resize-none outline-none disabled:opacity-60 focus:ring-2 focus:ring-emerald-400"
+              />
+              {reflexionSaved ? (
+                <p className="text-white text-sm font-black text-center">
+                  {getTranslation('game.finalReflectionSaved', language)}
+                </p>
+              ) : (
+                <button
+                  onClick={saveReflexion}
+                  disabled={!reflexionFinal.trim()}
+                  className="w-full py-3 bg-white text-emerald-600 rounded-xl font-black text-sm disabled:opacity-40 hover:bg-emerald-50 transition-colors"
+                >
+                  {getTranslation('game.finalReflectionSave', language)}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
