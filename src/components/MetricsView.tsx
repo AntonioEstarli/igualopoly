@@ -87,8 +87,14 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
   }, []);
 
   // Combinar todos los participantes
+  // Si es simulación final y hay snapshot, usar dinero original para jugadores
   const allParticipants = [
-    ...players,
+    ...players.map(p => ({
+      ...p,
+      money: isFinalSimulation && originalMoneySnapshot && originalMoneySnapshot[p.id]
+        ? originalMoneySnapshot[p.id]
+        : p.money
+    })),
     ...systemProfiles
   ];
 
