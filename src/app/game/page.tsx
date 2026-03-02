@@ -49,10 +49,6 @@ export default function MinisalaGame() {
   const lastAppliedCardRef = useRef(0); // Último nº de carta cuyo impacto económico fue aplicado
   const [isAutoSimulating, setIsAutoSimulating] = useState(false); // Indica si la simulación automática está corriendo
 
-  // Estado para la reflexión final
-  const [reflexionFinal, setReflexionFinal] = useState('');
-  const [reflexionSaved, setReflexionSaved] = useState(false);
-
   // Estado para detectar cuando el dado está girando
   const [isDiceRolling, setIsDiceRolling] = useState(false);
 
@@ -778,16 +774,6 @@ export default function MinisalaGame() {
     return diceData[nextIndex].value;
   };
 
-  const saveReflexion = async () => {
-    const usuarioId = localStorage.getItem('participant_id');
-    if (!usuarioId || !reflexionFinal.trim()) return;
-    await supabase
-      .from('participants')
-      .update({ reflexion_final: reflexionFinal.trim() })
-      .eq('id', usuarioId);
-    setReflexionSaved(true);
-  };
-
   // Función para limpiar Markdown del texto antes de enviarlo al TTS
   const cleanMarkdownForSpeech = (text: string): string => {
     return text
@@ -997,29 +983,6 @@ export default function MinisalaGame() {
                       ) : (
                         <div className="text-center space-y-4 w-full">
                           <p className="text-white font-black text-xl uppercase italic">{getTranslation('game.simulationComplete', language)}</p>
-                          {/* Caja de reflexión final */}
-                          <div className="bg-white/10 rounded-2xl p-4 text-left space-y-2">
-                            <p className="text-emerald-100 text-sm font-bold">{getTranslation('game.finalReflectionTitle', language)}</p>
-                            <textarea
-                              value={reflexionFinal}
-                              onChange={(e) => setReflexionFinal(e.target.value)}
-                              placeholder={getTranslation('game.finalReflectionPlaceholder', language)}
-                              disabled={reflexionSaved}
-                              rows={3}
-                              className="w-full rounded-xl p-3 text-sm text-slate-800 bg-white resize-none outline-none disabled:opacity-60"
-                            />
-                            {reflexionSaved ? (
-                              <p className="text-white text-sm font-black text-center">{getTranslation('game.finalReflectionSaved', language)}</p>
-                            ) : (
-                              <button
-                                onClick={saveReflexion}
-                                disabled={!reflexionFinal.trim()}
-                                className="w-full py-2 bg-white text-emerald-600 rounded-xl font-black text-sm disabled:opacity-40 hover:bg-emerald-50 transition-colors"
-                              >
-                                {getTranslation('game.finalReflectionSave', language)}
-                              </button>
-                            )}
-                          </div>
                           {/* Botón para mostrar métricas finales (solo líder) */}
                           {isLeader && (
                             <button
