@@ -330,6 +330,9 @@ export default function AdminPanel() {
         reescribe_es: card.reescribe_es,
         reescribe_en: card.reescribe_en,
         reescribe_cat: card.reescribe_cat,
+        simulation_text_es: card.simulation_text_es,
+        simulation_text_en: card.simulation_text_en,
+        simulation_text_cat: card.simulation_text_cat,
         impact_variable: card.impact_variable,
         impact_variable_2: card.impact_variable_2,
         impact_values: card.impact_values,
@@ -1238,6 +1241,9 @@ export default function AdminPanel() {
                   reescribe_es: '',
                   reescribe_en: '',
                   reescribe_cat: '',
+                  simulation_text_es: '',
+                  simulation_text_en: '',
+                  simulation_text_cat: '',
                   impact_variable: 'red',
                   impact_variable_2: '',
                   impact_values: { ALTO: 0, MEDIO: 0, BAJO: 0 },
@@ -1753,6 +1759,46 @@ export default function AdminPanel() {
                         className="w-full p-3 border rounded-lg text-sm resize-none"
                         rows={3}
                         placeholder="Instruccions de reescriptura..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Texto de simulación */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-2 block">🎯 Texto para la simulación final</label>
+                  <p className="text-xs text-slate-400 mb-3 italic">
+                    Este texto se mostrará durante la simulación final para explicar el impacto de la carta en un contexto igualitario.
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Español</label>
+                      <textarea
+                        value={editingCard.simulation_text_es || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, simulation_text_es: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Texto explicativo para la simulación..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">English</label>
+                      <textarea
+                        value={editingCard.simulation_text_en || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, simulation_text_en: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Explanatory text for simulation..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Català</label>
+                      <textarea
+                        value={editingCard.simulation_text_cat || ''}
+                        onChange={(e) => setEditingCard({ ...editingCard, simulation_text_cat: e.target.value })}
+                        className="w-full p-3 border rounded-lg text-sm resize-none"
+                        rows={3}
+                        placeholder="Text explicatiu per a la simulació..."
                       />
                     </div>
                   </div>
