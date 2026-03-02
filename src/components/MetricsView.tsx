@@ -258,7 +258,7 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
                             {participant.alias}
                           </span>
                           <span className="text-white text-xs font-black">
-                            {participant.money}€
+                            {participant.money} K€
                           </span>
                         </div>
                       </div>
