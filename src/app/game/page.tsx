@@ -939,8 +939,298 @@ export default function MinisalaGame() {
 
             {/* 1. EL TABLERO (Arriba derecha) */}
             <div className="w-full bg-slate-800 px-6 pb-6 pt-2 shadow-lg relative">
-<div className="max-w-[780px] mx-auto">
+<div className="max-w-[780px] mx-auto relative">
                 <BoardView currentStep={boardPosition} />
+
+                {/* CARTA centrada en el tablero - No mostrar en simulación final */}
+                {card && cardVisible && !isFinalSimulation && !isDiceRolling && (
+                  <div className="absolute inset-0 flex items-start justify-center pointer-events-none z-30" style={{ padding: '15% 15%' }}>
+                    <div
+                      className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col pointer-events-auto animate-zoom-in"
+                      style={{
+                        animation: 'zoomIn 0.6s ease-out 0.5s both',
+                        maxHeight: '100%',
+                        maxWidth: '100%'
+                      }}
+                    >
+                      <div
+                        className="p-3 flex justify-between items-center text-white flex-shrink-0"
+                        style={{ backgroundColor: card.color || '#ef4444' }}
+                      >
+                        <span className="font-black uppercase text-sm tracking-widest">
+                          {language === 'ES' ? card.name_es : language === 'EN' ? card.name_en : card.name_cat}
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (isSpeaking) {
+                              stopSpeaking();
+                            } else {
+                              // Leer el contenido según el paso actual
+                              let textToRead = '';
+                              if (cardStep === 1) {
+                                textToRead = language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat;
+                              } else if (cardStep === 2) {
+                                const sabiasText = language === 'ES' ? card.sabias_es : language === 'EN' ? card.sabias_en : card.sabias_cat;
+                                const afectaText = language === 'ES' ? card.afecta_es : language === 'EN' ? card.afecta_en : card.afecta_cat;
+                                textToRead = `${sabiasText || ''} ${afectaText || ''}`.trim();
+                              } else if (cardStep === 3) {
+                                const reflexionText = language === 'ES' ? card.reflexion_es : language === 'EN' ? card.reflexion_en : card.reflexion_cat;
+                                const reescribeText = language === 'ES' ? card.reescribe_es : language === 'EN' ? card.reescribe_en : card.reescribe_cat;
+                                textToRead = `${reflexionText || ''} ${reescribeText || ''}`.trim();
+                              }
+                              speakText(textToRead);
+                            }
+                          }}
+                          className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-xl transition-all"
+                          title={isSpeaking ? 'Detener' : 'Escuchar'}
+                        >
+                          {isSpeaking ? '⏸️' : '🔊'}
+                        </button>
+                      </div>
+
+                      <div className="p-4 flex-1 overflow-y-auto">
+                        {/* PASO 1: Situación */}
+                        {cardStep === 1 && (
+                          <div className="space-y-4">
+                            <div className="text-slate-700 font-serif text-xl leading-snug italic prose prose-lg max-w-none">
+                              <ReactMarkdown remarkPlugins={[remarkBreaks]}>
+                                {language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}
+                              </ReactMarkdown>
+                            </div>
+                            <button
+                              onClick={() => setCardStep(2)}
+                              className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                            >
+                              {getTranslation('game.next', language)}
+                            </button>
+                          </div>
+                        )}
+
+                        {/* PASO 2: Sabías que + Afecta + Puntuación */}
+                        {cardStep === 2 && (
+                          <div className="space-y-4">
+                            {/* Sabías que */}
+                            {(card.sabias_es || card.sabias_en || card.sabias_cat) && (
+                              <div>
+                                <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardDidYouKnow', language)}</h4>
+                                <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                                  <ReactMarkdown remarkPlugins={[remarkBreaks]}>
+                                    {language === 'ES' ? card.sabias_es : language === 'EN' ? card.sabias_en : card.sabias_cat}
+                                  </ReactMarkdown>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Cómo afecta a los perfiles */}
+                            {(card.afecta_es || card.afecta_en || card.afecta_cat) && (
+                              <div>
+                                <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardHowAffects', language)}</h4>
+                                <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                                  <ReactMarkdown remarkPlugins={[remarkBreaks]}>
+                                    {language === 'ES' ? card.afecta_es : language === 'EN' ? card.afecta_en : card.afecta_cat}
+                                  </ReactMarkdown>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Puntuación */}
+                            <div>
+                              <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardScore', language)}</h4>
+                              <div className="bg-slate-50 p-4 rounded-xl space-y-2">
+                                {card.impact_variable_2 ? (
+                                  <>
+                                    {/* Para el tier ALTO: mostrar el nivel raw real de cada variable que produce nivel efectivo ALTO
+                                        (responsabilidades se invierte: necesita raw BAJO para ser efectivo ALTO) */}
+                                    {(() => {
+                                      const rawForEffectiveAlto = (v: string) =>
+                                        v?.toLowerCase() === 'responsabilidades' ? 'BAJO' : 'ALTO';
+                                      const raw1 = rawForEffectiveAlto(card.impact_variable);
+                                      const raw2 = rawForEffectiveAlto(card.impact_variable_2);
+                                      return (
+                                        <>
+                                          <div className="flex justify-between items-start">
+                                            <div className="text-sm font-bold text-slate-700 flex-1 flex flex-col gap-0.5">
+                                              <span>
+                                                {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)}{' '}
+                                                {getTranslation(`characterCreation.levels.${raw1}`, language)}
+                                              </span>
+                                              <span>
+                                                {getTranslation(`characterCreation.variableLabels.${card.impact_variable_2}`, language)}{' '}
+                                                {getTranslation(`characterCreation.levels.${raw2}`, language)}
+                                              </span>
+                                            </div>
+                                            <span className="text-sm font-black text-green-600 ml-2 whitespace-nowrap">
+                                              {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}€
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-sm font-bold text-slate-700">
+                                              {getTranslation('game.scoreComboOneAlto', language)}
+                                            </span>
+                                            <span className="text-sm font-black text-yellow-600">
+                                              {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}€
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-sm font-bold text-slate-700">
+                                              {getTranslation('game.scoreComboNoneAlto', language)}
+                                            </span>
+                                            <span className="text-sm font-black text-red-600">
+                                              {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}€
+                                            </span>
+                                          </div>
+                                        </>
+                                      );
+                                    })()}
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm font-bold text-slate-700">
+                                        {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.ALTO', language)}
+                                      </span>
+                                      <span className="text-sm font-black text-green-600">
+                                        {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}€
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm font-bold text-slate-700">
+                                        {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.MEDIO', language)}
+                                      </span>
+                                      <span className="text-sm font-black text-yellow-600">
+                                        {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}€
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm font-bold text-slate-700">
+                                        {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.BAJO', language)}
+                                      </span>
+                                      <span className="text-sm font-black text-red-600">
+                                        {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}€
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => setCardStep(1)}
+                                className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
+                              >
+                                {getTranslation('game.back', language)}
+                              </button>
+                              <button
+                                onClick={() => setCardStep(3)}
+                                className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                              >
+                                {getTranslation('game.next', language)}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* PASO 3: Reflexión + Reescribe + Propuesta */}
+                        {cardStep === 3 && (
+                          <div className="space-y-4">
+                            {/* Preguntas de reflexión */}
+                            {(card.reflexion_es || card.reflexion_en || card.reflexion_cat) && (
+                              <div>
+                                <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardReflection', language)}</h4>
+                                <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                                  <ReactMarkdown remarkPlugins={[remarkBreaks]}>
+                                    {language === 'ES' ? card.reflexion_es : language === 'EN' ? card.reflexion_en : card.reflexion_cat}
+                                  </ReactMarkdown>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Reescribe la regla */}
+                            {(card.reescribe_es || card.reescribe_en || card.reescribe_cat) && (
+                              <div>
+                                <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardRewrite', language)}</h4>
+                                <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
+                                  <ReactMarkdown>
+                                    {language === 'ES' ? card.reescribe_es : language === 'EN' ? card.reescribe_en : card.reescribe_cat}
+                                  </ReactMarkdown>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Propuesta */}
+                            <div className="pt-2 border-t border-slate-100">
+                              <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">{getTranslation('game.proposeChange', language)}</h4>
+                              {!hasSubmittedProposal ? (
+                                <div className="space-y-3">
+                                  <textarea
+                                    value={proposalText}
+                                    onChange={(e) => setProposalText(e.target.value)}
+                                    placeholder={getTranslation('game.proposalPlaceholder', language)}
+                                    className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
+                                  />
+                                  {proposalText.trim() ? (
+                                    <div className="flex gap-3">
+                                      <button
+                                        onClick={() => setCardStep(2)}
+                                        className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
+                                      >
+                                        {getTranslation('game.back', language)}
+                                      </button>
+                                      <button
+                                        onClick={submitProposal}
+                                        disabled={isSubmitting}
+                                        className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all disabled:opacity-50"
+                                      >
+                                        {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex gap-3">
+                                      <button
+                                        onClick={() => setCardStep(2)}
+                                        className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
+                                      >
+                                        {getTranslation('game.back', language)}
+                                      </button>
+                                      <button
+                                        onClick={isLeader ? leaderDismissCard : () => setCard(null)}
+                                        className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                                      >
+                                        {getTranslation('game.next', language)}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
+                                    <span className="text-2xl">✅</span>
+                                    <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
+                                  </div>
+                                  <div className="flex gap-3">
+                                    <button
+                                      onClick={() => setCardStep(2)}
+                                      className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
+                                    >
+                                      {getTranslation('game.back', language)}
+                                    </button>
+                                    <button
+                                      onClick={isLeader ? leaderDismissCard : () => setCard(null)}
+                                      className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                                    >
+                                      {getTranslation('game.next', language)}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 2. PANEL DE CONTROL DEL LÍDER / ESPERA (encima del tablero) */}
@@ -1049,294 +1339,6 @@ export default function MinisalaGame() {
                   )}
                 </div>
               </div>
-
-              {/* CARTA (Aparece encajo del panel del dado con animación) - No mostrar en simulación final */}
-              {card && cardVisible && !isFinalSimulation && !isDiceRolling && (
-                <div className="absolute inset-0 flex items-start justify-center pt-[9.5%] pointer-events-none z-20" style={{ transform: 'scale(0.95)' }}>
-                  <div
-                    className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-w-lg w-full mx-4 pointer-events-auto animate-zoom-in"
-                    style={{
-                      animation: 'zoomIn 0.6s ease-out 0.5s both'
-                    }}
-                  >
-                    <div
-                      className="p-3 flex justify-between items-center text-white"
-                      style={{ backgroundColor: card.color || '#ef4444' }}
-                    >
-                      <span className="font-black uppercase text-sm tracking-widest">
-                        {language === 'ES' ? card.name_es : language === 'EN' ? card.name_en : card.name_cat}
-                      </span>
-                      <button
-                        onClick={() => {
-                          if (isSpeaking) {
-                            stopSpeaking();
-                          } else {
-                            // Leer el contenido según el paso actual
-                            let textToRead = '';
-                            if (cardStep === 1) {
-                              textToRead = language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat;
-                            } else if (cardStep === 2) {
-                              const sabiasText = language === 'ES' ? card.sabias_es : language === 'EN' ? card.sabias_en : card.sabias_cat;
-                              const afectaText = language === 'ES' ? card.afecta_es : language === 'EN' ? card.afecta_en : card.afecta_cat;
-                              textToRead = `${sabiasText || ''} ${afectaText || ''}`.trim();
-                            } else if (cardStep === 3) {
-                              const reflexionText = language === 'ES' ? card.reflexion_es : language === 'EN' ? card.reflexion_en : card.reflexion_cat;
-                              const reescribeText = language === 'ES' ? card.reescribe_es : language === 'EN' ? card.reescribe_en : card.reescribe_cat;
-                              textToRead = `${reflexionText || ''} ${reescribeText || ''}`.trim();
-                            }
-                            speakText(textToRead);
-                          }
-                        }}
-                        className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-xl transition-all"
-                        title={isSpeaking ? 'Detener' : 'Escuchar'}
-                      >
-                        {isSpeaking ? '⏸️' : '🔊'}
-                      </button>
-                    </div>
-
-                    <div className="p-4 flex-1">
-                      {/* PASO 1: Situación */}
-                      {cardStep === 1 && (
-                        <div className="space-y-4">
-                          <div className="text-slate-700 font-serif text-xl leading-snug italic prose prose-lg max-w-none">
-                            <ReactMarkdown remarkPlugins={[remarkBreaks]}>
-                              {language === 'ES' ? card.situation_es : language === 'EN' ? card.situation_en : card.situation_cat}
-                            </ReactMarkdown>
-                          </div>
-                          <button
-                            onClick={() => setCardStep(2)}
-                            className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
-                          >
-                            {getTranslation('game.next', language)}
-                          </button>
-                        </div>
-                      )}
-
-                      {/* PASO 2: Sabías que + Afecta + Puntuación */}
-                      {cardStep === 2 && (
-                        <div className="space-y-4">
-                          {/* Sabías que */}
-                          {(card.sabias_es || card.sabias_en || card.sabias_cat) && (
-                            <div>
-                              <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardDidYouKnow', language)}</h4>
-                              <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
-                                <ReactMarkdown remarkPlugins={[remarkBreaks]}>
-                                  {language === 'ES' ? card.sabias_es : language === 'EN' ? card.sabias_en : card.sabias_cat}
-                                </ReactMarkdown>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Cómo afecta a los perfiles */}
-                          {(card.afecta_es || card.afecta_en || card.afecta_cat) && (
-                            <div>
-                              <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardHowAffects', language)}</h4>
-                              <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
-                                <ReactMarkdown remarkPlugins={[remarkBreaks]}>
-                                  {language === 'ES' ? card.afecta_es : language === 'EN' ? card.afecta_en : card.afecta_cat}
-                                </ReactMarkdown>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Puntuación */}
-                          <div>
-                            <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardScore', language)}</h4>
-                            <div className="bg-slate-50 p-4 rounded-xl space-y-2">
-                              {card.impact_variable_2 ? (
-                                <>
-                                  {/* Para el tier ALTO: mostrar el nivel raw real de cada variable que produce nivel efectivo ALTO
-                                      (responsabilidades se invierte: necesita raw BAJO para ser efectivo ALTO) */}
-                                  {(() => {
-                                    const rawForEffectiveAlto = (v: string) =>
-                                      v?.toLowerCase() === 'responsabilidades' ? 'BAJO' : 'ALTO';
-                                    const raw1 = rawForEffectiveAlto(card.impact_variable);
-                                    const raw2 = rawForEffectiveAlto(card.impact_variable_2);
-                                    return (
-                                      <>
-                                        <div className="flex justify-between items-start">
-                                          <div className="text-sm font-bold text-slate-700 flex-1 flex flex-col gap-0.5">
-                                            <span>
-                                              {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)}{' '}
-                                              {getTranslation(`characterCreation.levels.${raw1}`, language)}
-                                            </span>
-                                            <span>
-                                              {getTranslation(`characterCreation.variableLabels.${card.impact_variable_2}`, language)}{' '}
-                                              {getTranslation(`characterCreation.levels.${raw2}`, language)}
-                                            </span>
-                                          </div>
-                                          <span className="text-sm font-black text-green-600 ml-2 whitespace-nowrap">
-                                            {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}€
-                                          </span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-sm font-bold text-slate-700">
-                                            {getTranslation('game.scoreComboOneAlto', language)}
-                                          </span>
-                                          <span className="text-sm font-black text-yellow-600">
-                                            {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}€
-                                          </span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-sm font-bold text-slate-700">
-                                            {getTranslation('game.scoreComboNoneAlto', language)}
-                                          </span>
-                                          <span className="text-sm font-black text-red-600">
-                                            {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}€
-                                          </span>
-                                        </div>
-                                      </>
-                                    );
-                                  })()}
-                                </>
-                              ) : (
-                                <>
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-sm font-bold text-slate-700">
-                                      {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.ALTO', language)}
-                                    </span>
-                                    <span className="text-sm font-black text-green-600">
-                                      {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}€
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-sm font-bold text-slate-700">
-                                      {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.MEDIO', language)}
-                                    </span>
-                                    <span className="text-sm font-black text-yellow-600">
-                                      {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}€
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-sm font-bold text-slate-700">
-                                      {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.BAJO', language)}
-                                    </span>
-                                    <span className="text-sm font-black text-red-600">
-                                      {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}€
-                                    </span>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex gap-3">
-                            <button
-                              onClick={() => setCardStep(1)}
-                              className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
-                            >
-                              {getTranslation('game.back', language)}
-                            </button>
-                            <button
-                              onClick={() => setCardStep(3)}
-                              className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
-                            >
-                              {getTranslation('game.next', language)}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* PASO 3: Reflexión + Reescribe + Propuesta */}
-                      {cardStep === 3 && (
-                        <div className="space-y-4">
-                          {/* Preguntas de reflexión */}
-                          {(card.reflexion_es || card.reflexion_en || card.reflexion_cat) && (
-                            <div>
-                              <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardReflection', language)}</h4>
-                              <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
-                                <ReactMarkdown remarkPlugins={[remarkBreaks]}>
-                                  {language === 'ES' ? card.reflexion_es : language === 'EN' ? card.reflexion_en : card.reflexion_cat}
-                                </ReactMarkdown>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Reescribe la regla */}
-                          {(card.reescribe_es || card.reescribe_en || card.reescribe_cat) && (
-                            <div>
-                              <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardRewrite', language)}</h4>
-                              <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
-                                <ReactMarkdown>
-                                  {language === 'ES' ? card.reescribe_es : language === 'EN' ? card.reescribe_en : card.reescribe_cat}
-                                </ReactMarkdown>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Propuesta */}
-                          <div className="pt-2 border-t border-slate-100">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">{getTranslation('game.proposeChange', language)}</h4>
-                            {!hasSubmittedProposal ? (
-                              <div className="space-y-3">
-                                <textarea
-                                  value={proposalText}
-                                  onChange={(e) => setProposalText(e.target.value)}
-                                  placeholder={getTranslation('game.proposalPlaceholder', language)}
-                                  className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
-                                />
-                                {proposalText.trim() ? (
-                                  <div className="flex gap-3">
-                                    <button
-                                      onClick={() => setCardStep(2)}
-                                      className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
-                                    >
-                                      {getTranslation('game.back', language)}
-                                    </button>
-                                    <button
-                                      onClick={submitProposal}
-                                      disabled={isSubmitting}
-                                      className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all disabled:opacity-50"
-                                    >
-                                      {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="flex gap-3">
-                                    <button
-                                      onClick={() => setCardStep(2)}
-                                      className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
-                                    >
-                                      {getTranslation('game.back', language)}
-                                    </button>
-                                    <button
-                                      onClick={isLeader ? leaderDismissCard : () => setCard(null)}
-                                      className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
-                                    >
-                                      {getTranslation('game.next', language)}
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="space-y-3">
-                                <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
-                                  <span className="text-2xl">✅</span>
-                                  <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
-                                </div>
-                                <div className="flex gap-3">
-                                  <button
-                                    onClick={() => setCardStep(2)}
-                                    className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
-                                  >
-                                    {getTranslation('game.back', language)}
-                                  </button>
-                                  <button
-                                    onClick={isLeader ? leaderDismissCard : () => setCard(null)}
-                                    className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
-                                  >
-                                    {getTranslation('game.next', language)}
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* 3. TUS VARIABLES (Panel informativo del perfil) */}
