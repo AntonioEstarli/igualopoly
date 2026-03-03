@@ -15,7 +15,7 @@ const TIPO_CONFIG: Record<Tipo, { color: string; bg: string; border: string; act
 
 const MAX_VOTES = 3;
 
-export function VotingView({ minisalaId, participantId, isLeader = false }: { minisalaId: string, participantId: string, isLeader?: boolean }) {
+export function VotingView({ minisalaId, participantId }: { minisalaId: string, participantId: string }) {
   const [proposals, setProposals] = useState<any[]>([]);
   const [userVotes, setUserVotes] = useState<any[]>([]);
   const [language, setLanguage] = useState<Language>('ES');
@@ -110,9 +110,7 @@ export function VotingView({ minisalaId, participantId, isLeader = false }: { mi
           {getTranslation('voting.title', language)}
         </h2>
         <p className="text-slate-500 text-sm">
-          {isLeader
-            ? getTranslation('voting.subtitle', language)
-            : getTranslation('voting.subtitleObserver', language)}
+          {getTranslation('voting.subtitle', language)}
         </p>
 
         {/* Temporizador */}
@@ -148,14 +146,11 @@ export function VotingView({ minisalaId, participantId, isLeader = false }: { mi
             return (
               <button
                 key={p.id}
-                onClick={() => isLeader && handleVote(p.id)}
-                disabled={!isLeader}
+                onClick={() => handleVote(p.id)}
                 className={`w-full flex justify-between items-center p-4 rounded-2xl border-2 transition-all ${
                   isSelected
                     ? 'border-red-500 bg-red-50 shadow-inner scale-[0.98]'
-                    : isLeader
-                      ? 'border-slate-100 bg-white hover:border-slate-300 shadow-sm'
-                      : 'border-slate-100 bg-white cursor-default'
+                    : 'border-slate-100 bg-white hover:border-slate-300 shadow-sm'
                 }`}
               >
                 <div className="flex gap-4 items-center">

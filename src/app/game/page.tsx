@@ -1162,31 +1162,55 @@ export default function MinisalaGame() {
                             {/* Propuesta */}
                             <div className="pt-2 border-t border-slate-100">
                               <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">{getTranslation('game.proposeChange', language)}</h4>
-                              {!hasSubmittedProposal ? (
-                                <div className="space-y-3">
-                                  <textarea
-                                    value={proposalText}
-                                    onChange={(e) => setProposalText(e.target.value)}
-                                    placeholder={getTranslation('game.proposalPlaceholder', language)}
-                                    className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
-                                  />
-                                  {proposalText.trim() ? (
-                                    <div className="flex gap-3">
-                                      <button
-                                        onClick={() => setCardStep(2)}
-                                        className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
-                                      >
-                                        {getTranslation('game.back', language)}
-                                      </button>
-                                      <button
-                                        onClick={submitProposal}
-                                        disabled={isSubmitting}
-                                        className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all disabled:opacity-50"
-                                      >
-                                        {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
-                                      </button>
+                              {isLeader ? (
+                                // Solo el líder puede proponer cambios de regla
+                                !hasSubmittedProposal ? (
+                                  <div className="space-y-3">
+                                    <textarea
+                                      value={proposalText}
+                                      onChange={(e) => setProposalText(e.target.value)}
+                                      placeholder={getTranslation('game.proposalPlaceholder', language)}
+                                      className="w-full p-4 text-sm border-2 border-slate-100 rounded-2xl focus:border-red-500 outline-none transition-all resize-none h-24"
+                                    />
+                                    {proposalText.trim() ? (
+                                      <div className="flex gap-3">
+                                        <button
+                                          onClick={() => setCardStep(2)}
+                                          className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
+                                        >
+                                          {getTranslation('game.back', language)}
+                                        </button>
+                                        <button
+                                          onClick={submitProposal}
+                                          disabled={isSubmitting}
+                                          className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 hover:bg-red-700 transition-all disabled:opacity-50"
+                                        >
+                                          {isSubmitting ? getTranslation('game.sending', language) : getTranslation('game.sendIdea', language)}
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex gap-3">
+                                        <button
+                                          onClick={() => setCardStep(2)}
+                                          className="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-black shadow-lg hover:bg-slate-300 transition-all"
+                                        >
+                                          {getTranslation('game.back', language)}
+                                        </button>
+                                        <button
+                                          onClick={isLeader ? leaderDismissCard : () => setCard(null)}
+                                          className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
+                                        >
+                                          {getTranslation('game.next', language)}
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="space-y-3">
+                                    <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
+                                      <span className="text-2xl">✅</span>
+                                      <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
                                     </div>
-                                  ) : (
                                     <div className="flex gap-3">
                                       <button
                                         onClick={() => setCardStep(2)}
@@ -1201,13 +1225,14 @@ export default function MinisalaGame() {
                                         {getTranslation('game.next', language)}
                                       </button>
                                     </div>
-                                  )}
-                                </div>
+                                  </div>
+                                )
                               ) : (
+                                // Los no-líderes ven un mensaje informativo
                                 <div className="space-y-3">
-                                  <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
-                                    <span className="text-2xl">✅</span>
-                                    <p className="text-green-700 text-xs font-bold uppercase">{getTranslation('game.proposalSent', language)}</p>
+                                  <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex items-center gap-3">
+                                    <span className="text-2xl">ℹ️</span>
+                                    <p className="text-amber-700 text-xs font-bold">{getTranslation('game.onlyLeaderPropose', language)}</p>
                                   </div>
                                   <div className="flex gap-3">
                                     <button
@@ -1217,7 +1242,7 @@ export default function MinisalaGame() {
                                       {getTranslation('game.back', language)}
                                     </button>
                                     <button
-                                      onClick={isLeader ? leaderDismissCard : () => setCard(null)}
+                                      onClick={() => setCard(null)}
                                       className="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg hover:bg-slate-900 transition-all"
                                     >
                                       {getTranslation('game.next', language)}
@@ -1456,7 +1481,6 @@ export default function MinisalaGame() {
           <VotingView
             minisalaId={minisalaId}
             participantId={localStorage.getItem('participant_id') || ''}
-            isLeader={isLeader}
           />
         </div>
 
