@@ -954,10 +954,9 @@ export default function AdminPanel() {
                 // Calcular métricas dinámicas actuales
                 const currentMetrics = calculateRoomMetrics(room.id);
 
-                // Si está en metrics_final, mostrar también las métricas del juego normal guardadas
-                const isMetricsFinal = room.current_phase === 'metrics_final';
-                const brechaNormal = room.brecha_normal || 0;
-                const ratioNormal = room.ratio_normal || 0;
+                // Detectar si están en simulación final
+                const isFinalSimulation = room.current_phase === 'metrics_final' ||
+                                         (room.current_phase === 'playing' && (room.brecha_normal || 0) > 0);
 
                 return (
                   <div
@@ -974,24 +973,19 @@ export default function AdminPanel() {
                       </span>
                     )}
 
-                    {/* Métricas del juego actual/normal */}
-                    {(isPlaying || isMetricsFinal) && currentMetrics.playerCount > 0 && (
+                    {/* Métricas del juego normal (solo si NO está en simulación final) */}
+                    {isPlaying && !isFinalSimulation && currentMetrics.playerCount > 0 && (
                       <div className="w-full mt-1 pt-2 border-t border-slate-100 space-y-1">
-                        {isMetricsFinal && (
-                          <div className="text-[10px] font-bold text-slate-500 uppercase text-center mb-1">
-                            Juego Normal
-                          </div>
-                        )}
                         <div className="flex justify-between items-center text-xs">
                           <span className="text-slate-500">Brecha:</span>
                           <span className="font-bold text-red-600">
-                            {isMetricsFinal ? brechaNormal : currentMetrics.brecha} €
+                            {currentMetrics.brecha} €
                           </span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
                           <span className="text-slate-500">Ratio:</span>
                           <span className="font-bold text-orange-600">
-                            {isMetricsFinal ? `${ratioNormal}x` : `${currentMetrics.ratio}x`}
+                            {currentMetrics.ratio}x
                           </span>
                         </div>
                         <div className="text-[10px] text-slate-400 text-center">
@@ -1001,7 +995,7 @@ export default function AdminPanel() {
                     )}
 
                     {/* Métricas de la simulación final igualitaria */}
-                    {isMetricsFinal && currentMetrics.playerCount > 0 && (
+                    {isFinalSimulation && currentMetrics.playerCount > 0 && (
                       <div className="w-full mt-1 pt-2 border-t border-emerald-200 space-y-1">
                         <div className="text-[10px] font-bold text-emerald-600 uppercase text-center mb-1">
                           Simulación Igualitaria
@@ -1017,6 +1011,9 @@ export default function AdminPanel() {
                           <span className="font-bold text-emerald-600">
                             {currentMetrics.ratio}x
                           </span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 text-center">
+                          {currentMetrics.playerCount} jugadores
                         </div>
                       </div>
                     )}
