@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/src/lib/supabaseClient';
+import { calculateSystemMoney } from '@/src/lib/gameLogic';
 
 export default function AdminPanel() {
   // Estado de autenticación
@@ -132,6 +133,55 @@ export default function AdminPanel() {
     } else {
       setRooms(data || []);
     }
+  };
+
+  // Función para calcular métricas dinámicas de una sala
+  const calculateRoomMetrics = (roomId: string) => {
+    const roomPlayers = usuarios.filter(u => u.minisala_id === roomId);
+
+    if (roomPlayers.length === 0) {
+      return { brecha: 0, ratio: 0, playerCount: 0 };
+    }
+
+    // Obtener el número de carta actual de la sala
+    const room = rooms.find(r => r.id === roomId);
+    const currentCardNumber = room?.next_dice_index || 0;
+
+    // Combinar jugadores reales + perfiles del sistema (arquetipos)
+    // Calcular el dinero de los system_profiles dinámicamente según la carta actual
+    const systemProfilesWithMoney = systemProfiles.map(profile => ({
+      ...profile,
+      money: calculateSystemMoney(
+        {
+          red: profile.red,
+          visibilidad: profile.visibilidad,
+          tiempo: profile.tiempo,
+          margen_error: profile.margen_error,
+          responsabilidades: profile.responsabilidades
+        },
+        currentCardNumber,
+        cards
+      )
+    }));
+
+    const allParticipants = [
+      ...roomPlayers,
+      ...systemProfilesWithMoney
+    ];
+
+    const moneyValues = allParticipants.map(p => p.money || 0).sort((a, b) => b - a);
+    const maxMoney = moneyValues[0] || 0;
+    const minMoney = moneyValues[moneyValues.length - 1] || 0;
+    const brecha = maxMoney - minMoney;
+    // Ratio de concentración: igual que en MetricsView.tsx (línea 108)
+    // Si minMoney es 0, el ratio es simplemente maxMoney (no infinito)
+    const ratio = minMoney === 0 ? maxMoney : maxMoney / minMoney;
+
+    return {
+      brecha,
+      ratio: parseFloat(ratio.toFixed(1)),
+      playerCount: roomPlayers.length
+    };
   };
 
   // Función para cargar los perfiles del sistema
@@ -864,13 +914,15 @@ export default function AdminPanel() {
                   playing: 'bg-green-100 text-green-700 border-green-200',
                   ranking: 'bg-purple-100 text-purple-700 border-purple-200',
                   voting: 'bg-blue-100 text-blue-700 border-blue-200',
-                  podium: 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                  podium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                  metrics_final: 'bg-emerald-100 text-emerald-700 border-emerald-200'
                 };
                 const phaseLabels: Record<string, string> = {
                   playing: '▶️ Jugando',
                   ranking: '🏆 Ranking',
                   voting: '🗳️ Votando',
-                  podium: '🥇 Podio'
+                  podium: '🥇 Podio',
+                  metrics_final: '📊 Métricas Finales'
                 };
                 const phaseClass = phaseColors[room.current_phase] || 'bg-slate-100 text-slate-600 border-slate-200';
                 const phaseLabel = phaseLabels[room.current_phase] || room.current_phase;
@@ -878,6 +930,14 @@ export default function AdminPanel() {
                 // Mostrar número de carta si está jugando
                 const isPlaying = room.current_phase === 'playing';
                 const cardNumber = room.next_dice_index || 0;
+
+                // Calcular métricas dinámicas actuales
+                const currentMetrics = calculateRoomMetrics(room.id);
+
+                // Si está en metrics_final, mostrar también las métricas del juego normal guardadas
+                const isMetricsFinal = room.current_phase === 'metrics_final';
+                const brechaNormal = room.brecha_normal || 0;
+                const ratioNormal = room.ratio_normal || 0;
 
                 return (
                   <div
@@ -892,6 +952,53 @@ export default function AdminPanel() {
                       <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded">
                         🃏 Carta {cardNumber}
                       </span>
+                    )}
+
+                    {/* Métricas del juego actual/normal */}
+                    {(isPlaying || isMetricsFinal) && currentMetrics.playerCount > 0 && (
+                      <div className="w-full mt-1 pt-2 border-t border-slate-100 space-y-1">
+                        {isMetricsFinal && (
+                          <div className="text-[10px] font-bold text-slate-500 uppercase text-center mb-1">
+                            Juego Normal
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-500">Brecha:</span>
+                          <span className="font-bold text-red-600">
+                            {isMetricsFinal ? brechaNormal : currentMetrics.brecha} €
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-500">Ratio:</span>
+                          <span className="font-bold text-orange-600">
+                            {isMetricsFinal ? `${ratioNormal}x` : `${currentMetrics.ratio}x`}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 text-center">
+                          {currentMetrics.playerCount} jugadores
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Métricas de la simulación final igualitaria */}
+                    {isMetricsFinal && currentMetrics.playerCount > 0 && (
+                      <div className="w-full mt-1 pt-2 border-t border-emerald-200 space-y-1">
+                        <div className="text-[10px] font-bold text-emerald-600 uppercase text-center mb-1">
+                          Simulación Igualitaria
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-500">Brecha:</span>
+                          <span className="font-bold text-emerald-600">
+                            {currentMetrics.brecha} €
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-500">Ratio:</span>
+                          <span className="font-bold text-emerald-600">
+                            {currentMetrics.ratio}x
+                          </span>
+                        </div>
+                      </div>
                     )}
                   </div>
                 );

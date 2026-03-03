@@ -670,6 +670,22 @@ export default function MinisalaGame() {
 
   // Función para que el Líder inicie la simulación final
   const startFinalSimulation = async () => {
+    // Guardar métricas del juego normal antes de iniciar la simulación
+    const moneyValues = roomPlayers.map(p => p.money).sort((a, b) => b - a);
+    const maxMoney = moneyValues[0] || 0;
+    const minMoney = moneyValues[moneyValues.length - 1] || 0;
+    const brecha = maxMoney - minMoney;
+    const ratio = minMoney === 0 ? maxMoney : maxMoney / minMoney;
+
+    // Guardar estas métricas en la tabla rooms
+    await supabase
+      .from('rooms')
+      .update({
+        brecha_normal: brecha,
+        ratio_normal: parseFloat(ratio.toFixed(2))
+      })
+      .eq('id', minisalaId);
+
     // Broadcast inicial para sincronizar el estado del juego
     await supabase.channel(`room:${minisalaId}`).send({
       type: 'broadcast',
