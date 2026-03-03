@@ -147,6 +147,12 @@ export default function AdminPanel() {
     const room = rooms.find(r => r.id === roomId);
     const currentCardNumber = room?.next_dice_index || 0;
 
+    // Detectar si están en simulación final:
+    // - Fase es 'metrics_final' (definitivamente simulación final)
+    // - Fase es 'playing' y ya hay brecha_normal guardada (están en simulación final)
+    const isFinalSimulation = room?.current_phase === 'metrics_final' ||
+                             (room?.current_phase === 'playing' && (room?.brecha_normal || 0) > 0);
+
     // Combinar jugadores reales + perfiles del sistema (arquetipos)
     // Calcular el dinero de los system_profiles dinámicamente según la carta actual
     const systemProfilesWithMoney = systemProfiles.map(profile => ({
@@ -160,7 +166,8 @@ export default function AdminPanel() {
           responsabilidades: profile.responsabilidades
         },
         currentCardNumber,
-        cards
+        cards,
+        isFinalSimulation ? { isFinalSimulation: true, profileId: profile.id } : undefined
       )
     }));
 
