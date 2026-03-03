@@ -545,9 +545,9 @@ export const translations = {
       CAT: 'Cap en ALT'
     },
     finalReflectionTitle: {
-      ES: '¿Qué reflexión te llevas del juego?',
-      EN: 'What reflection do you take from the game?',
-      CAT: 'Quina reflexió t\'emportes del joc?'
+      ES: '¿Qué reflexión te llevas del juego?\n¿Y qué puedes hacer tú para aplicar lo aprendido?',
+      EN: 'What reflection do you take from the game?\nAnd what can you do to apply what you learned?',
+      CAT: 'Quina reflexió t\'emportes del joc?\nI què pots fer tu per aplicar l\'après?'
     },
     finalReflectionPlaceholder: {
       ES: 'Escribe aquí tu reflexión...',

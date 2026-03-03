@@ -287,7 +287,7 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
         {isFinalSimulation && (
           <div className="bg-white/15 backdrop-blur-sm rounded-3xl border border-white/30 overflow-hidden shadow-2xl p-8">
             <div className="space-y-4">
-              <p className="text-emerald-100 text-lg font-bold text-center">
+              <p className="text-emerald-100 text-lg font-bold text-center whitespace-pre-line">
                 {getTranslation('game.finalReflectionTitle', language)}
               </p>
               <textarea
