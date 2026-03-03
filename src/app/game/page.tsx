@@ -674,7 +674,24 @@ export default function MinisalaGame() {
   // Función para que el Líder inicie la simulación final
   const startFinalSimulation = async () => {
     // Guardar métricas del juego normal antes de iniciar la simulación
-    const moneyValues = roomPlayers.map(p => p.money).sort((a, b) => b - a);
+    // Incluir jugadores reales + system_profiles (igual que en admin)
+    const systemProfilesWithMoney = systemProfiles.map(profile => ({
+      ...profile,
+      money: calculateSystemMoney(
+        {
+          red: profile.red,
+          visibilidad: profile.visibilidad,
+          tiempo: profile.tiempo,
+          margen_error: profile.margen_error,
+          responsabilidades: profile.responsabilidades
+        },
+        currentCardNumber,
+        allCards
+      )
+    }));
+
+    const allParticipants = [...roomPlayers, ...systemProfilesWithMoney];
+    const moneyValues = allParticipants.map(p => p.money).sort((a, b) => b - a);
     const maxMoney = moneyValues[0] || 0;
     const minMoney = moneyValues[moneyValues.length - 1] || 0;
     const brecha = maxMoney - minMoney;
