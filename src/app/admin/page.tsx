@@ -154,6 +154,19 @@ export default function AdminPanel() {
                              (room?.current_phase === 'playing' && (room?.brecha_normal || 0) > 0);
 
     // Combinar jugadores reales + perfiles del sistema (arquetipos)
+    // En metrics_final, recalcular el dinero de los jugadores con isFinalSimulation
+    const playersWithMoney = isFinalSimulation && room?.current_phase === 'metrics_final'
+      ? roomPlayers.map(player => ({
+          ...player,
+          money: calculateSystemMoney(
+            player.variables || {},
+            cards.length,
+            cards,
+            { isFinalSimulation: true, profileId: player.id }
+          )
+        }))
+      : roomPlayers;
+
     // Calcular el dinero de los system_profiles dinámicamente según la carta actual
     const systemProfilesWithMoney = systemProfiles.map(profile => ({
       ...profile,
@@ -172,7 +185,7 @@ export default function AdminPanel() {
     }));
 
     const allParticipants = [
-      ...roomPlayers,
+      ...playersWithMoney,
       ...systemProfilesWithMoney
     ];
 
