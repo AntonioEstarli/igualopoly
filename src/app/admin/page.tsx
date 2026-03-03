@@ -145,7 +145,7 @@ export default function AdminPanel() {
 
     // Obtener el número de carta actual de la sala
     const room = rooms.find(r => r.id === roomId);
-    const currentCardNumber = room?.next_dice_index || 0;
+    const currentCardNumber = room?.current_card_number || 0;
 
     // Detectar si están en simulación final:
     // - Fase es 'metrics_final' (definitivamente simulación final)

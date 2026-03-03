@@ -588,7 +588,10 @@ export default function MinisalaGame() {
     // Guardamos progreso en db
     const { error } = await supabase
       .from('rooms')
-      .update({ current_step: nextBoardPosition })
+      .update({
+        current_step: nextBoardPosition,
+        current_card_number: nextCardNumber
+      })
       .eq('id', minisalaId);
 
     if (error) {
@@ -699,10 +702,13 @@ export default function MinisalaGame() {
       .update({ current_phase: 'playing' })
       .eq('minisala_id', minisalaId);
 
-    // Actualizamos la sala a 'playing'
+    // Actualizamos la sala a 'playing' y reseteamos el número de carta
     await supabase
       .from('rooms')
-      .update({ current_phase: 'playing' })
+      .update({
+        current_phase: 'playing',
+        current_card_number: 0
+      })
       .eq('id', minisalaId);
 
     // Actualizamos el estado local
