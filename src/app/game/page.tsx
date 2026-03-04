@@ -884,12 +884,23 @@ export default function MinisalaGame() {
       if (microsoftVoice) return microsoftVoice;
 
       // 4. Usar la primera voz disponible del idioma
-      return langVoices[0];
+      if (langVoices.length > 0) return langVoices[0];
+
+      // 5. Fallback especial para catalán: usar español si no hay voces catalanas de calidad
+      if (language === 'CAT') {
+        console.log('⚠️ No hay buenas voces en catalán, usando español como fallback');
+        const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
+        return spanishVoices.find(v => v.name.includes('Google')) ||
+               spanishVoices.find(v => v.name.includes('Microsoft')) ||
+               spanishVoices[0];
+      }
+
+      return undefined;
     };
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = targetLang;
-    utterance.rate = 1.0; // Velocidad normal
+    utterance.rate = language === 'CAT' ? 0.95 : 1.0; // Ligeramente más lento en catalán
     utterance.pitch = 1.0;
 
     // Asignar la mejor voz disponible
