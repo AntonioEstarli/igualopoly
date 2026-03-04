@@ -272,7 +272,7 @@ export const translations = {
           {
             ES: 'Mi trabajo es visible y suelo participar en espacios donde se toman decisiones.',
             EN: 'My work is visible and I usually participate in decision-making spaces.',
-            CAT: 'La meva feina és visible i solic participar en espais on es prenen decisions.'
+            CAT: 'La meva feina és visible i acostumo a participar en espais on es prenen decisions.'
           },
           {
             ES: 'Mi trabajo es conocido dentro de mi equipo, pero no siempre más allá.',
