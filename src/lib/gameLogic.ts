@@ -147,11 +147,16 @@ export function calculateSystemMoney(
     const card = allCards[i];
     if (!card) continue;
 
-    // Simulación final: usar valor fijo por perfil (0 si no está definido), nunca el cálculo por variables
+    // Simulación final: usar valor fijo por perfil si existe en final_simulation_values
     if (options?.isFinalSimulation && options?.profileId) {
       const fsv = card.final_simulation_values;
-      total += (fsv && typeof fsv === 'object' ? fsv[options.profileId] ?? 0 : 0);
-      continue;
+      // Si el profileId existe en final_simulation_values, usar ese valor
+      if (fsv && typeof fsv === 'object' && options.profileId in fsv) {
+        total += fsv[options.profileId];
+        continue;
+      }
+      // Si no existe (jugador real), calcular por variables igualadas (todas en MEDIO)
+      // continuamos abajo con el cálculo normal usando las variables
     }
 
     if (card.impact_variable && card.impact_values) {

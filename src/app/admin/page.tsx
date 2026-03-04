@@ -159,7 +159,14 @@ export default function AdminPanel() {
       ? roomPlayers.map(player => ({
           ...player,
           money: calculateSystemMoney(
-            player.variables || {},
+            // Variables igualadas (todas en MEDIO) para simulación final
+            {
+              red: 'MEDIO',
+              visibilidad: 'MEDIO',
+              tiempo: 'MEDIO',
+              margen_error: 'MEDIO',
+              responsabilidades: 'MEDIO'
+            },
             cards.length,
             cards,
             { isFinalSimulation: true, profileId: player.id }
