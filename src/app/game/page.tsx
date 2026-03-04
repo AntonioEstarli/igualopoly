@@ -1191,7 +1191,7 @@ export default function MinisalaGame() {
                               <div>
                                 <h4 className="text-xs font-black text-slate-600 mb-2">{getTranslation('game.cardRewrite', language)}</h4>
                                 <div className="text-slate-700 text-sm leading-relaxed prose prose-sm max-w-none">
-                                  <ReactMarkdown>
+                                  <ReactMarkdown remarkPlugins={[remarkBreaks]}>
                                     {language === 'ES' ? card.reescribe_es : language === 'EN' ? card.reescribe_en : card.reescribe_cat}
                                   </ReactMarkdown>
                                 </div>
