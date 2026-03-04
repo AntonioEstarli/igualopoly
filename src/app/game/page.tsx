@@ -864,12 +864,12 @@ export default function MinisalaGame() {
 
     // Buscar la mejor voz disponible para el idioma
     // Prioridad: Google > Premium/Enhanced > Natural > Cualquier voz del idioma
-    const findBestVoice = () => {
+    const findBestVoice = (): { voice: SpeechSynthesisVoice | undefined; isSpanishFallback: boolean } => {
       const langVoices = voices.filter(v => v.lang.startsWith(targetLang.split('-')[0]));
 
       // 1. Buscar voces de Google (suelen ser las mejores)
       const googleVoice = langVoices.find(v => v.name.includes('Google'));
-      if (googleVoice) return googleVoice;
+      if (googleVoice) return { voice: googleVoice, isSpanishFallback: false };
 
       // 2. Buscar voces Premium o Enhanced
       const premiumVoice = langVoices.find(v =>
@@ -877,37 +877,40 @@ export default function MinisalaGame() {
         v.name.includes('Enhanced') ||
         v.name.includes('Natural')
       );
-      if (premiumVoice) return premiumVoice;
+      if (premiumVoice) return { voice: premiumVoice, isSpanishFallback: false };
 
       // 3. Buscar voces de Microsoft (mejor que las básicas)
       const microsoftVoice = langVoices.find(v => v.name.includes('Microsoft'));
-      if (microsoftVoice) return microsoftVoice;
+      if (microsoftVoice) return { voice: microsoftVoice, isSpanishFallback: false };
 
       // 4. Usar la primera voz disponible del idioma
-      if (langVoices.length > 0) return langVoices[0];
+      if (langVoices.length > 0) return { voice: langVoices[0], isSpanishFallback: false };
 
       // 5. Fallback especial para catalán: usar español si no hay voces catalanas de calidad
       if (language === 'CAT') {
         console.log('⚠️ No hay buenas voces en catalán, usando español como fallback');
         const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
-        return spanishVoices.find(v => v.name.includes('Google')) ||
+        const fallbackVoice = spanishVoices.find(v => v.name.includes('Google')) ||
                spanishVoices.find(v => v.name.includes('Microsoft')) ||
                spanishVoices[0];
+        return { voice: fallbackVoice, isSpanishFallback: true };
       }
 
-      return undefined;
+      return { voice: undefined, isSpanishFallback: false };
     };
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = targetLang;
+    const { voice: bestVoice, isSpanishFallback } = findBestVoice();
+
+    // Si usamos fallback español para catalán, usar código de idioma español
+    utterance.lang = isSpanishFallback ? 'es-ES' : targetLang;
     utterance.rate = language === 'CAT' ? 0.95 : 1.0; // Ligeramente más lento en catalán
     utterance.pitch = 1.0;
 
     // Asignar la mejor voz disponible
-    const bestVoice = findBestVoice();
     if (bestVoice) {
       utterance.voice = bestVoice;
-      console.log('🔊 Usando voz:', bestVoice.name);
+      console.log('🔊 Usando voz:', bestVoice.name, '| Idioma:', utterance.lang);
     }
 
     utterance.onstart = () => setIsSpeaking(true);
