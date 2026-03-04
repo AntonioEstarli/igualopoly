@@ -947,6 +947,8 @@ export default function AdminPanel() {
                 // Detectar si están en simulación final
                 const isFinalSimulation = room.current_phase === 'metrics_final' ||
                                          (room.current_phase === 'playing' && (room.brecha_normal || 0) > 0);
+                const brechaNormal = room.brecha_normal || 0;
+                const ratioNormal = room.ratio_normal || 0;
 
                 return (
                   <div
@@ -963,19 +965,24 @@ export default function AdminPanel() {
                       </span>
                     )}
 
-                    {/* Métricas del juego normal (solo si NO está en simulación final) */}
-                    {isPlaying && !isFinalSimulation && currentMetrics.playerCount > 0 && (
+                    {/* Métricas del juego normal */}
+                    {isPlaying && currentMetrics.playerCount > 0 && (
                       <div className="w-full mt-1 pt-2 border-t border-slate-100 space-y-1">
+                        {isFinalSimulation && (
+                          <div className="text-[10px] font-bold text-slate-500 uppercase text-center mb-1">
+                            Juego Normal
+                          </div>
+                        )}
                         <div className="flex justify-between items-center text-xs">
                           <span className="text-slate-500">Brecha:</span>
                           <span className="font-bold text-red-600">
-                            {currentMetrics.brecha} €
+                            {isFinalSimulation ? `${brechaNormal} €` : `${currentMetrics.brecha} €`}
                           </span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
                           <span className="text-slate-500">Ratio:</span>
                           <span className="font-bold text-orange-600">
-                            {currentMetrics.ratio}x
+                            {isFinalSimulation ? `${ratioNormal}x` : `${currentMetrics.ratio}x`}
                           </span>
                         </div>
                         <div className="text-[10px] text-slate-400 text-center">
