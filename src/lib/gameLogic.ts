@@ -131,8 +131,9 @@ export const getImpactDetail = (
  * Calcula el capital acumulado de un perfil basado en sus variables
  * y el histórico de cartas jugadas hasta el momento.
  *
- * En la simulación final (isFinalSimulation=true) usa los valores fijos
- * definidos por carta en `final_simulation_values[profileId]`, si existen.
+ * En la simulación final (isFinalSimulation=true) usa los valores de impacto
+ * más equitativos definidos en `impact_values_final`, aplicándolos paso a paso
+ * según las variables del perfil (igual que en el juego normal).
  */
 export function calculateSystemMoney(
   profileVars: any,
@@ -147,19 +148,14 @@ export function calculateSystemMoney(
     const card = allCards[i];
     if (!card) continue;
 
-    // Simulación final: usar valor fijo por perfil si existe en final_simulation_values
-    if (options?.isFinalSimulation && options?.profileId) {
-      const fsv = card.final_simulation_values;
-      // Si el profileId existe en final_simulation_values, usar ese valor
-      if (fsv && typeof fsv === 'object' && options.profileId in fsv) {
-        total += fsv[options.profileId];
-        continue;
-      }
-      // Si no existe (jugador real), calcular por variables igualadas (todas en MEDIO)
-      // continuamos abajo con el cálculo normal usando las variables
-    }
+    if (card.impact_variable) {
+      // En simulación final, usar impact_values_final si existe, sino usar impact_values normales
+      const impactValues = options?.isFinalSimulation && card.impact_values_final
+        ? card.impact_values_final
+        : card.impact_values;
 
-    if (card.impact_variable && card.impact_values) {
+      if (!impactValues) continue;
+
       let impact: number;
 
       // Caso 2: Dos variables de impacto
@@ -167,12 +163,12 @@ export function calculateSystemMoney(
         const level1 = applyVariableModifier(card.impact_variable, (profileVars[card.impact_variable.toLowerCase()] || 'MEDIO') as VariableLevel);
         const level2 = applyVariableModifier(card.impact_variable_2, (profileVars[card.impact_variable_2.toLowerCase()] || 'MEDIO') as VariableLevel);
         const combinedLevel = calculateCombinedLevel(level1, level2);
-        impact = card.impact_values[combinedLevel] || 0;
+        impact = impactValues[combinedLevel] || 0;
       } else {
         // Caso 1: Una sola variable
         const variableName = card.impact_variable.toLowerCase();
         const profileLevel = profileVars[variableName] || 'MEDIO';
-        impact = card.impact_values[profileLevel] || 0;
+        impact = impactValues[profileLevel] || 0;
       }
 
       total += impact;

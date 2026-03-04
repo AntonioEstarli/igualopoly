@@ -29,7 +29,13 @@ export default function MinisalaGame() {
   const [roomState, setRoomState] = useState({ currentCard: 0, isBoardVisible: false });
   const [myMoney, setMyMoney] = useState(0);
   const [card, setCard] = useState<any>(null);
-  const [minisalaId, setMinisalaId] = useState('');
+  const [minisalaId, setMinisalaId] = useState(() => {
+    // Proteger acceso a localStorage (puede no estar disponible en SSR)
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('minisala_id') || 'sala_1';
+    }
+    return 'sala_1';
+  });
   const [boardPosition, setBoardPosition] = useState(0);  // Posición del peón (avanza según dado)
   const [currentCardNumber, setCurrentCardNumber] = useState(0); // Número de carta actual (avanza de 1 en 1)
   const [history, setHistory] = useState<{cardName: string, amount: number, reason: string}[]>([]);
@@ -48,6 +54,7 @@ export default function MinisalaGame() {
   const isRestoringRef = useRef(false); // Evita que el useEffect de carta aplique dinero al restaurar sesión
   const lastAppliedCardRef = useRef(0); // Último nº de carta cuyo impacto económico fue aplicado
   const [isAutoSimulating, setIsAutoSimulating] = useState(false); // Indica si la simulación automática está corriendo
+  const gameChannelRef = useRef<any>(null); // Referencia al canal de juego para enviar broadcasts
 
   // Estado para detectar cuando el dado está girando
   const [isDiceRolling, setIsDiceRolling] = useState(false);
@@ -75,6 +82,11 @@ export default function MinisalaGame() {
 
   // Variables del jugador
   const [userVars, setUserVars] = useState<Record<string, string>>({});
+
+  // DEBUG: Log del valor de minisalaId al renderizar
+  useEffect(() => {
+    console.log('🔍 DEBUG - minisalaId actual:', minisalaId);
+  }, [minisalaId]);
 
   useEffect(() => {
     const storedLang = localStorage.getItem('idioma') as Language;
@@ -118,13 +130,59 @@ export default function MinisalaGame() {
     { id: 'p5', alias: 'Joven Prácticas', color: '#7c3aed', vars: { red: 'MEDIO', visibilidad: 'ALTO', tiempo: 'ALTO', margen_error: 'ALTO', responsabilidades: 'BAJO' } },
   ];*/
 
+  // Detectar cambios en la sala vía Supabase Realtime (ej: admin cambia sala)
   useEffect(() => {
-    const sId = localStorage.getItem('minisala_id') || 'sala_1';
-    setMinisalaId(sId);
+    const userId = localStorage.getItem('participant_id');
+    if (!userId) {
+      console.warn('⚠️ No hay participant_id, no se puede suscribir a cambios de sala');
+      return;
+    }
 
-    // Suscripción al estado de la minisala específica
-    const channel = supabase.channel(`room:${sId}`)
+    console.log(`📡 Suscribiéndose a cambios de sala para usuario: ${userId}`);
+
+    const channel = supabase
+      .channel('participant_room_changes')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'participants',
+        filter: `id=eq.${userId}`
+      }, (payload: any) => {
+        console.log('📨 Recibido cambio en participants:', payload);
+        const newRoom = payload.new.minisala_id;
+        if (newRoom && newRoom !== minisalaId) {
+          // Actualizar el estado y localStorage
+          setMinisalaId(newRoom);
+          localStorage.setItem('minisala_id', newRoom);
+          console.log(`🔄 Sala cambiada por admin: ${minisalaId} → ${newRoom}`);
+        }
+      })
+      .subscribe((status) => {
+        console.log(`📡 Estado de suscripción a cambios de sala: ${status}`);
+      });
+
+    return () => {
+      console.log('🔌 Desuscribiéndose de cambios de sala');
+      supabase.removeChannel(channel);
+    };
+  }, [minisalaId]);
+
+  // Suscripción al canal - se re-ejecuta cuando minisalaId cambia
+  useEffect(() => {
+    if (!minisalaId) {
+      console.warn('⚠️ No hay minisalaId, no se puede suscribir al canal de juego');
+      return;
+    }
+
+    console.log(`🎮 Suscribiéndose al canal de juego: room:${minisalaId}`);
+
+    const channel = supabase.channel(`room:${minisalaId}`, {
+      config: {
+        broadcast: { self: true } // Permitir que el líder reciba sus propios broadcasts
+      }
+    })
       .on('broadcast', { event: 'card_advance' }, ({ payload }) => {
+        console.log('📨 Broadcast recibido - card_advance:', payload);
         // 1. Actualizamos la posición del peón (según el dado)
         setRoomState(prev => ({ ...prev, currentCard: payload.nextBoardPosition }));
         setBoardPosition(payload.nextBoardPosition);
@@ -133,18 +191,27 @@ export default function MinisalaGame() {
         setCurrentCardNumber(payload.nextCardNumber);
       })
       .on('broadcast', { event: 'dice_roll' }, ({ payload }) => {
+        console.log('🎲 Broadcast recibido - dice_roll:', payload);
         // Sincronizar el lanzamiento del dado para todos los jugadores
         setExternalDiceRoll({ value: payload.diceValue, timestamp: payload.timestamp });
       })
       .on('broadcast', { event: 'dismiss_card' }, () => {
+        console.log('📨 Broadcast recibido - dismiss_card');
         setCard(null);
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`🎮 Estado de suscripción al canal de juego: ${status}`);
+      });
+
+    // Guardar referencia al canal para usarla en broadcasts
+    gameChannelRef.current = channel;
 
     return () => {
+      console.log(`🔌 Desuscribiéndose del canal de juego: room:${minisalaId}`);
+      gameChannelRef.current = null;
       supabase.removeChannel(channel);
     };
-  }, [minisalaId]); // Añadimos minisalaId como dependencia por seguridad
+  }, [minisalaId]); // Re-suscribir cuando cambia la sala
 
   // carga inicial de Perfiles de sistema
   useEffect(() => {
@@ -430,7 +497,7 @@ export default function MinisalaGame() {
 
       const [{ data }, { data: roomData }] = await Promise.all([
         supabase.from('participants').select('is_leader, current_phase, money').eq('id', usuarioId).single(),
-        supabase.from('rooms').select('current_phase, current_step, next_dice_index').eq('id', sId).single(),
+        supabase.from('rooms').select('current_phase, current_step, current_card_number, next_dice_index').eq('id', sId).single(),
       ]);
 
       if (data) {
@@ -462,7 +529,7 @@ export default function MinisalaGame() {
           setGamePhase('ranking');
           isRestoringRef.current = true;
           setBoardPosition(roomData?.current_step || 0);
-          setCurrentCardNumber(roomData?.next_dice_index || 0);
+          setCurrentCardNumber(roomData?.current_card_number || 0);
         } else if (participantPhase) {
           // 'playing': puede ser juego normal O simulación final ya en marcha
           const wasInFinalSimulation = localStorage.getItem('is_final_simulation') === 'true';
@@ -477,7 +544,7 @@ export default function MinisalaGame() {
           setGamePhase(participantPhase);
           isRestoringRef.current = true;
           setBoardPosition(roomData?.current_step || 0);
-          setCurrentCardNumber(roomData?.next_dice_index || 0);
+          setCurrentCardNumber(roomData?.current_card_number || 0);
         }
       }
     };
@@ -536,11 +603,13 @@ export default function MinisalaGame() {
 
   // Función para que el líder descarte la carta y notifique a todos los de la sala
   const leaderDismissCard = async () => {
-    await supabase.channel(`room:${minisalaId}`).send({
-      type: 'broadcast',
-      event: 'dismiss_card',
-      payload: {}
-    });
+    if (gameChannelRef.current) {
+      await gameChannelRef.current.send({
+        type: 'broadcast',
+        event: 'dismiss_card',
+        payload: {}
+      });
+    }
     setCard(null);
   };
 
@@ -554,12 +623,16 @@ export default function MinisalaGame() {
     // Obtener el valor del dado
     const diceValue = await getNextDiceValue() || Math.floor(Math.random() * 6) + 1;
 
-    // Broadcast del lanzamiento del dado para que todos lo vean (incluyendo el líder)
-    await supabase.channel(`room:${minisalaId}`).send({
-      type: 'broadcast',
-      event: 'dice_roll',
-      payload: { diceValue, timestamp: Date.now() }
-    });
+    console.log(`🎲 Líder enviando broadcast dice_roll: ${diceValue} a canal room:${minisalaId}`);
+
+    // Broadcast a todos (incluyendo el líder gracias a self: true)
+    if (gameChannelRef.current) {
+      await gameChannelRef.current.send({
+        type: 'broadcast',
+        event: 'dice_roll',
+        payload: { diceValue, timestamp: Date.now() }
+      });
+    }
 
     return diceValue;
   };
@@ -573,17 +646,16 @@ export default function MinisalaGame() {
     const nextBoardPosition = boardPosition + diceValue;
     const nextCardNumber = currentCardNumber + 1;
 
-    // Siempre notificamos y avanzamos el estado (la lógica de si hay carta o no se maneja en el render)
-    await supabase.channel(`room:${minisalaId}`).send({
-      type: 'broadcast',
-      event: 'card_advance',
-      payload: { nextBoardPosition, nextCardNumber }
-    });
+    console.log(`📤 Líder enviando broadcast card_advance: pos=${nextBoardPosition}, card=${nextCardNumber} a canal room:${minisalaId}`);
 
-    // Actualizar el estado local
-    setRoomState(prev => ({ ...prev, currentCard: nextBoardPosition }));
-    setBoardPosition(nextBoardPosition);  // Posición del peón
-    setCurrentCardNumber(nextCardNumber);     // Número de carta
+    // Broadcast a todos (incluyendo el líder gracias a self: true)
+    if (gameChannelRef.current) {
+      await gameChannelRef.current.send({
+        type: 'broadcast',
+        event: 'card_advance',
+        payload: { nextBoardPosition, nextCardNumber }
+      });
+    }
 
     // Guardamos progreso en db
     const { error } = await supabase

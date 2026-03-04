@@ -396,6 +396,7 @@ export default function AdminPanel() {
         impact_variable: card.impact_variable,
         impact_variable_2: card.impact_variable_2,
         impact_values: card.impact_values,
+        impact_values_final: card.impact_values_final ?? null,
         color: card.color,
         tipo: card.tipo,
         final_simulation_values: card.final_simulation_values ?? null
@@ -1417,6 +1418,7 @@ export default function AdminPanel() {
                   impact_variable: 'red',
                   impact_variable_2: '',
                   impact_values: { ALTO: 0, MEDIO: 0, BAJO: 0 },
+                  impact_values_final: null,
                   color: '#6366f1',
                   tipo: 'OPORTUNIDAD',
                   final_simulation_values: null
@@ -2038,41 +2040,43 @@ export default function AdminPanel() {
                   </p>
                 </div>
 
-                {/* Valores fijos para la simulación final */}
+                {/* Valores de impacto para la simulación final */}
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">
-                    Simulación Final — Valor fijo por perfil
+                    Valores de Impacto Económico (Simulación Final)
                   </label>
                   <p className="text-xs text-slate-400 mb-3 italic">
-                    Si se rellena algún perfil, en la simulación final se usarán estos valores en lugar del cálculo por variables. Los perfiles sin valor suman 0.
+                    Valores más equitativos para la simulación final. Se aplican paso a paso según las variables de cada perfil/jugador (igual que en el juego normal).
                   </p>
-                  <div className="space-y-2">
-                    {systemProfiles.map(profile => (
-                      <div key={profile.id} className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl">
-                        <span className="text-lg">{profile.emoji ? `${profile.emoji}` : '🤖'}</span>
-                        <span className="flex-1 text-sm font-medium text-slate-700">{profile.alias}</span>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['ALTO', 'MEDIO', 'BAJO'].map(level => (
+                      <div key={level} className="bg-green-50 p-3 rounded-xl border-2 border-green-200">
+                        <span className="text-xs font-bold text-green-700 block mb-1">{level}</span>
                         <input
                           type="number"
-                          value={editingCard.final_simulation_values?.[profile.id] ?? ''}
+                          value={editingCard.impact_values_final?.[level] ?? ''}
                           onChange={(e) => {
                             const val = e.target.value === '' ? undefined : parseInt(e.target.value);
-                            const current: Record<string, number> = { ...(editingCard.final_simulation_values || {}) };
+                            const current: Record<string, number> = { ...(editingCard.impact_values_final || {}) };
                             if (val === undefined) {
-                              delete current[profile.id];
+                              delete current[level];
                             } else {
-                              current[profile.id] = val;
+                              current[level] = val;
                             }
                             setEditingCard({
                               ...editingCard,
-                              final_simulation_values: Object.keys(current).length > 0 ? current : null
+                              impact_values_final: Object.keys(current).length > 0 ? current : undefined
                             });
                           }}
-                          className="w-20 p-2 border rounded-lg text-sm font-bold text-center"
+                          className="w-full p-2 border border-green-300 rounded-lg text-sm font-bold bg-white"
                           placeholder="0"
                         />
                       </div>
                     ))}
                   </div>
+                  <p className="text-xs text-green-600 mt-2 italic">
+                    💡 Estos valores suelen ser más equilibrados que los del juego normal
+                  </p>
                 </div>
               </div>
 
