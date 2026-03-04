@@ -135,7 +135,7 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 25, language
             backgroundPosition: '0 0, 0 6px, 6px -6px, -6px 0px'
           }}
         >
-          <span className="absolute -bottom-5 right-2 text-[8px] font-black text-white/80 uppercase">Finish (25€)</span>
+          <span className="absolute -bottom-5 right-2 text-[8px] font-black text-white/80 uppercase">Finish (25K €)</span>
         </div>
 
         {/* Líneas intermedias de progreso */}
