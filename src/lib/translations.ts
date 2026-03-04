@@ -282,7 +282,7 @@ export const translations = {
           {
             ES: 'Mi trabajo pasa bastante desapercibido o no suelo estar en espacios clave.',
             EN: 'My work goes largely unnoticed or I\'m not usually in key spaces.',
-            CAT: 'La meva feina passa força desapercebuda o no solic estar en espais clau.'
+            CAT: 'La meva feina passa força desapercebuda o no acostumo a estar en espais clau.'
           }
         ]
       },
