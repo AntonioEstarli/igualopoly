@@ -495,9 +495,9 @@ export const translations = {
       CAT: 'INICIAR EL JOC'
     },
     startGameDesc: {
-      ES: 'Los jugadores comenzarán la partida con 10€',
-      EN: 'Players will start the game with 10€',
-      CAT: 'Els jugadors començaran la partida amb 10€'
+      ES: 'Los jugadores comenzarán la partida con 10K €',
+      EN: 'Players will start the game with 10K €',
+      CAT: 'Els jugadors començaran la partida amb 10K €'
     },
     waitingGameStart: {
       ES: 'Esperando al líder para iniciar el juego...',
