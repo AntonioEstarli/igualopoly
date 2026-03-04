@@ -217,7 +217,7 @@ export function CapitalRace({ players, systemProfiles, maxCapital = 25, language
 
                   {/* Marcador de dinero individual */}
                   <div className="mt-1 bg-black/60 text-white text-[8px] px-1 rounded-full font-mono">
-                    {participant.money}€
+                    {participant.money}K€
                   </div>
                 </div>
               )}
