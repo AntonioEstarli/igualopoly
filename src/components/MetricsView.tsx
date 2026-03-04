@@ -107,8 +107,8 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
   // Ratio de concentración: ganador acumula X veces más que el último
   const ratio = minMoney === 0 ? maxMoney : maxMoney / minMoney;
 
-  // Determinar nivel de concentración (ALTO si ratio > 2, MEDIO si ratio > 1.5, BAJO si ratio <= 1.5)
-  const concentracionLevel = ratio > 2 ? 'ALTO' : ratio > 1.5 ? 'MEDIO' : 'BAJO';
+  // Determinar nivel de concentración (siempre BAJO en la simulación final)
+  const concentracionLevel = isFinalSimulation ? 'BAJO' : (ratio > 2 ? 'ALTO' : ratio > 1.5 ? 'MEDIO' : 'BAJO');
 
   // Ratio de motivación del equipo (inverso de la concentración)
   const motivacionLevel = isFinalSimulation
