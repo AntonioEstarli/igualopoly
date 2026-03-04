@@ -95,12 +95,14 @@ export function BoardView({ currentStep }: { currentStep: number }) {
         </div>
       </div>
 
-      {/* Logo centrado en el tablero */}
-      <img
-        src="/images/logo igualopoly.png"
-        alt="Igualopoly"
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[62%] object-contain pointer-events-none"
-      />
+      {/* Logo centrado en el tablero - solo en español */}
+      {language === 'ES' && (
+        <img
+          src="/images/logo igualopoly.png"
+          alt="Igualopoly"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[62%] object-contain pointer-events-none"
+        />
+      )}
 
       {/* Overlay informativo de la casilla actual */}
       <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold">
