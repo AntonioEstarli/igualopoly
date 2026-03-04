@@ -29,7 +29,7 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
   const [reflexionSaved, setReflexionSaved] = useState(false);
 
   useEffect(() => {
-    const storedLang = sessionStorage.getItem('idioma') as Language;
+    const storedLang = localStorage.getItem('idioma') as Language;
     if (storedLang) {
       setLanguage(storedLang);
     }

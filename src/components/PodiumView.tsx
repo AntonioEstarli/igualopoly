@@ -21,7 +21,7 @@ export function PodiumView({ initialLanguage }: { initialLanguage?: Language } =
 
   useEffect(() => {
     if (initialLanguage) return;
-    const storedLang = sessionStorage.getItem('idioma') as Language;
+    const storedLang = localStorage.getItem('idioma') as Language;
     if (storedLang) setLanguage(storedLang);
   }, [initialLanguage]);
 

@@ -8,7 +8,7 @@ export default function PublicView() {
   const [language, setLanguage] = useState<Language>('ES');
 
   useEffect(() => {
-    const storedLang = sessionStorage.getItem('idioma') as Language;
+    const storedLang = localStorage.getItem('idioma') as Language;
     if (storedLang) setLanguage(storedLang);
   }, []);
 

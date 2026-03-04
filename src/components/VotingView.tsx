@@ -23,7 +23,7 @@ export function VotingView({ minisalaId, participantId }: { minisalaId: string, 
   const [timeLeft, setTimeLeft] = useState(120); // 2 minutos en segundos
 
   useEffect(() => {
-    const storedLang = sessionStorage.getItem('idioma') as Language;
+    const storedLang = localStorage.getItem('idioma') as Language;
     if (storedLang) setLanguage(storedLang);
   }, []);
 
