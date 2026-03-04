@@ -2,11 +2,18 @@
 // src/components/BoardView.tsx
 import { useState, useEffect, useRef } from 'react';
 import { boardPositions } from '@/src/lib/boardPositions';
+import type { Language } from '@/src/lib/translations';
 
 export function BoardView({ currentStep }: { currentStep: number }) {
   const pos = boardPositions[currentStep] || boardPositions[0];
   const [isJumping, setIsJumping] = useState(false);
   const prevStepRef = useRef(currentStep);
+  const [language, setLanguage] = useState<Language>('ES');
+
+  useEffect(() => {
+    const storedLang = sessionStorage.getItem('idioma') as Language;
+    if (storedLang) setLanguage(storedLang);
+  }, []);
 
   useEffect(() => {
     if (prevStepRef.current !== currentStep) {
@@ -17,11 +24,23 @@ export function BoardView({ currentStep }: { currentStep: number }) {
     }
   }, [currentStep]);
 
+  // Seleccionar imagen del tablero según el idioma
+  const getBoardImage = () => {
+    switch (language) {
+      case 'EN':
+        return '/images/board_en.png';
+      case 'CAT':
+        return '/images/board_cat.png';
+      default:
+        return '/images/board.jpg';
+    }
+  };
+
   return (
     <div
       className="relative w-full aspect-square border-8 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
       style={{
-        backgroundImage: "url('/images/board.jpg')",
+        backgroundImage: `url('${getBoardImage()}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}

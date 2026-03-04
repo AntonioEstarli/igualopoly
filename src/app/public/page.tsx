@@ -1,9 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/src/lib/supabaseClient';
+import type { Language } from '@/src/lib/translations';
 
 export default function PublicView() {
   const [participants, setParticipants] = useState<any[]>([]);
+  const [language, setLanguage] = useState<Language>('ES');
+
+  useEffect(() => {
+    const storedLang = sessionStorage.getItem('idioma') as Language;
+    if (storedLang) setLanguage(storedLang);
+  }, []);
 
   useEffect(() => {
     // 1. Cargar participantes iniciales (Jugadores + Sistema)
@@ -28,6 +35,18 @@ export default function PublicView() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // Seleccionar imagen del tablero según el idioma
+  const getBoardImage = () => {
+    switch (language) {
+      case 'EN':
+        return '/images/board_en.png';
+      case 'CAT':
+        return '/images/board_cat.png';
+      default:
+        return '/images/board.jpg';
+    }
+  };
+
   return (
     <div className="bg-slate-900 min-h-screen text-white p-8 flex flex-col gap-6 aspect-video">
       {/* Encabezado con Tablero Digital */}
@@ -43,7 +62,7 @@ export default function PublicView() {
               <div
                   className="col-span-7 rounded-2xl border-4 border-slate-700 shadow-2xl relative"
                   style={{
-                      backgroundImage: "url('/images/board.jpg')",
+                      backgroundImage: `url('${getBoardImage()}')`,
                       backgroundSize: 'contain',
                       backgroundPosition: 'center',
                       backgroundRepeat: 'no-repeat'
