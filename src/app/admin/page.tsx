@@ -730,7 +730,8 @@ export default function AdminPanel() {
     const fetchPropuestas = async () => {
       const { data } = await supabase
         .from('rule_proposals')
-        .select('*')
+        .select('*, participants(alias), rooms:minisala_id(name)')
+        .order('minisala_id', { ascending: true })
         .order('votes', { ascending: false });
       setPropuestas(data || []);
     };
@@ -1137,11 +1138,21 @@ export default function AdminPanel() {
             <h2 className="font-bold mb-4 border-b pb-2 text-slate-600">Banco de Reglas Sugeridas</h2>
             <div className="max-h-60 overflow-y-auto space-y-2">
               {propuestas.length > 0 ? propuestas.map((p) => (
-                <div key={p.id} className="p-3 bg-slate-50 border-l-4 border-slate-400 rounded flex justify-between items-center">
-                  <span className="text-sm italic">"{p.proposal_text}"</span>
-                  <span className="text-xs font-black bg-white px-2 py-1 rounded shadow-sm text-slate-700">
-                    {p.votes} VOTOS
-                  </span>
+                <div key={p.id} className="p-3 bg-slate-50 border-l-4 border-slate-400 rounded">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-sm italic flex-1">"{p.proposal_text}"</span>
+                    <span className="text-xs font-black bg-white px-2 py-1 rounded shadow-sm text-slate-700 ml-2">
+                      {p.votes} VOTOS
+                    </span>
+                  </div>
+                  <div className="flex gap-3 text-xs text-slate-500">
+                    <span className="font-semibold">
+                      👤 {p.participants?.alias || 'Anónimo'}
+                    </span>
+                    <span className="font-semibold">
+                      🏠 {p.rooms?.name || 'Sin sala'}
+                    </span>
+                  </div>
                 </div>
               )) : <p className="text-slate-400 text-sm italic py-4">Esperando propuestas...</p>}
             </div>
