@@ -1100,7 +1100,7 @@ export default function MinisalaGame() {
                                               </span>
                                             </div>
                                             <span className="text-sm font-black text-green-600 ml-2 whitespace-nowrap">
-                                              {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}€
+                                              {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}K€
                                             </span>
                                           </div>
                                           <div className="flex justify-between items-center">
@@ -1108,7 +1108,7 @@ export default function MinisalaGame() {
                                               {getTranslation('game.scoreComboOneAlto', language)}
                                             </span>
                                             <span className="text-sm font-black text-yellow-600">
-                                              {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}€
+                                              {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}K€
                                             </span>
                                           </div>
                                           <div className="flex justify-between items-center">
@@ -1116,7 +1116,7 @@ export default function MinisalaGame() {
                                               {getTranslation('game.scoreComboNoneAlto', language)}
                                             </span>
                                             <span className="text-sm font-black text-red-600">
-                                              {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}€
+                                              {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}K€
                                             </span>
                                           </div>
                                         </>
@@ -1130,7 +1130,7 @@ export default function MinisalaGame() {
                                         {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.ALTO', language)}
                                       </span>
                                       <span className="text-sm font-black text-green-600">
-                                        {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}€
+                                        {card.impact_values?.ALTO >= 0 ? '+' : ''}{card.impact_values?.ALTO || 0}K€
                                       </span>
                                     </div>
                                     <div className="flex justify-between items-center">
@@ -1138,7 +1138,7 @@ export default function MinisalaGame() {
                                         {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.MEDIO', language)}
                                       </span>
                                       <span className="text-sm font-black text-yellow-600">
-                                        {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}€
+                                        {card.impact_values?.MEDIO >= 0 ? '+' : ''}{card.impact_values?.MEDIO || 0}K€
                                       </span>
                                     </div>
                                     <div className="flex justify-between items-center">
@@ -1146,7 +1146,7 @@ export default function MinisalaGame() {
                                         {getTranslation(`characterCreation.variableLabels.${card.impact_variable}`, language)} {getTranslation('characterCreation.levels.BAJO', language)}
                                       </span>
                                       <span className="text-sm font-black text-red-600">
-                                        {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}€
+                                        {card.impact_values?.BAJO >= 0 ? '+' : ''}{card.impact_values?.BAJO || 0}K€
                                       </span>
                                     </div>
                                   </>
