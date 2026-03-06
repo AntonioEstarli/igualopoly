@@ -937,6 +937,39 @@ export default function MinisalaGame() {
     // Buscar la mejor voz disponible para el idioma
     // Prioridad: Google > Premium/Enhanced > Natural > Cualquier voz del idioma
     const findBestVoice = (): { voice: SpeechSynthesisVoice | undefined; isSpanishFallback: boolean } => {
+      // Para catalán: priorizar Premium/Enhanced > Google > Fallback español
+      if (language === 'CAT') {
+        const catalanVoices = voices.filter(v => v.lang.startsWith('ca'));
+
+        // 1. Buscar voces Premium o Enhanced en catalán (PRIORIDAD)
+        const premiumCatalan = catalanVoices.find(v =>
+          v.name.includes('Premium') ||
+          v.name.includes('Enhanced') ||
+          v.name.includes('Natural')
+        );
+        if (premiumCatalan) {
+          console.log('🔊 Usando voz Premium/Enhanced en catalán:', premiumCatalan.name);
+          return { voice: premiumCatalan, isSpanishFallback: false };
+        }
+
+        // 2. Buscar voces de Google en catalán
+        const googleCatalan = catalanVoices.find(v => v.name.includes('Google'));
+        if (googleCatalan) {
+          console.log('🔊 Usando Google Catalan:', googleCatalan.name);
+          return { voice: googleCatalan, isSpanishFallback: false };
+        }
+
+        // 3. Fallback: usar español de alta calidad si no hay voces catalanas de calidad
+        console.log('🔊 No hay voces de calidad en catalán, usando español de alta calidad');
+        const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
+        const fallbackVoice = spanishVoices.find(v => v.name.includes('Google')) ||
+               spanishVoices.find(v => v.name.includes('Microsoft')) ||
+               spanishVoices.find(v => v.name.includes('Premium') || v.name.includes('Enhanced')) ||
+               spanishVoices[0];
+        return { voice: fallbackVoice, isSpanishFallback: true };
+      }
+
+      // Para otros idiomas, buscar la mejor voz disponible
       const langVoices = voices.filter(v => v.lang.startsWith(targetLang.split('-')[0]));
 
       // 1. Buscar voces de Google (suelen ser las mejores)
@@ -957,16 +990,6 @@ export default function MinisalaGame() {
 
       // 4. Usar la primera voz disponible del idioma
       if (langVoices.length > 0) return { voice: langVoices[0], isSpanishFallback: false };
-
-      // 5. Fallback especial para catalán: usar español si no hay voces catalanas de calidad
-      if (language === 'CAT') {
-        console.log('⚠️ No hay buenas voces en catalán, usando español como fallback');
-        const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
-        const fallbackVoice = spanishVoices.find(v => v.name.includes('Google')) ||
-               spanishVoices.find(v => v.name.includes('Microsoft')) ||
-               spanishVoices[0];
-        return { voice: fallbackVoice, isSpanishFallback: true };
-      }
 
       return { voice: undefined, isSpanishFallback: false };
     };
