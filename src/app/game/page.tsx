@@ -744,40 +744,9 @@ export default function MinisalaGame() {
   };
 
   // Función para que el Líder inicie la simulación final
+  // Nota: Las métricas del juego normal (brecha_normal, ratio_normal) ya fueron guardadas
+  // por el admin cuando activó la simulación final, antes de resetear el dinero a 0
   const startFinalSimulation = async () => {
-    // Guardar métricas del juego normal antes de iniciar la simulación
-    // Incluir jugadores reales + system_profiles (igual que en admin)
-    const systemProfilesWithMoney = systemProfiles.map(profile => ({
-      ...profile,
-      money: calculateSystemMoney(
-        {
-          red: profile.red,
-          visibilidad: profile.visibilidad,
-          tiempo: profile.tiempo,
-          margen_error: profile.margen_error,
-          responsabilidades: profile.responsabilidades
-        },
-        currentCardNumber,
-        allCards
-      )
-    }));
-
-    const allParticipants = [...roomPlayers, ...systemProfilesWithMoney];
-    const moneyValues = allParticipants.map(p => p.money).sort((a, b) => b - a);
-    const maxMoney = moneyValues[0] || 0;
-    const minMoney = moneyValues[moneyValues.length - 1] || 0;
-    const brecha = maxMoney - minMoney;
-    const ratio = minMoney === 0 ? maxMoney : maxMoney / minMoney;
-
-    // Guardar estas métricas en la tabla rooms
-    await supabase
-      .from('rooms')
-      .update({
-        brecha_normal: brecha,
-        ratio_normal: parseFloat(ratio.toFixed(2))
-      })
-      .eq('id', minisalaId);
-
     // Broadcast inicial para sincronizar el estado del juego
     await supabase.channel(`room:${minisalaId}`).send({
       type: 'broadcast',

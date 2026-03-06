@@ -136,6 +136,8 @@ export default function AdminPanel() {
   };
 
   // Función para calcular métricas dinámicas de una sala
+  // Solo se usa para la simulación igualitaria (durante simulación final)
+  // o para el juego normal (cuando NO está en simulación)
   const calculateRoomMetrics = (roomId: string) => {
     const roomPlayers = usuarios.filter(u => u.minisala_id === roomId);
 
@@ -154,7 +156,7 @@ export default function AdminPanel() {
                              (room?.current_phase === 'playing' && (room?.brecha_normal || 0) > 0);
 
     // Combinar jugadores reales + perfiles del sistema (arquetipos)
-    // Durante la simulación final, recalcular también el dinero de los jugadores reales
+    // Durante la simulación final, recalcular el dinero usando impact_values_final
     const playersWithMoney = isFinalSimulation
       ? roomPlayers.map(player => ({
           ...player,
@@ -704,6 +706,62 @@ export default function AdminPanel() {
     if (!confirmar) return;
 
     try {
+      // 0. PRIMERO: Guardar las métricas del juego normal ANTES de resetear el dinero
+      // Obtener todas las salas con su current_card_number
+      const { data: roomsData } = await supabase
+        .from('rooms')
+        .select('id, current_card_number')
+        .neq('id', '_none_');
+
+      // Obtener todos los participantes con su dinero actual
+      const { data: participantsData } = await supabase
+        .from('participants')
+        .select('id, minisala_id, money')
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      // Para cada sala, calcular y guardar brecha_normal y ratio_normal
+      if (roomsData && participantsData) {
+        for (const room of roomsData) {
+          const roomPlayers = participantsData.filter(p => p.minisala_id === room.id);
+          const currentCardNumber = room.current_card_number || 0;
+
+          // Calcular dinero de system_profiles
+          const systemProfilesWithMoney = systemProfiles.map(profile => ({
+            ...profile,
+            money: calculateSystemMoney(
+              {
+                red: profile.red,
+                visibilidad: profile.visibilidad,
+                tiempo: profile.tiempo,
+                margen_error: profile.margen_error,
+                responsabilidades: profile.responsabilidades
+              },
+              currentCardNumber,
+              cards
+            )
+          }));
+
+          // Combinar jugadores + system_profiles
+          const allParticipants = [...roomPlayers, ...systemProfilesWithMoney];
+          const moneyValues = allParticipants.map(p => p.money || 0).sort((a, b) => b - a);
+          const maxMoney = moneyValues[0] || 0;
+          const minMoney = moneyValues[moneyValues.length - 1] || 0;
+          const brecha = maxMoney - minMoney;
+          const ratio = minMoney === 0 ? maxMoney : maxMoney / minMoney;
+
+          // Guardar métricas en la sala
+          await supabase
+            .from('rooms')
+            .update({
+              brecha_normal: brecha,
+              ratio_normal: parseFloat(ratio.toFixed(2))
+            })
+            .eq('id', room.id);
+
+          console.log(`✅ Sala ${room.id}: brecha_normal=${brecha}, ratio_normal=${ratio.toFixed(2)}`);
+        }
+      }
+
       // 1. Reiniciar el dinero de todos los participantes a 0 y cambiar a fase 'final'
       const { error: participantsError } = await supabase
         .from('participants')
@@ -959,12 +1017,14 @@ export default function AdminPanel() {
                 const isPlaying = room.current_phase === 'playing';
                 const cardNumber = room.next_dice_index || 0;
 
-                // Calcular métricas dinámicas actuales
-                const currentMetrics = calculateRoomMetrics(room.id);
-
                 // Detectar si están en simulación final
                 const isFinalSimulation = room.current_phase === 'metrics_final' ||
                                          (room.current_phase === 'playing' && (room.brecha_normal || 0) > 0);
+
+                // Calcular métricas dinámicas actuales (para simulación igualitaria o juego normal)
+                const currentMetrics = calculateRoomMetrics(room.id);
+
+                // Métricas del juego normal: usar valores GUARDADOS (son finales, no cambian)
                 const brechaNormal = room.brecha_normal || 0;
                 const ratioNormal = room.ratio_normal || 0;
 
