@@ -23,6 +23,7 @@ interface MetricsViewProps {
 export function MetricsView({ players, systemProfiles, isFinalSimulation = false, minisalaId, originalMoneySnapshot }: MetricsViewProps) {
   const [language, setLanguage] = useState<Language>('ES');
   const [proposalCount, setProposalCount] = useState(0);
+  const [totalVotes, setTotalVotes] = useState(0);
 
   // Estado para la reflexión final
   const [reflexionFinal, setReflexionFinal] = useState('');
@@ -46,21 +47,25 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
     setReflexionSaved(true);
   };
 
-  // Obtener el número de propuestas
+  // Obtener el número de propuestas y votos
   useEffect(() => {
-    const fetchProposalCount = async () => {
+    const fetchProposalData = async () => {
       if (!minisalaId) return;
-      const { count, error } = await supabase
+
+      // Obtener propuestas con sus votos
+      const { data, error } = await supabase
         .from('rule_proposals')
-        .select('*', { count: 'exact', head: true })
+        .select('votes')
         .eq('minisala_id', minisalaId);
 
-      if (!error && count !== null) {
-        setProposalCount(count);
+      if (!error && data) {
+        setProposalCount(data.length);
+        const total = data.reduce((sum, prop) => sum + (prop.votes || 0), 0);
+        setTotalVotes(total);
       }
     };
 
-    fetchProposalCount();
+    fetchProposalData();
   }, [minisalaId]);
 
   useEffect(() => {
@@ -230,6 +235,35 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
               </div>
               <div className="text-slate-400 text-sm mt-4">
                 {getTranslation('metrics.propuestasDesc', language)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Propuestas y votos (solo en simulación final) */}
+        {isFinalSimulation && proposalCount > 0 && (
+          <div className="bg-white/15 backdrop-blur-sm rounded-3xl border border-white/30 overflow-hidden shadow-2xl p-8">
+            <div className="text-center">
+              <div className="text-slate-300 text-xs uppercase tracking-widest font-black mb-4">
+                {getTranslation('metrics.propuestas', language)}
+              </div>
+              <div className="flex items-center justify-center gap-8">
+                <div className="text-center">
+                  <div className="text-6xl font-black text-emerald-400">
+                    {proposalCount}
+                  </div>
+                  <div className="text-slate-300 text-sm mt-2">
+                    Propuesta{proposalCount !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-6xl font-black text-emerald-400">
+                    {totalVotes}
+                  </div>
+                  <div className="text-slate-300 text-sm mt-2">
+                    Voto{totalVotes !== 1 ? 's' : ''}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
