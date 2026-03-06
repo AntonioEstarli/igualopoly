@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/src/lib/supabaseClient';
-import { calculateSystemMoney } from '@/src/lib/gameLogic';
+import { calculateSystemMoney, VariableLevel } from '@/src/lib/gameLogic';
 
 export default function AdminPanel() {
   // Estado de autenticación
@@ -154,8 +154,24 @@ export default function AdminPanel() {
                              (room?.current_phase === 'playing' && (room?.brecha_normal || 0) > 0);
 
     // Combinar jugadores reales + perfiles del sistema (arquetipos)
-    // Los jugadores reales mantienen su dinero original del juego (no se recalcula)
-    const playersWithMoney = roomPlayers;
+    // Durante la simulación final, recalcular también el dinero de los jugadores reales
+    const playersWithMoney = isFinalSimulation
+      ? roomPlayers.map(player => ({
+          ...player,
+          money: calculateSystemMoney(
+            {
+              red: player.red as VariableLevel,
+              visibilidad: player.visibilidad as VariableLevel,
+              tiempo: player.tiempo as VariableLevel,
+              margen_error: player.margen_error as VariableLevel,
+              responsabilidades: player.responsabilidades as VariableLevel
+            },
+            currentCardNumber,
+            cards,
+            { isFinalSimulation: true, profileId: player.id }
+          )
+        }))
+      : roomPlayers;
 
     // Calcular el dinero de los system_profiles dinámicamente según la carta actual
     const systemProfilesWithMoney = systemProfiles.map(profile => ({
