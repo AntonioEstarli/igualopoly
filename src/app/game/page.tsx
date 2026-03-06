@@ -407,7 +407,11 @@ export default function MinisalaGame() {
       const userVars = JSON.parse(localStorage.getItem('vars') || '{}');
 
       // 3. Calculamos el impacto del detalle (monto y razón)
-      const detail = getImpactDetail(userVars, data.impact_variable, data.impact_values, data.impact_variable_2, language);
+      // En simulación final, usar impact_values_final si existe
+      const impactValues = isFinalSimulationRef.current && data.impact_values_final
+        ? data.impact_values_final
+        : data.impact_values;
+      const detail = getImpactDetail(userVars, data.impact_variable, impactValues, data.impact_variable_2, language);
 
       // --- NUEVA LÓGICA DE ACTUALIZACIÓN ---
 
@@ -1641,53 +1645,37 @@ export default function MinisalaGame() {
 
       ) : gamePhase === 'metrics_final' ? (
         /* FASE 5: MÉTRICAS FINALES (después de la simulación) */
-        (() => {
-          // Calcular el dinero original de cada jugador usando sus variables reales
-          const originalMoney: Record<string, number> = {};
-          roomPlayers.forEach(player => {
-            originalMoney[player.id] = calculateSystemMoney(
+        <MetricsView
+          players={roomPlayers.map(player => ({
+            ...player,
+            money: calculateSystemMoney(
               player.variables || {},
               allCards.length,
               allCards,
-              { isFinalSimulation: false } // Sin simulación final = variables reales del jugador
-            );
-          });
-
-          return (
-            <MetricsView
-              players={roomPlayers.map(player => ({
-                ...player,
-                money: calculateSystemMoney(
-                  player.variables || {},
-                  allCards.length,
-                  allCards,
-                  { isFinalSimulation: true, profileId: player.id }
-                )
-              }))}
-              systemProfiles={systemProfiles.map(profile => ({
-                id: profile.id,
-                alias: profile.alias,
-                color: profile.color,
-                emoji: profile.emoji,
-                money: calculateSystemMoney(
-                  {
-                    red: profile.red,
-                    visibilidad: profile.visibilidad,
-                    tiempo: profile.tiempo,
-                    margen_error: profile.margen_error,
-                    responsabilidades: profile.responsabilidades
-                  },
-                  allCards.length,
-                  allCards,
-                  { isFinalSimulation: true, profileId: profile.id }
-                )
-              }))}
-              isFinalSimulation={true}
-              minisalaId={minisalaId}
-              originalMoneySnapshot={originalMoney}
-            />
-          );
-        })()
+              { isFinalSimulation: true, profileId: player.id }
+            )
+          }))}
+          systemProfiles={systemProfiles.map(profile => ({
+            id: profile.id,
+            alias: profile.alias,
+            color: profile.color,
+            emoji: profile.emoji,
+            money: calculateSystemMoney(
+              {
+                red: profile.red,
+                visibilidad: profile.visibilidad,
+                tiempo: profile.tiempo,
+                margen_error: profile.margen_error,
+                responsabilidades: profile.responsabilidades
+              },
+              allCards.length,
+              allCards,
+              { isFinalSimulation: true, profileId: profile.id }
+            )
+          }))}
+          isFinalSimulation={true}
+          minisalaId={minisalaId}
+        />
 
 
       ) : null}

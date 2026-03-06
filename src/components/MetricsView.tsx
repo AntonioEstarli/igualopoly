@@ -17,10 +17,9 @@ interface MetricsViewProps {
   systemProfiles: Participant[];
   isFinalSimulation?: boolean;
   minisalaId?: string;
-  originalMoneySnapshot?: Record<string, number>; // Dinero original antes de la simulación final
 }
 
-export function MetricsView({ players, systemProfiles, isFinalSimulation = false, minisalaId, originalMoneySnapshot }: MetricsViewProps) {
+export function MetricsView({ players, systemProfiles, isFinalSimulation = false, minisalaId }: MetricsViewProps) {
   const [language, setLanguage] = useState<Language>('ES');
   const [proposalCount, setProposalCount] = useState(0);
   const [totalVotes, setTotalVotes] = useState(0);
@@ -92,14 +91,9 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
   }, []);
 
   // Combinar todos los participantes
-  // Si es simulación final y hay snapshot, usar dinero original para jugadores
+  // En simulación final, usar el dinero igualitario que viene en p.money
   const allParticipants = [
-    ...players.map(p => ({
-      ...p,
-      money: isFinalSimulation && originalMoneySnapshot && originalMoneySnapshot[p.id]
-        ? originalMoneySnapshot[p.id]
-        : p.money
-    })),
+    ...players,
     ...systemProfiles
   ];
 
@@ -278,10 +272,8 @@ export function MetricsView({ players, systemProfiles, isFinalSimulation = false
             {allParticipants
               .map(participant => {
                 const isPlayer = players.some(p => p.id === participant.id);
-                // Calcular el dinero que se va a mostrar para cada participante
-                const displayMoney = isFinalSimulation && originalMoneySnapshot && isPlayer
-                  ? originalMoneySnapshot[participant.id] ?? participant.money
-                  : participant.money;
+                // En simulación final, usar el dinero igualitario (participant.money)
+                const displayMoney = participant.money;
                 return { ...participant, displayMoney, isPlayer };
               })
               .sort((a, b) => b.displayMoney - a.displayMoney) // Ordenar por el dinero que se muestra
