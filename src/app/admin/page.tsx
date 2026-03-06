@@ -1030,6 +1030,24 @@ export default function AdminPanel() {
                         <div className="text-[10px] text-slate-400 text-center">
                           {currentMetrics.playerCount} jugadores
                         </div>
+
+                        {/* Propuestas con votos de esta sala */}
+                        {(() => {
+                          const roomProposals = propuestas.filter(p => p.minisala_id === room.id);
+                          if (roomProposals.length > 0) {
+                            const totalVotes = roomProposals.reduce((sum, prop) => sum + (prop.votes || 0), 0);
+                            return (
+                              <div className="mt-2 pt-2 border-t border-emerald-100">
+                                <div className="text-xs font-semibold text-emerald-600 text-center leading-tight">
+                                  {roomProposals.length} Propuesta{roomProposals.length !== 1 ? 's' : ''}
+                                  <br />
+                                  {totalVotes} Voto{totalVotes !== 1 ? 's' : ''}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     )}
                   </div>

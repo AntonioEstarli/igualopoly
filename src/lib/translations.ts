@@ -445,9 +445,9 @@ export const translations = {
       CAT: '💬 Preguntes de reflexió'
     },
     cardRewrite: {
-      ES: '✍️ Reescribe la regla',
-      EN: '✍️ Rewrite the rule',
-      CAT: '✍️ Reescriu la regla'
+      ES: '✍️ Reescribe la regla si esto ocurriera en tu organización',
+      EN: '✍️ Rewrite the rule if this happened in your organization',
+      CAT: '✍️ Reescriu la regla si això passés a la teva organització'
     },
     stadiumTitle: {
       ES: 'Stadium: Carrera de Capital',
