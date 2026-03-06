@@ -1035,7 +1035,8 @@ export default function MinisalaGame() {
                 money: calculateSystemMoney(
                   player.variables || {},
                   displayedCardNumber,
-                  allCards
+                  allCards,
+                  { isFinalSimulation: true, profileId: player.id }
                 )
               } : player)}
               language={language}
