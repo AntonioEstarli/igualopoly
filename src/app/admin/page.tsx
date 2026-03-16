@@ -815,7 +815,7 @@ export default function AdminPanel() {
     const fetchPropuestas = async () => {
       const { data } = await supabase
         .from('rule_proposals')
-        .select('*, participants(alias), rooms:minisala_id(name)')
+        .select('*, participants(alias), rooms:minisala_id(name), cards:card_id(name_es)')
         .order('minisala_id', { ascending: true })
         .order('votes', { ascending: false });
       setPropuestas(data || []);
@@ -1257,6 +1257,11 @@ export default function AdminPanel() {
                     <span className="font-semibold">
                       🏠 {p.rooms?.name || 'Sin sala'}
                     </span>
+                    {p.cards?.name_es && (
+                      <span className="font-semibold">
+                        🃏 {p.cards.name_es}
+                      </span>
+                    )}
                   </div>
                 </div>
               )) : <p className="text-slate-400 text-sm italic py-4">Esperando propuestas...</p>}

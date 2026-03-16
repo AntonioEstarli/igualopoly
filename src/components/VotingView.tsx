@@ -50,7 +50,7 @@ export function VotingView({ minisalaId, participantId, votingDuration = 120 }: 
   const fetchProposals = async () => {
     const { data, error } = await supabase
       .from('rule_proposals')
-      .select('*, participants(alias), cards:card_id(name_es, tipo), rooms:minisala_id(name)');
+      .select('*, participants(alias), cards:card_id(name_es, name_en, name_cat, tipo), rooms:minisala_id(name)');
     if (error) console.error("Error cargando propuestas:", error);
     setProposals(data || []);
   };
@@ -151,27 +151,33 @@ export function VotingView({ minisalaId, participantId, votingDuration = 120 }: 
           proposalsByTipo.map((p) => {
             const isSelected = userVotes.includes(p.id);
             return (
-              <button
-                key={p.id}
-                onClick={() => handleVote(p.id)}
-                className={`w-full flex justify-between items-center p-4 rounded-2xl border-2 transition-all ${
-                  isSelected
-                    ? 'border-red-500 bg-red-50 shadow-inner scale-[0.98]'
-                    : 'border-slate-100 bg-white hover:border-slate-300 shadow-sm'
-                }`}
-              >
-                <div className="flex gap-4 items-center">
-                  <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                    isSelected ? 'bg-red-500 border-red-500' : 'border-slate-200'
-                  }`}>
-                    {isSelected && <span className="text-white text-xs">✓</span>}
+              <div key={p.id} className="flex flex-col gap-1">
+                {p.cards && (
+                  <span className={`text-xs font-bold uppercase tracking-wide ${config.color} px-1`}>
+                    {language === 'EN' ? p.cards.name_en : language === 'CAT' ? p.cards.name_cat : p.cards.name_es}
+                  </span>
+                )}
+                <button
+                  onClick={() => handleVote(p.id)}
+                  className={`w-full flex justify-between items-center p-4 rounded-2xl border-2 transition-all ${
+                    isSelected
+                      ? 'border-red-500 bg-red-50 shadow-inner scale-[0.98]'
+                      : 'border-slate-100 bg-white hover:border-slate-300 shadow-sm'
+                  }`}
+                >
+                  <div className="flex gap-4 items-center">
+                    <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                      isSelected ? 'bg-red-500 border-red-500' : 'border-slate-200'
+                    }`}>
+                      {isSelected && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <p className={`font-medium text-left ${isSelected ? 'text-red-900' : 'text-slate-700'}`}>
+                      "{p.proposal_text}"
+                    </p>
                   </div>
-                  <p className={`font-medium text-left ${isSelected ? 'text-red-900' : 'text-slate-700'}`}>
-                    "{p.proposal_text}"
-                  </p>
-                </div>
-                <span className="text-xl ml-3 flex-shrink-0">{isSelected ? '❤️' : '🔥'}</span>
-              </button>
+                  <span className="text-xl ml-3 flex-shrink-0">{isSelected ? '❤️' : '🔥'}</span>
+                </button>
+              </div>
             );
           })
         )}
