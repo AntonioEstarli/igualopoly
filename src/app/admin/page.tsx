@@ -506,12 +506,14 @@ export default function AdminPanel() {
     setFaseActual(nuevaFase);
   };
 
+  const csvField = (value: string) => `"${value.replace(/"/g, '""')}"`;
+
   const exportToCSV = async () => {
     // 1. Obtener participantes ordenados por puntos
     const { data: participants } = await supabase
       .from('participants')
-      .select('alias, money, minisala_id, is_leader')
-      .order('money', { ascending: false });
+      .select('alias, money, money_normal, minisala_id, is_leader')
+      .order('money_normal', { ascending: false });
 
     // 2. Obtener propuestas con votos
     const { data: proposals } = await supabase
@@ -545,17 +547,19 @@ export default function AdminPanel() {
 
     // Sección 1: Fecha
     csvContent += `FECHA DE LA PARTIDA\n`;
-    csvContent += `"${fechaPartida}"\n\n`;
+    csvContent += `${csvField(fechaPartida)}\n\n`;
 
     // Sección 2: Participantes
     csvContent += `PARTICIPANTES (Ordenados por Puntos)\n`;
-    csvContent += `Alias,Sala,Rol,Puntos\n`;
+    csvContent += `Alias;Sala;Rol;Puntos Juego;Puntos Sim. Final\n`;
 
     if (participants && participants.length > 0) {
       participants.forEach(p => {
         const rol = p.is_leader ? 'Líder' : 'Participante';
         const sala = p.minisala_id || 'Sin sala';
-        csvContent += `"${p.alias}","${sala}","${rol}",${p.money}\n`;
+        const puntosJuego = p.money_normal ?? p.money ?? 0;
+        const puntosFinal = p.money_normal != null ? ((p.money ?? 0) + 10) : '';
+        csvContent += `${csvField(p.alias)};${csvField(sala)};${csvField(rol)};${puntosJuego};${puntosFinal}\n`;
       });
     }
 
@@ -563,11 +567,11 @@ export default function AdminPanel() {
 
     // Sección 3: Propuestas
     csvContent += `PROPUESTAS\n`;
-    csvContent += `Propuesta,Votos\n`;
+    csvContent += `Propuesta;Votos\n`;
 
     if (proposals && proposals.length > 0) {
       proposals.forEach(prop => {
-        csvContent += `"${prop.proposal_text}",${prop.votes}\n`;
+        csvContent += `${csvField(prop.proposal_text)};${prop.votes}\n`;
       });
     }
 
@@ -575,11 +579,11 @@ export default function AdminPanel() {
 
     // Sección 4: Reflexiones
     csvContent += `REFLEXIONES\n`;
-    csvContent += `Reflexión,Alias\n`;
+    csvContent += `Reflexión;Alias\n`;
 
     if (reflexiones && reflexiones.length > 0) {
       reflexiones.forEach(r => {
-        csvContent += `"${r.reflexion_final}","${r.alias}"\n`;
+        csvContent += `${csvField(r.reflexion_final)};${csvField(r.alias)}\n`;
       });
     }
 
@@ -772,7 +776,17 @@ export default function AdminPanel() {
         }
       }
 
-      // 1. Reiniciar el dinero de todos los participantes a 0 y cambiar a fase 'final'
+      // 1. Guardar money_normal para cada participante antes de resetear
+      if (participantsData) {
+        for (const p of participantsData) {
+          await supabase
+            .from('participants')
+            .update({ money_normal: p.money ?? 0 })
+            .eq('id', p.id);
+        }
+      }
+
+      // 2. Reiniciar el dinero de todos los participantes a 0 y cambiar a fase 'final'
       const { error: participantsError } = await supabase
         .from('participants')
         .update({
