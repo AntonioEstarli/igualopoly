@@ -44,6 +44,16 @@ export default function AdminPanel() {
   const [showConfig, setShowConfig] = useState(false);
   // Estado para forzar recálculo de online/offline cada 5 segundos
   const [, setRefreshTick] = useState(0);
+  // Votación
+  const [votingDuration, setVotingDuration] = useState(120);
+  const [votingTimeLeft, setVotingTimeLeft] = useState<number | null>(null);
+
+  // Countdown del timer de votación en admin
+  useEffect(() => {
+    if (votingTimeLeft === null || votingTimeLeft <= 0) return;
+    const t = setInterval(() => setVotingTimeLeft(prev => (prev !== null ? Math.max(0, prev - 1) : null)), 1000);
+    return () => clearInterval(t);
+  }, [votingTimeLeft]);
 
   // Verificar autenticación al cargar
   useEffect(() => {
@@ -647,10 +657,10 @@ export default function AdminPanel() {
 
     if (!confirmar) return;
 
-    // Actualizar todas las salas a 'voting'
+    // Actualizar todas las salas a 'voting' con la duración configurada
     const { error: roomsError } = await supabase
       .from('rooms')
-      .update({ current_phase: 'voting' })
+      .update({ current_phase: 'voting', voting_duration: votingDuration })
       .neq('id', '_none_');
 
     if (roomsError) {
@@ -667,7 +677,7 @@ export default function AdminPanel() {
     if (participantsError) {
       alert("Error al actualizar participantes: " + participantsError.message);
     } else {
-      alert("🗳️ ¡Votación activada para todos los jugadores!");
+      setVotingTimeLeft(votingDuration);
     }
   };
 
@@ -1258,6 +1268,35 @@ export default function AdminPanel() {
             <h2 className="font-bold mb-4 text-purple-600 flex items-center gap-2">
               🗳️ Activar Voto
             </h2>
+            <div className="mb-4">
+              <label className="text-xs text-slate-500 font-semibold block mb-1">Duración de la votación:</label>
+              <select
+                value={votingDuration}
+                onChange={e => setVotingDuration(Number(e.target.value))}
+                disabled={votingTimeLeft !== null && votingTimeLeft > 0}
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-300 disabled:opacity-50"
+              >
+                <option value={120}>2 minutos</option>
+                <option value={180}>3 minutos</option>
+                <option value={240}>4 minutos</option>
+                <option value={300}>5 minutos</option>
+              </select>
+            </div>
+            {votingTimeLeft !== null && (
+              <div className={`mb-4 text-center py-3 rounded-2xl font-mono text-3xl font-black transition-all ${
+                votingTimeLeft > 60
+                  ? 'bg-blue-100 text-blue-700'
+                  : votingTimeLeft > 30
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : votingTimeLeft > 0
+                      ? 'bg-red-100 text-red-700 animate-pulse'
+                      : 'bg-slate-100 text-slate-500'
+              }`}>
+                {votingTimeLeft > 0
+                  ? `⏱️ ${Math.floor(votingTimeLeft / 60).toString().padStart(2, '0')}:${(votingTimeLeft % 60).toString().padStart(2, '0')}`
+                  : '✅ Tiempo agotado'}
+              </div>
+            )}
             <button
               onClick={() => activateGlobalVoting()}
               className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-purple-700 transition-all active:scale-95 flex items-center justify-center gap-3"
