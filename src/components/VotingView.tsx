@@ -15,12 +15,12 @@ const TIPO_CONFIG: Record<Tipo, { color: string; bg: string; border: string; act
 
 const MAX_VOTES = 3;
 
-export function VotingView({ minisalaId, participantId }: { minisalaId: string, participantId: string }) {
+export function VotingView({ minisalaId, participantId, votingDuration = 120 }: { minisalaId: string, participantId: string, votingDuration?: number }) {
   const [proposals, setProposals] = useState<any[]>([]);
   const [userVotes, setUserVotes] = useState<any[]>([]);
   const [language, setLanguage] = useState<Language>('ES');
   const [activeTipo, setActiveTipo] = useState<Tipo>('OPORTUNIDAD');
-  const [timeLeft, setTimeLeft] = useState(120); // 2 minutos en segundos
+  const [timeLeft, setTimeLeft] = useState(votingDuration);
 
   useEffect(() => {
     const storedLang = localStorage.getItem('idioma') as Language;
@@ -31,7 +31,12 @@ export function VotingView({ minisalaId, participantId }: { minisalaId: string, 
     if (minisalaId) fetchProposals();
   }, [minisalaId]);
 
-  // Temporizador de 2 minutos
+  // Si votingDuration llega actualizado después del primer render, reiniciar timer
+  useEffect(() => {
+    setTimeLeft(votingDuration);
+  }, [votingDuration]);
+
+  // Temporizador configurable
   useEffect(() => {
     if (timeLeft <= 0) return;
 
@@ -120,7 +125,9 @@ export function VotingView({ minisalaId, participantId }: { minisalaId: string, 
               ? 'bg-blue-100 text-blue-700'
               : timeLeft > 30
                 ? 'bg-yellow-100 text-yellow-700'
-                : 'bg-red-100 text-red-700 animate-pulse'
+                : timeLeft > 0
+                  ? 'bg-red-100 text-red-700 animate-pulse'
+                  : 'bg-red-100 text-red-700'
           }`}>
             <span>⏱️</span>
             <span>

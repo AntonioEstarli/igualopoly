@@ -48,6 +48,7 @@ export default function MinisalaGame() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // 1. Estado para la fase (que escuchará de Supabase)
   const [gamePhase, setGamePhase] = useState<'start' | 'playing' | 'ranking' | 'voting' | 'podium' | 'final' | 'metrics_final'>('start');
+  const [votingDuration, setVotingDuration] = useState(120);
   // Estado para la simulación final
   const [isFinalSimulation, setIsFinalSimulation] = useState(false);
   const isFinalSimulationRef = useRef(false); // Ref para leer en callbacks de Supabase sin closure stale
@@ -278,7 +279,9 @@ export default function MinisalaGame() {
       .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${minisalaId}` },
         (payload) => {
-          if (payload.new.current_phase === 'ranking') {
+          if (payload.new.current_phase === 'voting' && payload.new.voting_duration) {
+            setVotingDuration(payload.new.voting_duration);
+          } else if (payload.new.current_phase === 'ranking') {
             setGamePhase('ranking');
           } else if (payload.new.current_phase === 'playing' && !isFinalSimulationRef.current) {
             // Transición de 'start' a 'playing': el líder ha iniciado el juego
@@ -501,7 +504,7 @@ export default function MinisalaGame() {
 
       const [{ data }, { data: roomData }] = await Promise.all([
         supabase.from('participants').select('is_leader, current_phase, money').eq('id', usuarioId).single(),
-        supabase.from('rooms').select('current_phase, current_step, current_card_number, next_dice_index').eq('id', sId).single(),
+        supabase.from('rooms').select('current_phase, current_step, current_card_number, next_dice_index, voting_duration').eq('id', sId).single(),
       ]);
 
       if (data) {
@@ -550,6 +553,7 @@ export default function MinisalaGame() {
           setBoardPosition(roomData?.current_step || 0);
           setCurrentCardNumber(roomData?.current_card_number || 0);
         }
+        if (roomData?.voting_duration) setVotingDuration(roomData.voting_duration);
       }
     };
 
@@ -1603,6 +1607,7 @@ export default function MinisalaGame() {
           <VotingView
             minisalaId={minisalaId}
             participantId={localStorage.getItem('participant_id') || ''}
+            votingDuration={votingDuration}
           />
         </div>
 
