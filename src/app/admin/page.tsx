@@ -1380,6 +1380,29 @@ export default function AdminPanel() {
             </div>
           </div>
 
+          {/* 📊 Brechas — línea completa */}
+          <div className="md:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-indigo-100">
+            <h2 className="font-bold mb-4 text-indigo-600 flex items-center gap-2">
+              📊 Brechas (todas las salas)
+            </h2>
+            <div className="flex flex-col md:flex-row gap-4">
+              <button
+                onClick={() => window.open('/admin/brechas?type=inicial', '_blank')}
+                className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+              >
+                <span>Brechas partida inicial</span>
+                <span className="text-2xl">📊</span>
+              </button>
+              <button
+                onClick={() => window.open('/admin/brechas?type=final', '_blank')}
+                className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+              >
+                <span>Brechas simulación final</span>
+                <span className="text-2xl">🎯</span>
+              </button>
+            </div>
+          </div>
+
           {/* 💭 Reflexiones Finales — línea completa */}
           <div className="md:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-emerald-100">
             <h2 className="font-bold mb-4 border-b pb-2 text-emerald-700">💭 Reflexiones Finales</h2>
