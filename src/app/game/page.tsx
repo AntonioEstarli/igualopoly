@@ -28,6 +28,7 @@ export default function MinisalaGame() {
   const [isLeader, setIsLeader] = useState(false);
   const [roomState, setRoomState] = useState({ currentCard: 0, isBoardVisible: false });
   const [myMoney, setMyMoney] = useState(0);
+  const myMoneyRef = useRef(0);
   const [card, setCard] = useState<any>(null);
   const [minisalaId, setMinisalaId] = useState(() => {
     // Proteger acceso a localStorage (puede no estar disponible en SSR)
@@ -121,6 +122,9 @@ export default function MinisalaGame() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Mantener ref de dinero siempre actualizado (para usarlo en callbacks de suscripción sin closure stale)
+  useEffect(() => { myMoneyRef.current = myMoney; }, [myMoney]);
 
   // TODO: REvisar que los valores son correctos, aunque de hecho debería coger estos valores de la base de datos
   /*const SYSTEM_PROFILES = [
@@ -253,13 +257,23 @@ export default function MinisalaGame() {
               setCard(null);
               setHistory([]);
               setMyMoney(0);
+              lastAppliedCardRef.current = 0;
               isFinalSimulationRef.current = true;
               setIsFinalSimulation(true);
               localStorage.setItem('is_final_simulation', 'true');
             } else if (newPhase === 'voting' || newPhase === 'podium' || newPhase === 'metrics_final') {
               setGamePhase(newPhase);
+              // Al entrar en metrics_final, cada jugador guarda su dinero real en la DB
+              // (evita race conditions de las actualizaciones durante la simulación)
+              if (newPhase === 'metrics_final') {
+                const usuarioId = localStorage.getItem('participant_id');
+                if (usuarioId) {
+                  supabase.from('participants').update({ money: myMoneyRef.current }).eq('id', usuarioId);
+                }
+              }
             } else if (newPhase === 'playing' && isFinalSimulationRef.current) {
               // Transición de 'final' → 'playing': arranca la simulación automática (jugadores no-líder)
+              setMyMoney(10);
               setGamePhase('playing');
             }
             // 'playing' sin isFinalSimulationRef: lo gestiona la suscripción de rooms
@@ -524,6 +538,7 @@ export default function MinisalaGame() {
           setCurrentCardNumber(0);
           setCard(null);
           setHistory([]);
+          lastAppliedCardRef.current = 0;
           isFinalSimulationRef.current = true;
           setIsFinalSimulation(true);
           localStorage.setItem('is_final_simulation', 'true');
@@ -762,10 +777,10 @@ export default function MinisalaGame() {
       payload: { nextBoardPosition: 0, nextCardNumber: 0 }
     });
 
-    // Actualizamos todos los participantes de la sala a 'playing'
+    // Actualizamos todos los participantes de la sala a 'playing' con 10€ iniciales
     await supabase
       .from('participants')
-      .update({ current_phase: 'playing' })
+      .update({ current_phase: 'playing', money: 10 })
       .eq('minisala_id', minisalaId);
 
     // Actualizamos la sala a 'playing' y reseteamos el número de carta
@@ -778,6 +793,7 @@ export default function MinisalaGame() {
       .eq('id', minisalaId);
 
     // Actualizamos el estado local
+    setMyMoney(10);
     setGamePhase('playing');
     setIsAutoSimulating(true); // Iniciar simulación automática
   };
