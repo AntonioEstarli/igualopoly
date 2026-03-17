@@ -61,6 +61,11 @@ export default function MinisalaGame() {
   // Estado para detectar cuando el dado está girando
   const [isDiceRolling, setIsDiceRolling] = useState(false);
 
+  // Estado para el comentario del dado (mensaje gracioso entre movimiento y carta)
+  const [diceComment, setDiceComment] = useState<{ text: string; imageUrl: string } | null>(null);
+  const [diceCommentVisible, setDiceCommentVisible] = useState(false);
+  const pendingDiceCommentRef = useRef<{ comment_es: string; comment_en: string; comment_cat: string; comment_image_url: string } | null>(null);
+
   // Estado para sincronizar el lanzamiento del dado entre todos los jugadores
   const [externalDiceRoll, setExternalDiceRoll] = useState<{ value: number; timestamp: number } | null>(null);
 
@@ -199,6 +204,23 @@ export default function MinisalaGame() {
         console.log('🎲 Broadcast recibido - dice_roll:', payload);
         // Sincronizar el lanzamiento del dado para todos los jugadores
         setExternalDiceRoll({ value: payload.diceValue, timestamp: payload.timestamp });
+        // Guardar comentario del dado si existe
+        if (payload.comment) {
+          const lang = (localStorage.getItem('idioma') as Language) || 'ES';
+          const text = lang === 'ES' ? payload.comment.comment_es
+            : lang === 'EN' ? payload.comment.comment_en
+            : payload.comment.comment_cat;
+          const imageUrl = payload.comment.comment_image_url || '';
+          if (text && text.trim()) {
+            setDiceComment({ text, imageUrl });
+          } else if (imageUrl && imageUrl.trim()) {
+            setDiceComment({ text: '', imageUrl });
+          } else {
+            setDiceComment(null);
+          }
+        } else {
+          setDiceComment(null);
+        }
       })
       .on('broadcast', { event: 'dismiss_card' }, () => {
         console.log('📨 Broadcast recibido - dismiss_card');
@@ -466,15 +488,34 @@ export default function MinisalaGame() {
     }
   }, [currentCardNumber, allCards, language]); // Se dispara cada vez que cambia el número de carta o el idioma
 
+  // Retrasa la aparición del comentario del dado para que el peón termine de moverse
+  useEffect(() => {
+    if (!diceComment) {
+      setDiceCommentVisible(false);
+      return;
+    }
+    const timer = setTimeout(() => setDiceCommentVisible(true), 1800);
+    return () => clearTimeout(timer);
+  }, [diceComment]);
+
   // Retrasa la aparición de la carta para que se aprecie el movimiento del peón
+  // Si hay un comentario del dado, se muestra primero durante 4 segundos y luego aparece la carta
   useEffect(() => {
     if (!card) {
       setCardVisible(false);
       return;
     }
+    if (diceComment) {
+      // Esperar 1800ms (aparición del comentario) + 4000ms (lectura) antes de mostrar carta
+      const timer = setTimeout(() => {
+        setDiceComment(null);
+        setCardVisible(true);
+      }, 5800);
+      return () => clearTimeout(timer);
+    }
     const timer = setTimeout(() => setCardVisible(true), 1300);
     return () => clearTimeout(timer);
-  }, [card]);
+  }, [card, diceComment]);
 
   // Sincroniza displayedPlayers con roomPlayers: inmediato en la carga inicial, retrasado en actualizaciones
   useEffect(() => {
@@ -653,8 +694,13 @@ export default function MinisalaGame() {
       await gameChannelRef.current.send({
         type: 'broadcast',
         event: 'dice_roll',
-        payload: { diceValue, timestamp: Date.now() }
+        payload: {
+          diceValue,
+          timestamp: Date.now(),
+          comment: pendingDiceCommentRef.current || null,
+        }
       });
+      pendingDiceCommentRef.current = null;
     }
 
     return diceValue;
@@ -840,7 +886,7 @@ export default function MinisalaGame() {
     runAutoSimulation();
   }, [isFinalSimulation, isAutoSimulating, isLeader, gamePhase, boardPosition]);
 
-  // Función para obtener el siguiente valor del dado (fake)
+  // Función para obtener el siguiente valor del dado (fake) y su comentario opcional
   const getNextDiceValue = async (): Promise<number | null> => {
     // 1. Obtener el next_dice_index de la sala actual
     const { data: roomData, error: roomError } = await supabase
@@ -858,7 +904,7 @@ export default function MinisalaGame() {
     // 2. Obtener todos los valores ordenados por id y usar el índice como posición
     const { data: diceData, error: diceError } = await supabase
       .from('fake_dice_values')
-      .select('value')
+      .select('value, comment_es, comment_en, comment_cat, comment_image_url')
       .order('id', { ascending: true });
 
     if (diceError || !diceData || diceData.length === 0) {
@@ -876,7 +922,16 @@ export default function MinisalaGame() {
       .update({ next_dice_index: nextIndex + 1 })
       .eq('id', minisalaId);
 
-    return diceData[nextIndex].value;
+    // Guardar comentario del dado actual para broadcast
+    const entry = diceData[nextIndex];
+    pendingDiceCommentRef.current = {
+      comment_es: entry.comment_es || '',
+      comment_en: entry.comment_en || '',
+      comment_cat: entry.comment_cat || '',
+      comment_image_url: entry.comment_image_url || '',
+    };
+
+    return entry.value;
   };
 
   // Función para limpiar Markdown del texto antes de enviarlo al TTS
@@ -1084,6 +1139,31 @@ export default function MinisalaGame() {
             <div className="w-full bg-slate-800 px-6 pb-6 pt-2 shadow-lg relative">
 <div className="max-w-[780px] mx-auto relative">
                 <BoardView currentStep={boardPosition} />
+
+                {/* COMENTARIO DEL DADO: mensaje gracioso antes de la carta */}
+                {diceComment && diceCommentVisible && !isFinalSimulation && !isDiceRolling && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30" style={{ padding: '15% 15%' }}>
+                    <div
+                      className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl shadow-2xl border-4 border-emerald-300 p-6 pointer-events-auto flex flex-col items-center justify-center gap-4 max-w-full max-h-full"
+                      style={{ animation: 'zoomIn 0.5s ease-out both' }}
+                    >
+                      {diceComment.imageUrl && (
+                        <img
+                          src={diceComment.imageUrl}
+                          alt=""
+                          className="max-h-40 max-w-full rounded-2xl object-contain border-2 border-white/30"
+                        />
+                      )}
+                      {diceComment.text && (
+                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border-2 border-white/20 w-full">
+                          <p className="text-white text-lg leading-relaxed text-center font-bold">
+                            {diceComment.text}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* CARTA centrada en el tablero - No mostrar en simulación final */}
                 {card && cardVisible && !isFinalSimulation && !isDiceRolling && (

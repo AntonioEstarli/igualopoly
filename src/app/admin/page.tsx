@@ -269,7 +269,13 @@ export default function AdminPanel() {
   const createDiceValue = async (diceValue: any) => {
     const { error } = await supabase
       .from('fake_dice_values')
-      .insert([{ value: diceValue.value }]);
+      .insert([{
+        value: diceValue.value,
+        comment_es: diceValue.comment_es || null,
+        comment_en: diceValue.comment_en || null,
+        comment_cat: diceValue.comment_cat || null,
+        comment_image_url: diceValue.comment_image_url || null,
+      }]);
 
     if (error) {
       alert("Error al crear valor del dado: " + error.message);
@@ -283,7 +289,13 @@ export default function AdminPanel() {
   const updateDiceValue = async (diceValue: any) => {
     const { error } = await supabase
       .from('fake_dice_values')
-      .update({ value: diceValue.value })
+      .update({
+        value: diceValue.value,
+        comment_es: diceValue.comment_es || null,
+        comment_en: diceValue.comment_en || null,
+        comment_cat: diceValue.comment_cat || null,
+        comment_image_url: diceValue.comment_image_url || null,
+      })
       .eq('id', diceValue.id);
 
     if (error) {
@@ -1687,7 +1699,7 @@ export default function AdminPanel() {
             </h2>
             <button
               onClick={() => {
-                setEditingDiceValue({ value: 1 });
+                setEditingDiceValue({ value: 1, comment_es: '', comment_en: '', comment_cat: '', comment_image_url: '' });
                 setIsAddingDiceValue(true);
               }}
               className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 shadow-sm"
@@ -1704,6 +1716,7 @@ export default function AdminPanel() {
                 <tr>
                   <th className="p-4">Orden</th>
                   <th className="p-4">Valor del Dado</th>
+                  <th className="p-4">Comentario</th>
                   <th className="p-4">Acciones</th>
                 </tr>
               </thead>
@@ -1715,6 +1728,19 @@ export default function AdminPanel() {
                       <span className="inline-flex items-center justify-center w-10 h-10 bg-slate-800 text-white rounded-lg font-black text-xl">
                         {dv.value}
                       </span>
+                    </td>
+                    <td className="p-4">
+                      {(dv.comment_es || dv.comment_en || dv.comment_cat) ? (
+                        <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg font-bold border border-emerald-200">
+                          {dv.comment_image_url ? '🖼️ ' : '💬 '}
+                          {(dv.comment_es || dv.comment_en || dv.comment_cat || '').substring(0, 30)}
+                          {(dv.comment_es || dv.comment_en || dv.comment_cat || '').length > 30 ? '...' : ''}
+                        </span>
+                      ) : dv.comment_image_url ? (
+                        <span className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-lg font-bold border border-blue-200">🖼️ Solo imagen</span>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">Sin comentario</span>
+                      )}
                     </td>
                     <td className="p-4 flex gap-2">
                       <button
@@ -2279,7 +2305,7 @@ export default function AdminPanel() {
         {/* MODAL DE EDICIÓN/CREACIÓN DE VALORES DEL DADO */}
         {editingDiceValue && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
+            <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
               <h3 className="text-2xl font-black mb-6">
                 {isAddingDiceValue ? 'Nuevo Valor del Dado' : 'Editar Valor del Dado'}
               </h3>
@@ -2300,6 +2326,57 @@ export default function AdminPanel() {
                         {num}
                       </button>
                     ))}
+                  </div>
+                </div>
+                {/* Comentarios opcionales */}
+                <div className="border-t pt-4 mt-4">
+                  <p className="text-xs font-bold text-emerald-600 uppercase mb-3">Comentario opcional (aparece antes de la carta)</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 mb-1 block">Texto ES</label>
+                      <input
+                        type="text"
+                        value={editingDiceValue.comment_es || ''}
+                        onChange={(e) => setEditingDiceValue({ ...editingDiceValue, comment_es: e.target.value })}
+                        className="w-full p-2 border rounded-lg text-sm"
+                        placeholder="Mensaje en español..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 mb-1 block">Texto EN</label>
+                      <input
+                        type="text"
+                        value={editingDiceValue.comment_en || ''}
+                        onChange={(e) => setEditingDiceValue({ ...editingDiceValue, comment_en: e.target.value })}
+                        className="w-full p-2 border rounded-lg text-sm"
+                        placeholder="Message in English..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 mb-1 block">Texto CAT</label>
+                      <input
+                        type="text"
+                        value={editingDiceValue.comment_cat || ''}
+                        onChange={(e) => setEditingDiceValue({ ...editingDiceValue, comment_cat: e.target.value })}
+                        className="w-full p-2 border rounded-lg text-sm"
+                        placeholder="Missatge en català..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 mb-1 block">URL de imagen (opcional)</label>
+                      <input
+                        type="text"
+                        value={editingDiceValue.comment_image_url || ''}
+                        onChange={(e) => setEditingDiceValue({ ...editingDiceValue, comment_image_url: e.target.value })}
+                        className="w-full p-2 border rounded-lg text-sm"
+                        placeholder="https://ejemplo.com/imagen.png"
+                      />
+                      {editingDiceValue.comment_image_url && (
+                        <div className="mt-2 flex justify-center">
+                          <img src={editingDiceValue.comment_image_url} alt="Preview" className="max-h-24 rounded-lg border" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
