@@ -48,6 +48,10 @@ export default function AdminPanel() {
   const [votingDuration, setVotingDuration] = useState(120);
   const [votingTimeLeft, setVotingTimeLeft] = useState<number | null>(null);
 
+  // Backup / Import CSV
+  const [importPreview, setImportPreview] = useState<{ cards: any[]; diceValues: any[]; systemProfiles: any[] } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+
   // Countdown del timer de votación en admin
   useEffect(() => {
     if (votingTimeLeft === null || votingTimeLeft <= 0) return;
@@ -617,6 +621,206 @@ export default function AdminPanel() {
 
     // Liberar el objeto URL
     URL.revokeObjectURL(url);
+  };
+
+  // ============ BACKUP CSV EXPORT/IMPORT ============
+
+  const exportBackupCSV = async () => {
+    const { data: cardsData } = await supabase.from('cards').select('*').order('id');
+    const { data: diceData } = await supabase.from('fake_dice_values').select('*').order('id');
+    const { data: profilesData } = await supabase.from('system_profiles').select('*').order('id');
+
+    if (!cardsData?.length && !diceData?.length && !profilesData?.length) {
+      alert('No hay datos para exportar');
+      return;
+    }
+
+    let csv = '';
+
+    // Cards section
+    if (cardsData && cardsData.length > 0) {
+      const cardHeaders = Object.keys(cardsData[0]);
+      csv += '### CARDS ###\n';
+      csv += cardHeaders.map(h => csvField(h)).join(',') + '\n';
+      for (const row of cardsData) {
+        csv += cardHeaders.map(h => csvField(typeof row[h] === 'object' ? JSON.stringify(row[h]) : String(row[h] ?? ''))).join(',') + '\n';
+      }
+      csv += '\n';
+    }
+
+    // Dice values section
+    if (diceData && diceData.length > 0) {
+      const diceHeaders = Object.keys(diceData[0]);
+      csv += '### FAKE_DICE_VALUES ###\n';
+      csv += diceHeaders.map(h => csvField(h)).join(',') + '\n';
+      for (const row of diceData) {
+        csv += diceHeaders.map(h => csvField(typeof row[h] === 'object' ? JSON.stringify(row[h]) : String(row[h] ?? ''))).join(',') + '\n';
+      }
+      csv += '\n';
+    }
+
+    // System profiles section
+    if (profilesData && profilesData.length > 0) {
+      const profileHeaders = Object.keys(profilesData[0]);
+      csv += '### SYSTEM_PROFILES ###\n';
+      csv += profileHeaders.map(h => csvField(h)).join(',') + '\n';
+      for (const row of profilesData) {
+        csv += profileHeaders.map(h => csvField(typeof row[h] === 'object' ? JSON.stringify(row[h]) : String(row[h] ?? ''))).join(',') + '\n';
+      }
+    }
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const fecha = new Date().toISOString().slice(0, 10);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `backup_igualopoly_${fecha}.csv`);
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const parseBackupCSV = (text: string): { cards: any[]; diceValues: any[]; systemProfiles: any[] } | string => {
+    const sections: Record<string, string[]> = {};
+    let currentSection = '';
+
+    const lines = text.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('### ') && trimmed.endsWith(' ###')) {
+        currentSection = trimmed.replace(/^### | ###$/g, '');
+        sections[currentSection] = [];
+      } else if (currentSection && trimmed) {
+        sections[currentSection].push(trimmed);
+      }
+    }
+
+    // Validate required sections
+    const validSections = ['CARDS', 'FAKE_DICE_VALUES', 'SYSTEM_PROFILES'];
+    const foundSections = Object.keys(sections);
+    for (const s of foundSections) {
+      if (!validSections.includes(s)) {
+        return `Sección desconocida en el CSV: "${s}". Secciones válidas: ${validSections.join(', ')}`;
+      }
+    }
+
+    if (foundSections.length === 0) {
+      return 'El archivo no contiene ninguna sección válida (### CARDS ###, ### FAKE_DICE_VALUES ###, ### SYSTEM_PROFILES ###)';
+    }
+
+    const parseCSVRow = (row: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        const ch = row[i];
+        if (ch === '"') {
+          if (inQuotes && row[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (ch === ',' && !inQuotes) {
+          result.push(current);
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current);
+      return result;
+    };
+
+    const parseSection = (sectionLines: string[]): any[] => {
+      if (sectionLines.length < 2) return [];
+      const headers = parseCSVRow(sectionLines[0]);
+      const rows: any[] = [];
+      for (let i = 1; i < sectionLines.length; i++) {
+        const values = parseCSVRow(sectionLines[i]);
+        if (values.length !== headers.length) continue;
+        const obj: any = {};
+        for (let j = 0; j < headers.length; j++) {
+          let val: any = values[j];
+          // Try parsing JSON objects
+          if (val.startsWith('{') || val.startsWith('[')) {
+            try { val = JSON.parse(val); } catch { /* keep as string */ }
+          }
+          // Parse numbers for id and value fields
+          if ((headers[j] === 'id' || headers[j] === 'value') && !isNaN(Number(val)) && val !== '') {
+            val = Number(val);
+          }
+          if (val === 'null' || val === '') val = null;
+          obj[headers[j]] = val;
+        }
+        rows.push(obj);
+      }
+      return rows;
+    };
+
+    // Validate cards
+    const parsedCards = sections['CARDS'] ? parseSection(sections['CARDS']) : [];
+    const requiredCardFields = ['id', 'name_es', 'impact_variable', 'impact_values'];
+    for (const card of parsedCards) {
+      for (const field of requiredCardFields) {
+        if (card[field] === null || card[field] === undefined) {
+          return `Carta con ID ${card.id ?? '?'} le falta el campo obligatorio "${field}"`;
+        }
+      }
+    }
+
+    // Validate dice values
+    const parsedDice = sections['FAKE_DICE_VALUES'] ? parseSection(sections['FAKE_DICE_VALUES']) : [];
+    for (const dv of parsedDice) {
+      if (dv.value === null || dv.value === undefined || dv.value < 1 || dv.value > 6) {
+        return `Valor del dado inválido: ${dv.value}. Debe ser entre 1 y 6.`;
+      }
+    }
+
+    // Validate system profiles
+    const parsedProfiles = sections['SYSTEM_PROFILES'] ? parseSection(sections['SYSTEM_PROFILES']) : [];
+    const validLevels = ['ALTO', 'MEDIO', 'BAJO'];
+    const profileVars = ['red', 'visibilidad', 'tiempo', 'margen_error', 'responsabilidades'];
+    for (const p of parsedProfiles) {
+      if (!p.id || !p.alias) {
+        return `Perfil con ID "${p.id ?? '?'}" le falta el campo "alias"`;
+      }
+      for (const v of profileVars) {
+        if (p[v] && !validLevels.includes(p[v])) {
+          return `Perfil "${p.alias}" tiene valor inválido "${p[v]}" para "${v}". Valores válidos: ALTO, MEDIO, BAJO`;
+        }
+      }
+    }
+
+    return { cards: parsedCards, diceValues: parsedDice, systemProfiles: parsedProfiles };
+  };
+
+  const handleImportCSV = () => {
+    if (!confirm('¿Estás seguro de que deseas importar un archivo de backup? Esto mostrará una vista previa de los datos antes de aplicar cambios.')) {
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = ev.target?.result as string;
+        const result = parseBackupCSV(text);
+        if (typeof result === 'string') {
+          setImportError(result);
+          setImportPreview(null);
+          alert(`Error en el archivo CSV:\n\n${result}`);
+        } else {
+          setImportError(null);
+          setImportPreview(result);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   };
 
   const asignarLider = async (usuarioId: string, salaId: string) => {
@@ -1767,6 +1971,152 @@ export default function AdminPanel() {
               <p className="p-8 text-center text-slate-400 italic">No hay valores configurados. El dado usará valores aleatorios.</p>
             )}
           </div>
+        </section>
+
+        {/* SECCIÓN 5: BACKUP */}
+        <section className="mt-12">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              💾 Backup
+            </h2>
+          </div>
+          <p className="text-sm text-slate-500 mb-4">
+            Exporta e importa la configuración de cartas, dados y arquetipos.
+          </p>
+          <div className="flex gap-4 mb-6">
+            <button
+              onClick={exportBackupCSV}
+              className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-sm"
+            >
+              📥 Exportar CSV
+            </button>
+            <button
+              onClick={handleImportCSV}
+              className="bg-amber-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-700 shadow-sm"
+            >
+              📤 Importar CSV
+            </button>
+          </div>
+
+          {importError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+              <p className="text-red-700 font-bold text-sm">❌ Error de importación</p>
+              <p className="text-red-600 text-sm mt-1">{importError}</p>
+            </div>
+          )}
+
+          {importPreview && (
+            <div className="space-y-6">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <p className="text-green-700 font-bold text-sm">✅ Archivo válido — Vista previa de los datos</p>
+                <p className="text-green-600 text-xs mt-1">
+                  {importPreview.cards.length} cartas · {importPreview.diceValues.length} valores de dado · {importPreview.systemProfiles.length} arquetipos
+                </p>
+              </div>
+
+              {/* Preview Cards */}
+              {importPreview.cards.length > 0 && (
+                <div>
+                  <h3 className="font-bold text-sm text-slate-700 mb-2">🃏 Cartas ({importPreview.cards.length})</h3>
+                  <div className="bg-white rounded-xl border shadow-sm overflow-x-auto max-h-64 overflow-y-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-500 uppercase sticky top-0">
+                        <tr>
+                          <th className="p-2">ID</th>
+                          <th className="p-2">Nombre (ES)</th>
+                          <th className="p-2">Variable</th>
+                          <th className="p-2">Impacto</th>
+                          <th className="p-2">Tipo</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {importPreview.cards.map((c: any) => (
+                          <tr key={c.id} className="hover:bg-slate-50">
+                            <td className="p-2 font-mono">{c.id}</td>
+                            <td className="p-2 font-medium">{c.name_es}</td>
+                            <td className="p-2">{c.impact_variable}{c.impact_variable_2 ? ` + ${c.impact_variable_2}` : ''}</td>
+                            <td className="p-2 font-mono">
+                              {typeof c.impact_values === 'object' ? `A:${c.impact_values?.ALTO} M:${c.impact_values?.MEDIO} B:${c.impact_values?.BAJO}` : String(c.impact_values)}
+                            </td>
+                            <td className="p-2">{c.tipo}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview Dice Values */}
+              {importPreview.diceValues.length > 0 && (
+                <div>
+                  <h3 className="font-bold text-sm text-slate-700 mb-2">🎲 Valores del Dado ({importPreview.diceValues.length})</h3>
+                  <div className="bg-white rounded-xl border shadow-sm overflow-x-auto max-h-48 overflow-y-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-500 uppercase sticky top-0">
+                        <tr>
+                          <th className="p-2">Orden</th>
+                          <th className="p-2">Valor</th>
+                          <th className="p-2">Comentario (ES)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {importPreview.diceValues.map((dv: any, i: number) => (
+                          <tr key={dv.id ?? i} className="hover:bg-slate-50">
+                            <td className="p-2 font-mono">{i + 1}</td>
+                            <td className="p-2 font-black text-lg">{dv.value}</td>
+                            <td className="p-2 text-slate-600">{dv.comment_es || <span className="italic text-slate-400">—</span>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview System Profiles */}
+              {importPreview.systemProfiles.length > 0 && (
+                <div>
+                  <h3 className="font-bold text-sm text-slate-700 mb-2">👤 Arquetipos ({importPreview.systemProfiles.length})</h3>
+                  <div className="bg-white rounded-xl border shadow-sm overflow-x-auto max-h-48 overflow-y-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-500 uppercase sticky top-0">
+                        <tr>
+                          <th className="p-2">ID</th>
+                          <th className="p-2">Alias</th>
+                          <th className="p-2">Red</th>
+                          <th className="p-2">Visib.</th>
+                          <th className="p-2">Tiempo</th>
+                          <th className="p-2">Margen</th>
+                          <th className="p-2">Respons.</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {importPreview.systemProfiles.map((p: any) => (
+                          <tr key={p.id} className="hover:bg-slate-50">
+                            <td className="p-2 font-mono">{p.id}</td>
+                            <td className="p-2 font-medium">{p.alias}</td>
+                            <td className="p-2">{p.red}</td>
+                            <td className="p-2">{p.visibilidad}</td>
+                            <td className="p-2">{p.tiempo}</td>
+                            <td className="p-2">{p.margen_error}</td>
+                            <td className="p-2">{p.responsabilidades}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => setImportPreview(null)}
+                className="text-sm text-slate-500 hover:text-slate-700 underline"
+              >
+                Cerrar vista previa
+              </button>
+            </div>
+          )}
         </section>
           </>
         )}
