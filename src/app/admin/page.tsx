@@ -683,8 +683,32 @@ export default function AdminPanel() {
     const sections: Record<string, string[]> = {};
     let currentSection = '';
 
-    const lines = text.split('\n');
-    for (const line of lines) {
+    // Split into logical lines respecting quoted fields with newlines
+    const logicalLines: string[] = [];
+    let buffer = '';
+    let insideQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '"') {
+        if (insideQuotes && text[i + 1] === '"') {
+          buffer += '""';
+          i++;
+        } else {
+          insideQuotes = !insideQuotes;
+          buffer += ch;
+        }
+      } else if (ch === '\n' && !insideQuotes) {
+        logicalLines.push(buffer);
+        buffer = '';
+      } else if (ch === '\r' && !insideQuotes) {
+        // skip \r
+      } else {
+        buffer += ch;
+      }
+    }
+    if (buffer) logicalLines.push(buffer);
+
+    for (const line of logicalLines) {
       const trimmed = line.trim();
       if (trimmed.startsWith('### ') && trimmed.endsWith(' ###')) {
         currentSection = trimmed.replace(/^### | ###$/g, '');
